@@ -1,6 +1,6 @@
 import { LogInIcon } from "lucide-react";
-import Logo from "../shared/logo/Logo";
-import { Button } from "../ui/button";
+import Logo from "../../shared/logo/Logo";
+import { Button } from "../../ui/button";
 import Bookmarks from "./Bookmarks";
 import Notification from "./Notifation";
 import SearchBox from "./SearchBox";
@@ -18,14 +18,14 @@ export default function Header() {
         <Notification active={true} />
         <Button
           variant="ghost"
-          className="text-muted text-lg flex items-center text-bold"
+          className="text-muted text-lg flex items-center text-bold rounded-[5px] hover:bg-muted-foreground"
         >
           <p>ورود</p>
           <LogInIcon className="w-6 h-6" />
         </Button>
         <Button
           variant="default"
-          className="bg-primary text-secondary w-31.25 h-10.75"
+          className="bg-primary text-secondary w-31.25 h-10.75 shadow-xl"
         >
           <p className="font-bold text-lg font-dyna">ثبت آگهی</p>
         </Button>

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { DynaPuff, Vazirmatn } from "next/font/google";
 import "./globals.css";
-import Header from "@/components/header/Header";
+import Header from "@/components/home/header/Header";
 
 const vazirMatn = Vazirmatn({
   variable: "--font-vazir-matn",
