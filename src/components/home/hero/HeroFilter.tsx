@@ -17,7 +17,7 @@ export default function HeroFilter() {
       className="flex px-3 py-2.5 items-center justify-between bg-secondary rounded-[15px] mt-5"
     >
       <Select dir="rtl">
-        <SelectTrigger className="w-58 h-9.25 text-[15px] font-dyna">
+        <SelectTrigger className="w-58 h-9.25 text-[16px] font-dyna">
           <SelectValue placeholder="تمامی برند ها" />
         </SelectTrigger>
         <SelectContent>
@@ -30,7 +30,7 @@ export default function HeroFilter() {
         </SelectContent>
       </Select>
       <Select dir="rtl">
-        <SelectTrigger className="w-53.25 h-9.25 text-[15px] font-dyna">
+        <SelectTrigger className="w-53.25 h-9.25 text-[16px] font-dyna">
           <SelectValue placeholder="همه شهر ها" />
         </SelectTrigger>
         <SelectContent>
