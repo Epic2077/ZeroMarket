@@ -1,16 +1,20 @@
+import { Button } from "@/components/ui/button";
 import { Bell } from "lucide-react";
 
 interface notificationProps {
   active: boolean;
 }
 
-export default function Notification(active: notificationProps) {
+export default function Notification({ active }: notificationProps) {
   return (
-    <div className="relative w-6 h-6 hover:bg-muted-foreground rounded-[5px] flex items-center justify-center cursor-pointer">
-      <div
-        className={`absolute top-0 right-0 w-2 h-2  rounded-full bg-red-500 ${active ? "block" : "hidden"}`}
-      ></div>
-      <Bell className="w-5 h-5 text-muted" />
-    </div>
+    <Button
+      variant="ghost"
+      className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150"
+    >
+      <Bell size={18} />
+      {active && (
+        <span className="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full"></span>
+      )}
+    </Button>
   );
 }

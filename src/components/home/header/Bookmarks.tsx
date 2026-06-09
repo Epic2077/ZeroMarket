@@ -1,16 +1,18 @@
-import { BookmarksTitle } from "@/context/header";
+import Link from "next/link";
+import { navLinks } from "@/context/header";
 
 export default function Bookmarks() {
   return (
-    <div className="flex items-center gap-6 ">
-      {BookmarksTitle.map((title, index) => (
-        <p
-          className="text-[16px] font-normal dyna-puff text-muted p-2 hover:border-b-2 hover:text-foreground border-primary cursor-pointer"
-          key={index}
+    <nav className="hidden lg:flex items-center gap-1">
+      {navLinks?.map((link) => (
+        <Link
+          key={`nav-${link?.label}`}
+          href={link?.href}
+          className="px-3 py-2 text-sm font-500 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors duration-150"
         >
-          {title}
-        </p>
+          {link?.label}
+        </Link>
       ))}
-    </div>
+    </nav>
   );
 }

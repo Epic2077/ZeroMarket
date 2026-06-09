@@ -3,7 +3,7 @@ import HeroText from "./HeroText";
 import HeroFilter from "./HeroFilter";
 import HeroLabels from "./Labels";
 import { Shield, TrendingUp, Zap } from "lucide-react";
-import Logo from "@/components/shared/logo/Logo";
+import Logo from "@/components/shared/Logo";
 
 export default function Hero() {
   return (
