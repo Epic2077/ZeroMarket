@@ -37,8 +37,8 @@ export default function HeroFilter() {
           <SelectGroup>
             <SelectLabel className="text-black">شهر ها</SelectLabel>
             <SelectItem value="city1">شهر 1</SelectItem>
-            <SelectItem value="brand2">برند 2</SelectItem>
-            <SelectItem value="brand3">برند 3</SelectItem>
+            <SelectItem value="city2">شهر 2</SelectItem>
+            <SelectItem value="city3">شهر 3</SelectItem>
           </SelectGroup>
         </SelectContent>
       </Select>
