@@ -16,7 +16,7 @@ export default function AuthHeader() {
         variant="default"
         className="py-2 px-4 hover:bg-primary/90 transition-colors duration-150 hidden sm:flex"
       >
-        <Link href="#register" className="btn-primary text-sm hidden sm:flex ">
+        <Link href="#register" className=" text-sm hidden sm:flex ">
           ثبت آگهی
         </Link>
       </Button>

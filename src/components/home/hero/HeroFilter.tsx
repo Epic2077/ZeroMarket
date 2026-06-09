@@ -44,7 +44,7 @@ export default function HeroFilter() {
       </Select>
       <Button
         variant="default"
-        className="bg-primary text-secondary w-33.25 h-9.25"
+        className="bg-primary text-secondary w-33.25 h-9.25 hover:bg-primary/90 transition-colors duration-150"
       >
         <Search className="w-5 h-5" />
         <p className="font-bold text-sm font-dyna">جستجو در لیست</p>

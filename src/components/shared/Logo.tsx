@@ -15,7 +15,7 @@ interface LogoProps {
 const logoSizeMap: Record<Exclude<LogoProps["size"], number>, number> = {
   small: 32,
   medium: 64,
-  large: 96,
+  large: 230,
 };
 
 const Logo = memo(function Logo({

@@ -2,7 +2,6 @@ import { BackgroundBeamsWithCollision } from "@/components/ui/background-beams-w
 import HeroText from "./HeroText";
 import HeroFilter from "./HeroFilter";
 import HeroLabels from "./Labels";
-import { Shield, TrendingUp, Zap } from "lucide-react";
 import Logo from "@/components/shared/Logo";
 
 export default function Hero() {
@@ -12,23 +11,10 @@ export default function Hero() {
         <div className="">
           <HeroText />
           <HeroFilter />
-          <div className="flex items-center gap-5 mt-5" dir="rtl">
-            <HeroLabels
-              icon={<Shield className="text-accent w-5 h-5" />}
-              title=" +100 فروشنده تایید شده "
-            />
-            <HeroLabels
-              icon={<TrendingUp className="text-accent w-5 h-5" />}
-              title="تحلیل قیمت لحظه ای "
-            />
-            <HeroLabels
-              icon={<Zap className="text-accent w-5 h-5" />}
-              title="8،500+ آگهی فعال"
-            />
-          </div>
+          <HeroLabels />
         </div>
         <div className="md:w-[30%] opacity-50">
-          <Logo size="large" title={false} />
+          <Logo size="large" />
         </div>
       </div>
     </BackgroundBeamsWithCollision>
