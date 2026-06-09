@@ -7,7 +7,7 @@ import SearchBox from "./SearchBox";
 
 export default function Header() {
   return (
-    <header
+    <div
       className="w-full h-18 flex items-center bg-white px-4.5 justify-between font-dyna"
       dir="rtl"
     >
@@ -30,6 +30,6 @@ export default function Header() {
           <p className="font-bold text-lg font-dyna">ثبت آگهی</p>
         </Button>
       </div>
-    </header>
+    </div>
   );
 }

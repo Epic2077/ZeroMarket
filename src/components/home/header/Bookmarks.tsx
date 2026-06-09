@@ -1,4 +1,4 @@
-import { BookmarksTitle } from "@/context/Header";
+import { BookmarksTitle } from "@/context/header";
 
 export default function Bookmarks() {
   return (

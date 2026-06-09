@@ -41,7 +41,9 @@ export default function RootLayout({
       className={`${vazirMatn.variable} ${dynaPuff.variable}  h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <Header />
+        <header className="w-full sticky top-0 z-100">
+          <Header />
+        </header>
         {children}
       </body>
     </html>

@@ -19,11 +19,11 @@ export default function Hero() {
             />
             <HeroLabels
               icon={<TrendingUp className="text-accent w-5 h-5" />}
-              title=" +100 فروشنده تایید شده "
+              title="تحلیل قیمت لحظه ای "
             />
             <HeroLabels
               icon={<Zap className="text-accent w-5 h-5" />}
-              title=" +100 فروشنده تایید شده "
+              title="8،500+ آگهی فعال"
             />
           </div>
         </div>
