@@ -11,7 +11,7 @@ export default function TableRender() {
   return (
     <div className="container mx-auto py-10 w-[90%]" dir="rtl">
       <div className="mb-6 mt-4">
-        <p className="text-[14px] text-muted">بازار زنده</p>
+        <p className="text-[14px] text-muted-foreground">بازار زنده</p>
         <h2 className="font-dyna text-2xl text-secondary-foreground">
           آخرین آگهی های صفر کیلومتر
         </h2>
