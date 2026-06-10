@@ -173,7 +173,7 @@ export const LatestTableColumns: ColumnDef<columnsType>[] = [
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         dir="rtl"
-        className="hover:bg-transparent w-full justify-start gap-1 px-0 text-sm font-semibold text-muted hover:text-foreground vazir-matn"
+        className="hover:bg-transparent w-full justify-start gap-1 px-0 text-sm font-semibold hover:text-foreground vazir-matn"
       >
         برند / مدل / تریم
         <ArrowUpDown className="h-3.5 w-3.5" />
@@ -182,7 +182,9 @@ export const LatestTableColumns: ColumnDef<columnsType>[] = [
     cell: ({ row }) => (
       <div dir="rtl" className="flex flex-col gap-0.5">
         <span className="font-medium text">{row.original.brand}</span>
-        <span className="text-xs text-muted">{row.original.trim}</span>
+        <span className="text-xs text-muted-foreground">
+          {row.original.trim}
+        </span>
       </div>
     ),
   },
@@ -193,7 +195,7 @@ export const LatestTableColumns: ColumnDef<columnsType>[] = [
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         dir="rtl"
-        className="hover:bg-transparent w-full justify-start gap-1 px-0 text-sm font-semibold text-muted hover:text-foreground vazir-matn"
+        className="hover:bg-transparent w-full justify-start gap-1 px-0 text-sm font-semibold  hover:text-foreground vazir-matn"
       >
         سال
         <ArrowUpDown className="h-3.5 w-3.5" />
@@ -206,19 +208,17 @@ export const LatestTableColumns: ColumnDef<columnsType>[] = [
   {
     accessorKey: "color",
     header: () => (
-      <span className="text-sm font-semibold text-muted vazir-matn">رنگ</span>
+      <span className="text-sm font-semibold  vazir-matn">رنگ</span>
     ),
   },
   {
     accessorKey: "seller",
     header: () => (
-      <span className="text-sm font-semibold text-muted vazir-matn">
-        فروشنده
-      </span>
+      <span className="text-sm font-semibold  vazir-matn">فروشنده</span>
     ),
     cell: ({ row }) => (
       <div dir="rtl" className="flex items-center gap-1.5">
-        <span className="text-muted">{row.original.seller}</span>
+        <span className="">{row.original.seller}</span>
         {row.original.verified && (
           <BadgeCheck className="h-4 w-4 text-blue-500 shrink-0" />
         )}
@@ -232,7 +232,7 @@ export const LatestTableColumns: ColumnDef<columnsType>[] = [
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         dir="rtl"
-        className="w-full justify-start gap-1 px-0 text-sm font-semibold text-muted hover:text-foreground vazir-matn hover:bg-transparent"
+        className="w-full justify-start gap-1 px-0 text-sm font-semibold hover:text-foreground vazir-matn hover:bg-transparent"
       >
         قیمت (تومان)
         <ArrowUpDown className="h-3.5 w-3.5" />
@@ -247,7 +247,7 @@ export const LatestTableColumns: ColumnDef<columnsType>[] = [
   {
     accessorKey: "status",
     header: () => (
-      <span className="text-sm font-semibold text-muted vazir-matn">وضعیت</span>
+      <span className="text-sm font-semibold vazir-matn">وضعیت</span>
     ),
     cell: ({ getValue }) => {
       const s = statusMap[getValue() as string];

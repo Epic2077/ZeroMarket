@@ -50,7 +50,7 @@ export default function LatestTable<TData, TValue>({
               {headerGroup.headers.map((header) => (
                 <TableHead
                   key={header.id}
-                  className="px-4 py-3 text-sm font-semibold  text-right vazir-matn"
+                  className="px-4 py-3 text-sm font-semibold text-right vazir-matn"
                 >
                   {header.isPlaceholder
                     ? null

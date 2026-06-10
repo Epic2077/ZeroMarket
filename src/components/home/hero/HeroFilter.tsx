@@ -14,10 +14,10 @@ export default function HeroFilter() {
   return (
     <div
       dir="rtl"
-      className="flex px-3 py-2.5 items-center justify-between bg-secondary rounded-[15px] mt-5"
+      className="flex flex-col sm:flex-row flex-wrap gap-3 px-3 py-2.5 items-stretch sm:items-center justify-between bg-secondary rounded-[15px] mt-5 w-full sm:w-max"
     >
       <Select dir="rtl">
-        <SelectTrigger className="w-58 h-9.25 text-[16px] font-dyna">
+        <SelectTrigger className="w-full sm:w-58 h-9.25 text-[16px] font-dyna">
           <SelectValue placeholder="تمامی برند ها" />
         </SelectTrigger>
         <SelectContent>
@@ -30,7 +30,7 @@ export default function HeroFilter() {
         </SelectContent>
       </Select>
       <Select dir="rtl">
-        <SelectTrigger className="w-53.25 h-9.25 text-[16px] font-dyna">
+        <SelectTrigger className="w-full sm:w-53.25 h-9.25 text-[16px] font-dyna">
           <SelectValue placeholder="همه شهر ها" />
         </SelectTrigger>
         <SelectContent>
@@ -44,7 +44,7 @@ export default function HeroFilter() {
       </Select>
       <Button
         variant="default"
-        className="bg-primary text-secondary w-33.25 h-9.25 hover:bg-primary/90 transition-colors duration-150"
+        className="bg-primary text-secondary w-full sm:w-33.25 h-9.25 hover:bg-primary/90 transition-colors duration-150"
       >
         <Search className="w-5 h-5" />
         <p className="font-bold text-sm font-dyna">جستجو در لیست</p>
