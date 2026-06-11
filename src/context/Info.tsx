@@ -1,4 +1,12 @@
-import { Car, ListChecks, TrendingUp, Users } from "lucide-react";
+import {
+  Car,
+  CheckCircle,
+  ListChecks,
+  Search,
+  Send,
+  TrendingUp,
+  Users,
+} from "lucide-react";
 
 export const stats = [
   {
@@ -58,4 +66,31 @@ export const cities = [
   "شیراز",
   "تبریز",
   "کرج",
+];
+
+export const steps = [
+  {
+    id: "step-browse",
+    number: "۰۱",
+    icon: <Search size={24} className="text-primary" />,
+    title: "مرور و فیلتر آگهی‌ها",
+    description:
+      "بیش از ۸٬۵۰ آگهی صفرکیلومتر را بر اساس برند، مدل، تریم، رنگ، شهر و محدوده قیمت جستجو کنید. با جدول بورس‌مانند ما مرتب‌سازی کنید.",
+  },
+  {
+    id: "step-request",
+    number: "۰۲",
+    icon: <Send size={24} className="text-accent" />,
+    title: "ارسال درخواست خرید",
+    description:
+      "خودروی مناسب پیدا کردید؟ درخواست خرید را مستقیماً به فروشنده تأییدشده ارسال کنید. بدون تماس تلفنی — درخواست شامل شرایط و قیمت پیشنهادی شماست.",
+  },
+  {
+    id: "step-confirm",
+    number: "۰۳",
+    icon: <CheckCircle size={24} className="text-success" />,
+    title: "پاسخ فروشنده",
+    description:
+      "فروشنده تأیید، رد یا قابل مذاکره اعلام می‌کند — فوری اطلاع‌رسانی می‌شوید. در صورت قابل مذاکره، اطلاعات تماس برای گفتگوی مستقیم به اشتراک گذاشته می‌شود.",
+  },
 ];
