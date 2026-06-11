@@ -1,24 +1,30 @@
-import { data } from "@/context/Info";
+import { stats } from "@/context/Info";
 
 export default function InfoSection() {
   return (
-    <section className="grid md:grid-cols-2 xl:grid-cols-4 rtl" dir="rtl">
-      {data.map(({ icon: Icon, title, description, footNote }) => (
-        <article
-          key={title}
-          className="
-           border border-border border-t-0 border-r-0 bg-white/5 p-5 flex items-center backdrop-blur-sm "
-        >
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted-foreground text-accent">
-            <Icon className="h-6 w-6" />
-          </div>
-          <div className="flex flex-col gap-1 mr-6 vazir-matn">
-            <h3 className="text-4xl font-medium tracking-wider">{title}</h3>
-            <p className=" text-sm text-muted">{description}</p>
-            <p className=" text-sm text-[#668B2B]">{footNote}</p>
-          </div>
-        </article>
-      ))}
+    <section className="bg-card border-b border-border" dir="rtl">
+      <div className="max-w-screen-2xl mx-auto px-4 lg:px-8 xl:px-10">
+        <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-border">
+          {stats?.map((stat) => (
+            <div key={stat?.id} className="px-6 py-5 flex items-center gap-6">
+              <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center shrink-0">
+                {stat?.icon}
+              </div>
+              <div>
+                <div className="stat-value text-2xl">{stat?.value}</div>
+                <div className="text-xs font-600 text-muted-foreground mt-0.5">
+                  {stat?.label}
+                </div>
+                <div
+                  className={`text-2xs font-500 mt-0.5 ${stat?.positive ? "text-success" : "text-danger"}`}
+                >
+                  {stat?.sub}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </section>
   );
 }

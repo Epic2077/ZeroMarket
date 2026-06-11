@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { DynaPuff, Vazirmatn } from "next/font/google";
 import "./globals.css";
-import Header from "@/components/home/header/Header";
+import Header from "@/components/layout/header/Header";
+import Footer from "@/components/layout/footer/Footer";
 
 const vazirMatn = Vazirmatn({
   variable: "--font-vazir-matn",
@@ -41,10 +42,13 @@ export default function RootLayout({
       className={`${vazirMatn.variable} ${dynaPuff.variable}  h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <header className="w-full sticky top-0 z-100">
+        <header className="w-full sticky top-0 z-100" dir="rtl">
           <Header />
         </header>
         {children}
+        <footer dir="rtl">
+          <Footer />
+        </footer>
       </body>
     </html>
   );
