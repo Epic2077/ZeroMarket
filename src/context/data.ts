@@ -1,33 +1,4 @@
-export interface Listing {
-  id: string;
-  brand: string;
-  model: string;
-  trim: string;
-  year: number;
-  color: string;
-  colorHex: string;
-  engine: string;
-  transmission: string;
-  fuelType: string;
-  bodyType: string;
-  city: string;
-  deliveryDays: number;
-  sellerName: string;
-  sellerVerified: boolean;
-  sellerResponseRate: number;
-  sellerMemberSince: string;
-  sellerActiveListings: number;
-  sellerAvatar: string;
-  price: number;
-  priceUnit: string;
-  status: "active" | "pending" | "sold" | "negotiable" | "reserved";
-  listedDate: string;
-  factoryOptions: string[];
-  marketAvgBuy: number;
-  marketAvgSell: number;
-  priceVsMarket: number;
-  trend7d: number;
-}
+import { Listing } from "@/types/dataTypes";
 
 export const listings: Listing[] = [
   {
@@ -469,10 +440,10 @@ export const brandVolumeData = [
 
 export function formatPrice(price: number): string {
   if (price >= 1000000000) {
-    return (price / 1000000000).toFixed(2) + "B";
+    return (price / 1000000000).toFixed(2) + "میلیارد";
   }
   if (price >= 1000000) {
-    return (price / 1000000).toFixed(0) + "M";
+    return (price / 1000000).toFixed(0) + "میلیون";
   }
   return price.toLocaleString();
 }
