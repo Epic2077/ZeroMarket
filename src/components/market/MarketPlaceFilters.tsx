@@ -13,7 +13,10 @@ import { ChevronDown, Search, Shield, X } from "lucide-react";
 
 interface Props {
   filters: FilterState;
-  onUpdate: <K extends keyof FilterState>(key: K, value: FilterState[K]) => void;
+  onUpdate: <K extends keyof FilterState>(
+    key: K,
+    value: FilterState[K],
+  ) => void;
   onReset: () => void;
   activeCount: number;
   totalResults: number;
@@ -127,7 +130,7 @@ export default function MarketplaceFilters({
           value={filters.priceMin}
           onChange={(e) => onUpdate("priceMin", e.target.value)}
           placeholder="حداقل (میلیارد)"
-          className={`${fieldClass} w-24 px-2 py-1.5 font-mono`}
+          className={`${fieldClass} w-50 px-2 py-1.5 font-mono`}
         />
         <span className="text-xs text-muted-foreground">–</span>
         <input
@@ -135,7 +138,7 @@ export default function MarketplaceFilters({
           value={filters.priceMax}
           onChange={(e) => onUpdate("priceMax", e.target.value)}
           placeholder="حداکثر (میلیارد)"
-          className={`${fieldClass} w-24 px-2 py-1.5 font-mono`}
+          className={`${fieldClass} w-50 px-2 py-1.5 font-mono`}
         />
       </div>
 

@@ -5,6 +5,7 @@ import { brandFa } from "@/context/marketFilters";
 import type { Listing } from "@/types/dataTypes";
 import { BarChart2, Star, TrendingDown, TrendingUp } from "lucide-react";
 import dynamic from "next/dynamic";
+import MarketplaceSummary from "./MarketplaceSummary";
 
 const BrandVolumeChart = dynamic(() => import("./BrandVolumeChart"), {
   ssr: false,
@@ -52,32 +53,7 @@ export default function MarketplaceSidebar({ listings }: Props) {
   return (
     <div className="flex flex-col gap-4">
       {/* Market summary */}
-      <div className="card-elevated p-4">
-        <p className="section-label mb-3">خلاصه بازار</p>
-        <div className="flex flex-col gap-2.5">
-          {summary.map((item) => (
-            <div
-              key={`sidebar-${item.label}`}
-              className="flex items-center justify-between"
-            >
-              <div className="flex items-center gap-1.5">
-                {item.icon}
-                <span className="text-xs text-muted-foreground">
-                  {item.label}
-                </span>
-              </div>
-              <div className="text-right">
-                <span className="text-xs font-mono font-700 text-foreground">
-                  {item.value}
-                </span>
-                <span className="text-2xs text-muted-foreground ml-1">
-                  {item.sub}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <MarketplaceSummary summary={summary} />
 
       {/* Brand distribution chart */}
       <div className="card-elevated p-4">

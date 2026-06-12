@@ -34,6 +34,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 50];
@@ -100,17 +101,19 @@ export default function ListingTable({ data = listings }: ListingTableProps) {
                   data-state={row.getIsSelected() ? "selected" : undefined}
                   className="border-b border-border/50 transition-colors hover:bg-accent/10 data-[state=selected]:bg-accent/15"
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className="px-4 py-3 text-sm vazir-matn"
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
-                  ))}
+                  <Link href={`/listings/${row.original.id}`} passHref>
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell
+                        key={cell.id}
+                        className="px-4 py-3 text-sm vazir-matn"
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    ))}
+                  </Link>
                 </TableRow>
               ))
             ) : (
