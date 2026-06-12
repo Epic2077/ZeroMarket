@@ -171,12 +171,18 @@ export const listingColumns: ColumnDef<Listing>[] = [
       />
     ),
     cell: ({ row }) => (
-      <Checkbox
-        className="mr-2"
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="انتخاب ردیف"
-      />
+      // Stop the click from bubbling to the row's navigate-on-click handler.
+      <span
+        className="flex items-center"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Checkbox
+          className="mr-2"
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="انتخاب ردیف"
+        />
+      </span>
     ),
     enableSorting: false,
   },
