@@ -62,7 +62,7 @@ export default function ListingDetailPricePanel({
   const statusInfo = requestStatusConfig[requestStatus];
 
   return (
-    <div className="card-elevated p-5 flex flex-col gap-4 sticky top-24">
+    <div className="card-elevated p-5 flex flex-col gap-4 ">
       {/* Price */}
       <div>
         <p className="section-label mb-1">قیمت آگهی</p>
@@ -141,7 +141,7 @@ export default function ListingDetailPricePanel({
           <div className="mt-3 animate-fade-in">
             <DetailPriceTrendChart />
             <div className="flex items-center gap-1.5 mt-2 p-2 bg-warning/8 border border-warning/20 rounded-lg">
-              <Lock size={11} className="text-warning flex-shrink-0" />
+              <Lock size={11} className="text-warning shrink-0" />
               <span className="text-2xs text-warning font-600">
                 تاریخچه ۳۰ روزه با نسخه ویژه در دسترس است
               </span>

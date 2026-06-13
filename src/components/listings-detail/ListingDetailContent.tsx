@@ -75,7 +75,7 @@ export default function ListingDetailContent({ listing }: Props) {
         {/* Page header */}
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
           <div className="flex items-start gap-4">
-            <BrandIcon brand={listing.brand} />
+            <BrandIcon brand={listing.brand} size="lg" />
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-2xl font-800 text-foreground tracking-tight">
@@ -165,7 +165,10 @@ export default function ListingDetailContent({ listing }: Props) {
           {/* Left — specs (2/3 width) */}
           <div className="xl:col-span-2 flex flex-col gap-6">
             <ListingDetailSpecs listing={listing} />
-            <ListingDetailSimilar currentSeller={listing.sellerName} />
+            <ListingDetailSimilar
+              currentSeller={listing.sellerName}
+              currentId={listing.id}
+            />
           </div>
 
           {/* Right — price + seller + action (1/3 width) */}

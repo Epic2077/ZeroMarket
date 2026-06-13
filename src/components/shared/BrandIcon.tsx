@@ -1,8 +1,15 @@
 interface BrandIconProps {
   brand: string;
+  size?: "sm" | "md" | "lg";
 }
 
-export default function BrandIcon({ brand }: BrandIconProps) {
+export default function BrandIcon({ brand, size = "md" }: BrandIconProps) {
+  const sizeMap = {
+    sm: "w-8 h-8 text-[9px]",
+    md: "w-9 h-9 text-[10px]",
+    lg: "w-12 h-12 text-sm",
+  };
+
   function brandLogoStyle(brand: string): {
     backgroundColor: string;
     color: string;
@@ -18,7 +25,7 @@ export default function BrandIcon({ brand }: BrandIconProps) {
   const initials = brand.slice(0, 3).toUpperCase();
   return (
     <div
-      className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-lg text-xs font-bold -mr-5"
+      className={`flex ${sizeMap[size]} shrink-0 select-none items-center justify-center rounded-lg text-xs font-bold -mr-5 ${sizeMap[size]}`}
       style={brandLogoStyle(brand)}
     >
       {initials}

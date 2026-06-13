@@ -8,18 +8,24 @@ import StatusBadge from "../shared/StatusBadge";
 
 interface Props {
   currentSeller: string;
+  currentId: string;
 }
 
-export default function ListingDetailSimilar({ currentSeller }: Props) {
+export default function ListingDetailSimilar({
+  currentSeller,
+  currentId,
+}: Props) {
   const similar = listings
-    .filter((l) => l.sellerName !== currentSeller)
+    .filter((l) => l.sellerName === currentSeller && l.id !== currentId)
     .slice(0, 4);
+
+  if (similar.length === 0) return null;
 
   return (
     <div className="card-elevated p-5">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-700 text-foreground">
-          آگهی‌های مشابه صفرکیلومتر
+          سایر آگهی‌های این فروشنده
         </h2>
         <Link
           href={`/market`}
