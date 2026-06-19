@@ -4,7 +4,7 @@ import Link from "next/link";
 export default function HomeCTA() {
   return (
     <section
-      className="max-w-screen-2xl mx-auto px-4 lg:px-8 xl:px-10 py-14"
+      className="max-w-screen-2xl mx-auto px-4 lg:px-8 xl:px-10 py-14 vazir-matn"
       dir="rtl"
     >
       <div className="rounded-2xl hero-gradient p-10 lg:p-14 flex flex-col lg:flex-row items-center justify-between gap-8 relative overflow-hidden">
@@ -43,18 +43,18 @@ export default function HomeCTA() {
 
         <div className="relative z-10 flex flex-col sm:flex-row gap-3 shrink-0">
           <Link
-            href="/listings-marketplace"
-            className="flex items-center gap-2 px-5 py-3 bg-white text-primary font-700 text-sm rounded-xl hover:bg-white/90 transition-colors duration-150"
-          >
-            مرور آگهی‌ها
-            <ArrowRight size={15} className="rotate-180" />
-          </Link>
-          <Link
             href="#register"
-            className="flex items-center gap-2 px-5 py-3 bg-white/10 border border-white/25 text-white font-700 text-sm rounded-xl hover:bg-white/20 transition-colors duration-150"
+            className="flex items-center gap-2 px-5 py-3 bg-white text-primary font-700 text-sm rounded-xl hover:bg-white/90 transition-colors duration-150"
           >
             <PlusCircle size={15} />
             ثبت خودروی شما
+          </Link>
+          <Link
+            href="/listings-marketplace"
+            className="flex items-center gap-2 px-5 py-3 bg-white/10 border border-white/25 text-white font-700 text-sm rounded-xl hover:bg-white/20 transition-colors duration-150"
+          >
+            مرور آگهی‌ها
+            <ArrowRight size={15} className="rotate-180" />
           </Link>
         </div>
       </div>

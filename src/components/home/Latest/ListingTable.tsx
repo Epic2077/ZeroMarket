@@ -37,7 +37,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-const PAGE_SIZE_OPTIONS = [10, 20, 30, 50];
+const PAGE_SIZE_OPTIONS = [50, 100];
 const faNum = (n: number) => n.toLocaleString("fa-IR");
 
 interface ListingTableProps {

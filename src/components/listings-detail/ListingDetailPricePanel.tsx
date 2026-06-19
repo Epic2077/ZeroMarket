@@ -100,7 +100,7 @@ export default function ListingDetailPricePanel({
           />
           {/* Marker */}
           <div
-            className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-primary border-2 border-white shadow"
+            className="absolute top-1/2 mt-1.5 -translate-y-1/2 w-3 h-3 rounded-full bg-primary border-2 border-white shadow"
             style={{
               left: `${Math.min(95, Math.max(5, ((listing.price - listing.marketAvgBuy) / (listing.marketAvgSell - listing.marketAvgBuy)) * 100))}%`,
               transform: "translate(-50%, -50%)",

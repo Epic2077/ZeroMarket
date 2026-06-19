@@ -109,7 +109,8 @@ export default function ListingAuctionModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 vazir-matn mt-15"
+      dir="rtl"
       role="dialog"
       aria-modal="true"
       aria-label="Auction request"

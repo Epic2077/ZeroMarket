@@ -9,7 +9,7 @@ import { ArrowUpDown } from "lucide-react";
 /* ----------------------------- Farsi helpers ----------------------------- */
 
 // Convert latin digits to Persian digits (no thousands separator added).
-const toFa = (value: string | number): string =>
+export const toFa = (value: string | number): string =>
   String(value).replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[Number(d)]);
 
 // Persian (Jalali) calendar date for the upload time.
@@ -23,7 +23,7 @@ const formatUploadDate = (iso: string): string =>
 
 function formatPriceFa(price: number): string {
   if (price >= 1_000_000_000) {
-    return `${toFa((price / 1_000_000_000).toFixed(2))} میلیارد`;
+    return `${toFa((price / 1_000_000_000).toFixed(3))} میلیارد`;
   }
   if (price >= 1_000_000) {
     return `${toFa((price / 1_000_000).toFixed(0))} میلیون`;
@@ -172,10 +172,7 @@ export const listingColumns: ColumnDef<Listing>[] = [
     ),
     cell: ({ row }) => (
       // Stop the click from bubbling to the row's navigate-on-click handler.
-      <span
-        className="flex items-center"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <span className="flex items-center" onClick={(e) => e.stopPropagation()}>
         <Checkbox
           className="mr-2"
           checked={row.getIsSelected()}
@@ -225,7 +222,9 @@ export const listingColumns: ColumnDef<Listing>[] = [
     accessorKey: "year",
     header: ({ column }) => <SortHeader label="سال" column={column} />,
     cell: ({ getValue }) => (
-      <span className="tabular-nums">{toFa(getValue() as number)}</span>
+      <div>
+        <span className="tabular-nums">{toFa(getValue() as number)}</span>
+      </div>
     ),
   },
   {
@@ -243,7 +242,9 @@ export const listingColumns: ColumnDef<Listing>[] = [
   },
   {
     accessorKey: "bodyType",
-    header: () => <span className="text-sm font-semibold vazir-matn">نوع</span>,
+    header: () => (
+      <span className="text-sm font-semibold vazir-matn">سگمنت</span>
+    ),
     cell: ({ getValue }) => {
       const type = getValue() as string;
       return (

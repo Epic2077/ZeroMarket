@@ -147,10 +147,13 @@ export default function ListingDetailContent({ listing }: Props) {
             <User size={14} />
             <span>فروشنده: {listing.sellerName}</span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <VerifiedBadge size="sm" />
-            <span>هویت فروشنده توسط زیرومارکت تأیید شده</span>
-          </div>
+          <div className="w-px h-3 bg-border hidden sm:block" />
+          {listing.sellerVerified && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <VerifiedBadge size="sm" />
+              <span>هویت فروشنده توسط زیرومارکت تأیید شده</span>
+            </div>
+          )}
           <div className="w-px h-3 bg-border hidden sm:block" />
           <div className="text-xs text-muted-foreground">
             شناسه آگهی:{" "}
@@ -172,7 +175,7 @@ export default function ListingDetailContent({ listing }: Props) {
           </div>
 
           {/* Right — price + seller + action (1/3 width) */}
-          <div className="xl:col-span-1 flex flex-col gap-4">
+          <div className="xl:col-span-1 flex flex-col gap-4 ">
             <ListingDetailPricePanel
               listing={listing}
               onRequestAuction={() => setAuctionOpen(true)}
