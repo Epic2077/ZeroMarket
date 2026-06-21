@@ -1,4 +1,4 @@
-import { CheckIcon } from "lucide-react";
+import { BadgeCheck, CheckIcon } from "lucide-react";
 
 interface VerifiedBadgeProps {
   size?: "sm" | "md" | "lg";
@@ -13,11 +13,15 @@ export default function VerifiedBadge({ size = "md" }: VerifiedBadgeProps) {
   const iconSize = { sm: 8, md: 10, lg: 12 };
   return (
     <span
-      className={`verified-badge ${sizeMap[size]}`}
       title="Verified Seller — Identity confirmed by ZeroMarket"
       aria-label="Verified seller"
     >
-      <CheckIcon size={iconSize[size]} color="white" strokeWidth={3} />
+      {/* <CheckIcon  color="white" strokeWidth={3} /> */}
+      <BadgeCheck
+        size={sizeMap[size]}
+        className="h-4 w-4 text-blue-500 shrink-0"
+        strokeWidth={3}
+      />
     </span>
   );
 }

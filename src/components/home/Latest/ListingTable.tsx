@@ -34,9 +34,10 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-const PAGE_SIZE_OPTIONS = [10, 20, 30, 50];
+const PAGE_SIZE_OPTIONS = [50, 100];
 const faNum = (n: number) => n.toLocaleString("fa-IR");
 
 interface ListingTableProps {
@@ -46,6 +47,8 @@ interface ListingTableProps {
 export default function ListingTable({ data = listings }: ListingTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+
+  const navigate = useRouter();
 
   const table = useReactTable({
     data,
@@ -98,7 +101,10 @@ export default function ListingTable({ data = listings }: ListingTableProps) {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() ? "selected" : undefined}
-                  className="border-b border-border/50 transition-colors hover:bg-accent/10 data-[state=selected]:bg-accent/15"
+                  className="cursor-pointer border-b border-border/50 transition-colors hover:bg-accent/10 data-[state=selected]:bg-accent/15"
+                  onClick={() =>
+                    navigate.push(`/market/listings/${row.original.id}`)
+                  }
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell

@@ -1,30 +1,29 @@
-"use client";
-
-import { motion } from "motion/react";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 interface RevealProps {
   children: ReactNode;
   /** Extra classes applied to the wrapper (e.g. grid item utilities). */
   className?: string;
-  /** Stagger delay in seconds before the element animates in. */
+  /** Stagger delay in seconds before the entrance animation starts. */
   delay?: number;
 }
 
+// CSS-driven entrance animation. It plays whenever the element is inserted into
+// the DOM — including when Next restores the page on a back navigation, where
+// client effects do NOT re-run. The element's resting state is visible, so the
+// content can never get stuck hidden (unlike a JS/observer-gated reveal).
 export default function Reveal({
   children,
   className = "",
   delay = 0,
 }: RevealProps) {
+  const style: CSSProperties | undefined = delay
+    ? { animationDelay: `${delay}s` }
+    : undefined;
+
   return (
-    <motion.div
-      className={className}
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.15, margin: "0px 0px -10% 0px" }}
-      transition={{ duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] }}
-    >
+    <div className={`reveal-in ${className}`.trim()} style={style}>
       {children}
-    </motion.div>
+    </div>
   );
 }

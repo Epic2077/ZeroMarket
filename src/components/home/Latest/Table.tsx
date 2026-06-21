@@ -10,24 +10,30 @@ import {
 } from "@/components/ui/table";
 import {
   ColumnDef,
+  ExpandedState,
   flexRender,
   getCoreRowModel,
+  getExpandedRowModel,
   getSortedRowModel,
   SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import { useState } from "react";
+import { Fragment, type ReactNode, useState } from "react";
 
-interface TableProps<TData, TValue> {
+interface TableProps<TData> {
   columns: ColumnDef<TData>[];
   data: TData[];
+  /** When provided, rows become expandable and this renders the expanded panel. */
+  renderSubRow?: (row: TData) => ReactNode;
 }
 
-export default function LatestTable<TData, TValue>({
+export default function LatestTable<TData>({
   columns,
   data,
-}: TableProps<TData, TValue>) {
+  renderSubRow,
+}: TableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [expanded, setExpanded] = useState<ExpandedState>({});
 
   const table = useReactTable({
     data,
@@ -35,7 +41,10 @@ export default function LatestTable<TData, TValue>({
     getCoreRowModel: getCoreRowModel(),
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
-    state: { sorting },
+    getExpandedRowModel: getExpandedRowModel(),
+    onExpandedChange: setExpanded,
+    getRowCanExpand: () => Boolean(renderSubRow),
+    state: { sorting, expanded },
   });
 
   return (
@@ -66,19 +75,28 @@ export default function LatestTable<TData, TValue>({
         <TableBody>
           {table.getRowModel().rows.length ? (
             table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                className="border-b border-border/50 transition-colors hover:bg-accent/10"
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell
-                    key={cell.id}
-                    className="px-4 py-3 text-sm vazir-matn"
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
+              <Fragment key={row.id}>
+                <TableRow className="border-b border-border/50 transition-colors hover:bg-accent/10">
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell
+                      key={cell.id}
+                      className="px-4 py-3 text-sm vazir-matn"
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+                {renderSubRow && row.getIsExpanded() && (
+                  <TableRow className="hover:bg-transparent">
+                    <TableCell colSpan={columns.length} className="p-0">
+                      {renderSubRow(row.original)}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </Fragment>
             ))
           ) : (
             <TableRow>
