@@ -3,6 +3,7 @@ import { DynaPuff, Vazirmatn } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/layout/header/Header";
 import Footer from "@/components/layout/footer/Footer";
+import { Toaster } from "@/components/ui/sonner";
 
 const vazirMatn = Vazirmatn({
   variable: "--font-vazir-matn",
@@ -49,6 +50,7 @@ export default function RootLayout({
         <footer dir="rtl">
           <Footer />
         </footer>
+        <Toaster position="top-center" dir="rtl" />
       </body>
     </html>
   );

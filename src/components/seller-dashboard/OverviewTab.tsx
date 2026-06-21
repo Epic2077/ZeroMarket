@@ -38,13 +38,13 @@ function RequestSummary({
           <div className="text-xs text-muted-foreground">{req.listing}</div>
         </div>
       </div>
-      <div className="flex items-center gap-3">
-        <div className="text-left">
-          <div className="text-sm font-mono font-700 text-foreground">
-            {formatPrice(req.offer)}
-          </div>
-          <div className="text-2xs text-muted-foreground">{req.time}</div>
+      <div className="text-center">
+        <div className="text-sm font-mono font-700 text-foreground">
+          {req.offer.toLocaleString()} تومان
         </div>
+        <div className="text-2xs text-muted-foreground">{req.time}</div>
+      </div>
+      <div className="flex items-center gap-3">
         <RequestStatusBadge status={req.status} />
         {trigger}
       </div>

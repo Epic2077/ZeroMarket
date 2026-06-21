@@ -1,8 +1,15 @@
+"use client";
+
 import VerifiedBadge from "@/components/shared/VerifiedBadeg";
-import { PlusCircle, Settings } from "lucide-react";
+import { PlusCircle, Settings, Upload } from "lucide-react";
 import Link from "next/link";
 
-export default function DashboardHeader() {
+interface Props {
+  onNewPost: () => void;
+  onBulkImport: () => void;
+}
+
+export default function DashboardHeader({ onNewPost, onBulkImport }: Props) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
       <div className="flex items-center gap-4">
@@ -24,9 +31,13 @@ export default function DashboardHeader() {
           <Settings size={14} />
           تنظیمات پروفایل
         </Link>
-        <button className="btn-primary text-sm">
+        <button onClick={onNewPost} className="btn-primary text-sm">
           <PlusCircle size={14} />
           ثبت آگهی جدید
+        </button>
+        <button onClick={onBulkImport} className="btn-secondary text-sm">
+          <Upload size={14} />
+          ورود گروهی (اکسل)
         </button>
       </div>
     </div>

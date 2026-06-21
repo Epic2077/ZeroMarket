@@ -92,14 +92,6 @@ export interface DashboardStat {
 
 export const sellerStats: DashboardStat[] = [
   {
-    id: "st-views",
-    label: "بازدید کل",
-    value: "۱۲٬۴۸۰",
-    change: "+۱۸٪",
-    up: true,
-    icon: <Eye size={18} className="text-primary" />,
-  },
-  {
     id: "st-requests",
     label: "درخواست‌های دریافتی",
     value: "۴۷",
@@ -122,6 +114,14 @@ export const sellerStats: DashboardStat[] = [
     change: "+۵٪",
     up: true,
     icon: <TrendingUp size={18} className="text-warning" />,
+  },
+  {
+    id: "st-views",
+    label: "بازدید کل",
+    value: "۱۲٬۴۸۰",
+    change: "+۱۸٪",
+    up: true,
+    icon: <Eye size={18} className="text-primary" />,
   },
 ];
 
