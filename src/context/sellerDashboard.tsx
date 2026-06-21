@@ -151,6 +151,8 @@ export interface QuickAction {
   icon: ReactNode;
   label: string;
   color: string;
+  // Optional modal opened by this action; undefined for non-modal actions.
+  modal?: "newPost" | "bulkImport";
 }
 
 export const quickActions: QuickAction[] = [
@@ -158,11 +160,13 @@ export const quickActions: QuickAction[] = [
     icon: <PlusCircle size={14} />,
     label: "ثبت آگهی جدید",
     color: "text-primary",
+    modal: "newPost",
   },
   {
     icon: <Upload size={14} />,
     label: "ورود گروهی (اکسل)",
     color: "text-accent",
+    modal: "bulkImport",
   },
   {
     icon: <BarChart2 size={14} />,

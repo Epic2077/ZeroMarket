@@ -2,15 +2,22 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import VerifiedBadge from "@/components/shared/VerifiedBadeg";
+import {
+  bodyTypeFa,
+  brandModelFa,
+  cityFa,
+  colorFa,
+  sellerFa,
+  toFa,
+} from "@/context/carLabels";
 import { Listing } from "@/types/dataTypes";
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 
-/* ----------------------------- Farsi helpers ----------------------------- */
+// Re-exported for existing consumers importing the digit helper from here.
+export { toFa };
 
-// Convert latin digits to Persian digits (no thousands separator added).
-export const toFa = (value: string | number): string =>
-  String(value).replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[Number(d)]);
+/* ----------------------------- Farsi helpers ----------------------------- */
 
 // Persian (Jalali) calendar date for the upload time.
 const dateFormatter = new Intl.DateTimeFormat("fa-IR", {
@@ -32,65 +39,8 @@ function formatPriceFa(price: number): string {
 }
 
 /* ------------------------------ Farsi maps ------------------------------- */
-
-// Brand + model → Persian name. Falls back to the latin "<brand> <model>".
-const brandModelFa: Record<string, string> = {
-  "Toyota Camry": "تویوتا کمری",
-  "Hyundai Tucson": "هیوندای توسان",
-  "Kia Sportage": "کیا اسپورتیج",
-  "BMW 3 Series": "بی‌ام‌و سری ۳",
-  "Geely Coolray": "جیلی کول‌ری",
-  "Haval H6": "هاوال H6",
-  "Jetour X70 Plus": "جتور X70 پلاس",
-  "Chery Tiggo 8 Pro": "چری تیگو ۸ پرو",
-  "MVM 550": "ام‌وی‌ام ۵۵۰",
-  "Honda CR-V": "هوندا CR-V",
-  "IKCO Dena Plus": "ایران‌خودرو دنا پلاس",
-  "Volkswagen Tiguan": "فولکس‌واگن تیگوان",
-};
-
-const colorFa: Record<string, string> = {
-  "Pearl White": "سفید صدفی",
-  "Midnight Black": "مشکی",
-  "Steel Gray": "خاکستری فولادی",
-  "Alpine White": "سفید",
-  "Ocean Blue": "آبی اقیانوسی",
-  "Crimson Red": "قرمز",
-  "Champagne Gold": "طلایی شامپاینی",
-  "Glacier White": "سفید یخی",
-  "Deep Blue": "آبی سیر",
-  "Sonic Gray Pearl": "خاکستری",
-  "Silver Metallic": "نقره‌ای متالیک",
-  "Deep Black Pearl": "مشکی صدفی",
-};
-
-const bodyTypeFa: Record<string, string> = {
-  Sedan: "سدان",
-  SUV: "شاسی‌بلند",
-};
-
-const cityFa: Record<string, string> = {
-  Tehran: "تهران",
-  Isfahan: "اصفهان",
-  Mashhad: "مشهد",
-  Shiraz: "شیراز",
-  Tabriz: "تبریز",
-  Karaj: "کرج",
-};
-
-const sellerFa: Record<string, string> = {
-  "Aria Motors": "آریا موتورز",
-  "Parsian Auto": "پارسیان خودرو",
-  "Mehr Khodro": "مهر خودرو",
-  "Bavarian Motors TH": "باواریان موتورز",
-  "Star Auto Group": "استار خودرو",
-  "Haval Center NW": "مرکز هاوال",
-  "Capital Auto TH": "کاپیتال خودرو",
-  "Sina Motors": "سینا موتورز",
-  "Tehran Auto Mall": "اتومال تهران",
-  "IKCO Direct": "ایران‌خودرو دایرکت",
-  "Euro Motors Tehran": "یورو موتورز تهران",
-};
+// Brand/model, color, body type, city and seller label maps now live in
+// `@/context/carLabels` so the listing cards and seller pages share them.
 
 const statusFa: Record<
   Listing["status"],

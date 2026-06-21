@@ -2,6 +2,7 @@ import Reveal from "@/components/shared/Reveal";
 import VerifiedBadge from "@/components/shared/VerifiedBadeg";
 import { sellers } from "@/context/topSellers";
 import { ListChecks, Star } from "lucide-react";
+import Link from "next/link";
 
 export default function VerifiedSellers() {
   return (
@@ -18,9 +19,9 @@ export default function VerifiedSellers() {
               فروشندگان برتر تأییدشده
             </h2>
           </div>
-          <button className="btn-secondary text-sm">
+          <Link href="/sellers" className="btn-secondary text-sm">
             مشاهده همه فروشندگان
-          </button>
+          </Link>
         </div>
       </Reveal>
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">

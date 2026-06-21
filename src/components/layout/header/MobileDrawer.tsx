@@ -1,4 +1,4 @@
-import { navLinks } from "@/context/header";
+import { navLinks } from "@/context/Header";
 import { User } from "lucide-react";
 import Link from "next/link";
 

@@ -11,6 +11,7 @@ import ListingDetailSpecs from "./ListingDetailSpecs";
 import ListingDetailSeller from "./ListingDetailSeller";
 import ListingDetailPricePanel from "./ListingDetailPricePanel";
 import ListingDetailSimilar from "./ListingDetailSimilar";
+import ListingDetailRelated from "./ListingDetailRelated";
 import ListingAuctionModal from "./ListingAuctionModal";
 
 import {
@@ -184,6 +185,9 @@ export default function ListingDetailContent({ listing }: Props) {
             <ListingDetailSeller listing={listing} />
           </div>
         </div>
+
+        {/* Related cars / other sellers of the same model */}
+        <ListingDetailRelated listing={listing} />
       </div>
       {/* Auction modal */}
       {auctionOpen && (

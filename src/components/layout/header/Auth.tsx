@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button";
 import { LogIn } from "lucide-react";
 import Link from "next/link";
+import PostAdButton from "./PostAdButton";
 
 export default function AuthHeader() {
   return (
@@ -12,14 +12,7 @@ export default function AuthHeader() {
         <LogIn size={15} />
         ورود
       </Link>
-      <Button
-        variant="default"
-        className="py-2 px-4 hover:bg-primary/90 transition-colors duration-150 hidden sm:flex"
-      >
-        <Link href="#register" className=" text-sm hidden sm:flex ">
-          ثبت آگهی
-        </Link>
-      </Button>
+      <PostAdButton />
     </>
   );
 }

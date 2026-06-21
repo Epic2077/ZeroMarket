@@ -1,5 +1,5 @@
+import { navLinks } from "@/context/Header";
 import Link from "next/link";
-import { navLinks } from "@/context/header";
 
 export default function Bookmarks() {
   return (

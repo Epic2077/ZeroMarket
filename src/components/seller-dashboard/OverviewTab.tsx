@@ -16,6 +16,8 @@ import RequestStatusBadge from "./RequestStatusBadge";
 
 interface Props {
   onViewAllRequests: () => void;
+  onNewPost: () => void;
+  onBulkImport: () => void;
 }
 
 // The always-visible summary row of a request. `trigger` is the optional
@@ -71,7 +73,11 @@ function RequestActions() {
   );
 }
 
-export default function OverviewTab({ onViewAllRequests }: Props) {
+export default function OverviewTab({
+  onViewAllRequests,
+  onNewPost,
+  onBulkImport,
+}: Props) {
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
       {/* Recent requests */}
@@ -158,6 +164,13 @@ export default function OverviewTab({ onViewAllRequests }: Props) {
             {quickActions.map((action) => (
               <button
                 key={`action-${action.label}`}
+                onClick={
+                  action.modal === "newPost"
+                    ? onNewPost
+                    : action.modal === "bulkImport"
+                      ? onBulkImport
+                      : undefined
+                }
                 className="flex items-center gap-2.5 px-3 py-2 text-sm font-500 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors duration-150 text-right w-full"
               >
                 <span className={action.color}>{action.icon}</span>

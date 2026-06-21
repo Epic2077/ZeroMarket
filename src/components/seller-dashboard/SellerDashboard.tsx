@@ -30,7 +30,11 @@ export default function SellerDashboard() {
       <DashboardTabs active={activeTab} onChange={setActiveTab} />
 
       {activeTab === "summary" && (
-        <OverviewTab onViewAllRequests={() => setActiveTab("requests")} />
+        <OverviewTab
+          onViewAllRequests={() => setActiveTab("requests")}
+          onNewPost={() => setModal("newPost")}
+          onBulkImport={() => setModal("bulkImport")}
+        />
       )}
       {activeTab === "listings" && <ListingsTab />}
       {activeTab === "requests" && <RequestsTab />}
