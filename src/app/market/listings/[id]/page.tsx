@@ -6,6 +6,11 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
+// Pre-render a route for every known listing.
+export function generateStaticParams() {
+  return listings.map((listing) => ({ id: listing.id }));
+}
+
 export default async function SinglePage({ params }: PageProps) {
   const { id } = await params;
   const listing = listings.find((l) => l.id === id);

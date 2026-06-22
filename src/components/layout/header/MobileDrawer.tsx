@@ -1,15 +1,29 @@
+"use client";
+
 import { navLinks } from "@/context/Header";
-import { User } from "lucide-react";
+import { Search, User } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
+import SearchModal from "./SearchModal";
 
 interface MobileDrawerProps {
   setMobileOpen: (open: boolean) => void;
 }
 
 export default function MobileDrawer({ setMobileOpen }: MobileDrawerProps) {
+  const [searchOpen, setSearchOpen] = useState(false);
+
   return (
     <div className="lg:hidden bg-card border-t border-border shadow-card-hover animate-slide-up">
       <div className="px-4 py-3 flex flex-col gap-1">
+        <button
+          onClick={() => setSearchOpen(true)}
+          className="px-3 py-2.5 text-sm font-500 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors duration-150 flex items-center gap-2 text-right"
+        >
+          <Search size={15} />
+          جست‌وجوی خودرو یا فروشنده
+        </button>
+
         {navLinks?.map((link) => (
           <Link
             key={`mobile-nav-${link?.label}`}
@@ -44,6 +58,8 @@ export default function MobileDrawer({ setMobileOpen }: MobileDrawerProps) {
           </Link>
         </div>
       </div>
+
+      {searchOpen && <SearchModal onClose={() => setSearchOpen(false)} />}
     </div>
   );
 }
