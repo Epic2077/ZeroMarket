@@ -25,8 +25,8 @@ it from prototype to product.
   allowlisted in `next.config.ts`), and a placeholder/blur strategy.
 - 🟡 **Dark theme.** `next-themes` is installed and a dark palette is commented out in
   `globals.css`. Finish the dark tokens and add a theme toggle.
-- 🟡 **Form library.** `react-hook-form` is a dependency but forms are hand-rolled with
-  `useState`. Standardize on RHF + a schema validator (zod) for all forms.
+- ✅ **Form library.** All data-entry forms now use `react-hook-form` + `zod`
+  (`zodResolver`), with shared field schemas in `src/lib/validation.ts`.
 
 ## 2. Bugs & quick fixes
 

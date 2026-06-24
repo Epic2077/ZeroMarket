@@ -14,9 +14,12 @@ import {
 import { toast } from "sonner";
 import { Listing } from "@/types/dataTypes";
 import { formatPrice } from "@/context/data";
+import { requiredText } from "@/lib/validation";
 import BrandIcon from "../shared/BrandIcon";
 import VerifiedBadge from "../shared/VerifiedBadeg";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 type RequestOutcome = "pending" | "approved" | "declined" | "negotiable";
 
@@ -26,11 +29,20 @@ interface Props {
   onStatusChange: (s: RequestOutcome) => void;
 }
 
-interface FormValues {
-  offerPrice: string;
-  message: string;
-  contactPhone: string;
-}
+// The amount carries comma separators; validate against the digit-only value.
+const auctionSchema = z.object({
+  offerPrice: z
+    .string()
+    .min(1, "قیمت پیشنهادی الزامی است")
+    .refine(
+      (v) => Number(v.replace(/\D/g, "")) >= 100_000_000,
+      "حداقل پیشنهاد: ۱۰۰٬۰۰۰٬۰۰۰ تومان",
+    ),
+  message: z.string().optional(),
+  contactPhone: requiredText("شماره تماس الزامی است"),
+});
+
+type FormValues = z.infer<typeof auctionSchema>;
 
 export default function ListingAuctionModal({
   listing,
@@ -45,14 +57,21 @@ export default function ListingAuctionModal({
     register,
     handleSubmit,
     formState: { errors },
-    getValues,
+    setValue,
   } = useForm<FormValues>({
+    resolver: zodResolver(auctionSchema),
     defaultValues: {
-      offerPrice: (listing.price / 1_000_000_000).toFixed(2),
+      offerPrice: listing.price.toLocaleString("en-US"),
       message: "",
       contactPhone: "",
     },
   });
+
+  // Keep only digits and group them in threes → "900000" becomes "900,000".
+  const groupThousands = (raw: string): string => {
+    const digits = raw.replace(/\D/g, "");
+    return digits ? Number(digits).toLocaleString("en-US") : "";
+  };
 
   const onSubmit = async () => {
     setLoading(true);
@@ -122,7 +141,7 @@ export default function ListingAuctionModal({
 
       <div className="relative bg-card rounded-2xl shadow-2xl w-full max-w-lg animate-slide-up overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border mr-5">
           <div className="flex items-center gap-3">
             <BrandIcon brand={listing.brand} />
             <div>
@@ -156,7 +175,7 @@ export default function ListingAuctionModal({
               <div>
                 <div className="text-2xs text-muted-foreground">قیمت آگهی</div>
                 <div className="text-price text-xl text-foreground">
-                  {formatPrice(listing.price)}
+                  {listing.price.toLocaleString()}
                 </div>
                 <div className="text-2xs text-muted-foreground">تومان</div>
               </div>
@@ -193,23 +212,25 @@ export default function ListingAuctionModal({
                 قیمت پیشنهادی شما <span className="text-danger">*</span>
               </label>
               <p className="text-2xs text-muted-foreground mb-1.5">
-                به میلیارد تومان — مثلاً ۲.۷۵ یعنی ۲٬۷۵۰٬۰۰۰٬۰۰۰ تومان
+                مبلغ کامل به تومان — مثلاً ۹۰۰٬۰۰۰٬۰۰۰
               </p>
               <div className="relative">
                 <input
-                  type="number"
-                  step="0.01"
+                  type="text"
+                  inputMode="numeric"
+                  dir="rtl"
                   {...register("offerPrice", {
-                    required: "قیمت پیشنهادی الزامی است",
-                    min: {
-                      value: 0.1,
-                      message: "حداقل پیشنهاد: ۰.۱ میلیارد تومان",
+                    onChange: (e) => {
+                      setValue("offerPrice", groupThousands(e.target.value), {
+                        shouldValidate: true,
+                      });
                     },
                   })}
-                  className="w-full pl-3 pr-24 py-2.5 text-sm border border-border rounded-lg bg-card font-mono focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  // placeholder={listing.marketAvgBuy.toLocaleString()}
+                  className="w-full pl-20 pr-3 py-2.5 text-sm text-right border border-border rounded-lg bg-card font-mono focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-600">
-                  میلیارد تومان
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-600">
+                  تومان
                 </span>
               </div>
               {errors.offerPrice && (
@@ -229,9 +250,7 @@ export default function ListingAuctionModal({
               </p>
               <input
                 type="tel"
-                {...register("contactPhone", {
-                  required: "شماره تماس الزامی است",
-                })}
+                {...register("contactPhone")}
                 placeholder="۰۹xx-xxx-xxxx"
                 className="w-full px-3 py-2.5 text-sm border border-border rounded-lg bg-card font-mono focus:outline-none focus:ring-2 focus:ring-primary/30"
               />

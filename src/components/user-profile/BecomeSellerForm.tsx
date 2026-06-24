@@ -2,7 +2,12 @@
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -16,33 +21,60 @@ import {
   cityOptions,
   sellerBenefits,
 } from "@/context/userProfile";
+import { optionalUrl, requiredText } from "@/lib/validation";
 import type { SellerApplicationStatus } from "@/types/user";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2, Clock, Store } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { z } from "zod";
 
 interface Props {
   status: SellerApplicationStatus;
   onSubmitted: () => void;
 }
 
-const emptyForm = {
-  businessName: "",
-  businessType: "",
-  businessId: "",
-  phone: "",
-  city: "",
-  address: "",
-  website: "",
-};
+const sellerApplicationSchema = z.object({
+  businessName: requiredText("نام کسب‌وکار الزامی است"),
+  businessType: requiredText("نوع فعالیت را انتخاب کنید"),
+  businessId: requiredText("شناسه ملی الزامی است"),
+  phone: z.string().trim().optional(),
+  city: z.string().trim().optional(),
+  address: z.string().trim().optional(),
+  website: optionalUrl,
+  agreed: z.boolean().refine((value) => value, {
+    message: "برای ادامه باید قوانین فروشندگان را بپذیرید",
+  }),
+});
+
+type SellerApplicationValues = z.infer<typeof sellerApplicationSchema>;
 
 export default function BecomeSellerForm({ status, onSubmitted }: Props) {
-  const [form, setForm] = useState(emptyForm);
-  const [agreed, setAgreed] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors, isSubmitting },
+  } = useForm<SellerApplicationValues>({
+    resolver: zodResolver(sellerApplicationSchema),
+    defaultValues: {
+      businessName: "",
+      businessType: "",
+      businessId: "",
+      phone: "",
+      city: "",
+      address: "",
+      website: "",
+      agreed: false,
+    },
+  });
 
-  const set = (key: keyof typeof form, value: string) =>
-    setForm((prev) => ({ ...prev, [key]: value }));
+  const onSubmit = handleSubmit(async () => {
+    await new Promise((r) => setTimeout(r, 600));
+    toast.success("درخواست فروشندگی شما ثبت شد و در حال بررسی است");
+    onSubmitted();
+  });
 
   // ---- Application already submitted -------------------------------------
   if (status === "pending") {
@@ -83,20 +115,6 @@ export default function BecomeSellerForm({ status, onSubmitted }: Props) {
   }
 
   // ---- Application form ----------------------------------------------------
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.businessName.trim() || !form.businessType || !form.businessId.trim()) {
-      toast.error("نام کسب‌وکار، نوع فعالیت و شناسه ملی الزامی است");
-      return;
-    }
-    if (!agreed) {
-      toast.error("برای ادامه باید قوانین فروشندگان را بپذیرید");
-      return;
-    }
-    toast.success("درخواست فروشندگی شما ثبت شد و در حال بررسی است");
-    onSubmitted();
-  };
-
   return (
     <div className="flex flex-col gap-6">
       {/* Benefits */}
@@ -126,7 +144,7 @@ export default function BecomeSellerForm({ status, onSubmitted }: Props) {
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="card-elevated p-6">
+      <form onSubmit={onSubmit} noValidate className="card-elevated p-6">
         <div className="mb-5">
           <h3 className="text-sm font-700 text-foreground">اطلاعات کسب‌وکار</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
@@ -136,121 +154,144 @@ export default function BecomeSellerForm({ status, onSubmitted }: Props) {
 
         <FieldGroup>
           <Field className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field>
+            <Field data-invalid={!!errors.businessName}>
               <FieldLabel htmlFor="businessName">نام کسب‌وکار</FieldLabel>
               <Input
                 id="businessName"
-                value={form.businessName}
-                onChange={(e) => set("businessName", e.target.value)}
                 placeholder="مثلاً نمایشگاه آریا موتورز"
+                aria-invalid={!!errors.businessName}
+                {...register("businessName")}
               />
+              <FieldError>{errors.businessName?.message}</FieldError>
             </Field>
-            <Field>
+            <Field data-invalid={!!errors.businessType}>
               <FieldLabel htmlFor="businessType">نوع فعالیت</FieldLabel>
-              <Select
-                dir="rtl"
-                value={form.businessType || undefined}
-                onValueChange={(v) => set("businessType", v)}
-              >
-                <SelectTrigger id="businessType" className="w-full vazir-matn">
-                  <SelectValue placeholder="انتخاب نوع فعالیت" />
-                </SelectTrigger>
-                <SelectContent>
-                  {businessTypeOptions.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>
-                      {o.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Controller
+                control={control}
+                name="businessType"
+                render={({ field }) => (
+                  <Select
+                    dir="rtl"
+                    value={field.value || undefined}
+                    onValueChange={field.onChange}
+                  >
+                    <SelectTrigger id="businessType" className="w-full vazir-matn">
+                      <SelectValue placeholder="انتخاب نوع فعالیت" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {businessTypeOptions.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              <FieldError>{errors.businessType?.message}</FieldError>
             </Field>
           </Field>
 
           <Field className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field>
+            <Field data-invalid={!!errors.businessId}>
               <FieldLabel htmlFor="businessId">
                 شناسه ملی / کد اقتصادی
               </FieldLabel>
               <Input
                 id="businessId"
-                value={form.businessId}
-                onChange={(e) => set("businessId", e.target.value)}
                 placeholder="۱۰ تا ۱۱ رقم"
+                aria-invalid={!!errors.businessId}
+                {...register("businessId")}
               />
+              <FieldError>{errors.businessId?.message}</FieldError>
             </Field>
             <Field>
               <FieldLabel htmlFor="bizPhone">تلفن کسب‌وکار</FieldLabel>
               <Input
                 id="bizPhone"
-                value={form.phone}
-                onChange={(e) => set("phone", e.target.value)}
                 placeholder="۰۲۱ ۰۰۰۰ ۰۰۰۰"
+                {...register("phone")}
               />
             </Field>
           </Field>
 
           <Field>
             <FieldLabel htmlFor="bizCity">شهر فعالیت</FieldLabel>
-            <Select
-              dir="rtl"
-              value={form.city || undefined}
-              onValueChange={(v) => set("city", v)}
-            >
-              <SelectTrigger id="bizCity" className="w-full vazir-matn">
-                <SelectValue placeholder="انتخاب شهر" />
-              </SelectTrigger>
-              <SelectContent>
-                {cityOptions.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Controller
+              control={control}
+              name="city"
+              render={({ field }) => (
+                <Select
+                  dir="rtl"
+                  value={field.value || undefined}
+                  onValueChange={field.onChange}
+                >
+                  <SelectTrigger id="bizCity" className="w-full vazir-matn">
+                    <SelectValue placeholder="انتخاب شهر" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cityOptions.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </Field>
 
           <Field>
             <FieldLabel htmlFor="address">نشانی محل فعالیت</FieldLabel>
             <textarea
               id="address"
-              value={form.address}
-              onChange={(e) => set("address", e.target.value)}
               rows={2}
               placeholder="نشانی کامل نمایشگاه یا دفتر…"
               className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+              {...register("address")}
             />
           </Field>
 
-          <Field>
+          <Field data-invalid={!!errors.website}>
             <FieldLabel htmlFor="website">
               وب‌سایت{" "}
               <span className="text-muted-foreground font-normal">(اختیاری)</span>
             </FieldLabel>
             <Input
               id="website"
-              value={form.website}
-              onChange={(e) => set("website", e.target.value)}
               placeholder="https://"
+              aria-invalid={!!errors.website}
+              {...register("website")}
             />
+            <FieldError>{errors.website?.message}</FieldError>
           </Field>
 
-          <label className="flex items-start gap-2.5 cursor-pointer">
-            <Checkbox
-              checked={agreed}
-              onCheckedChange={(v) => setAgreed(!!v)}
-              className="mt-0.5"
-              aria-label="پذیرش قوانین فروشندگان"
-            />
-            <span className="text-xs text-muted-foreground leading-relaxed">
-              <span className="text-foreground font-600">
-                قوانین و مقررات فروشندگان
-              </span>{" "}
-              زیرومارکت را می‌پذیرم و صحت اطلاعات واردشده را تأیید می‌کنم.
-            </span>
-          </label>
+          <div>
+            <label className="flex items-start gap-2.5 cursor-pointer">
+              <Controller
+                control={control}
+                name="agreed"
+                render={({ field }) => (
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={(v) => field.onChange(!!v)}
+                    className="mt-0.5"
+                    aria-label="پذیرش قوانین فروشندگان"
+                  />
+                )}
+              />
+              <span className="text-xs text-muted-foreground leading-relaxed">
+                <span className="text-foreground font-600">
+                  قوانین و مقررات فروشندگان
+                </span>{" "}
+                زیرومارکت را می‌پذیرم و صحت اطلاعات واردشده را تأیید می‌کنم.
+              </span>
+            </label>
+            <FieldError>{errors.agreed?.message}</FieldError>
+          </div>
 
           <div className="flex justify-end">
-            <Button type="submit" className="text-sm">
+            <Button type="submit" disabled={isSubmitting} className="text-sm">
               <Store size={14} />
               ارسال درخواست فروشندگی
             </Button>

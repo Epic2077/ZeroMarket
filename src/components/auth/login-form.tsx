@@ -1,4 +1,7 @@
+"use client";
+
 import { cn } from "@/lib/utils";
+import { emailField, requiredText } from "@/lib/validation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,16 +13,42 @@ import {
 import {
   Field,
   FieldDescription,
+  FieldError,
   FieldGroup,
   FieldLabel,
   FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
+
+const loginSchema = z.object({
+  email: emailField,
+  password: requiredText("رمز عبور الزامی است"),
+});
+
+type LoginValues = z.infer<typeof loginSchema>;
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "" },
+  });
+
+  const onSubmit = handleSubmit(async () => {
+    await new Promise((r) => setTimeout(r, 600));
+    toast.success("خوش آمدید");
+  });
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props} dir="rtl">
       <Card>
@@ -28,7 +57,7 @@ export function LoginForm({
           <CardDescription>ورود با اکانت گوگل یا اپل</CardDescription>
         </CardHeader>
         <CardContent>
-          <form>
+          <form onSubmit={onSubmit} noValidate>
             <FieldGroup>
               <Field>
                 <Button variant="outline" type="button">
@@ -53,16 +82,18 @@ export function LoginForm({
               <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
                 یا
               </FieldSeparator>
-              <Field>
+              <Field data-invalid={!!errors.email}>
                 <FieldLabel htmlFor="email">ایمیل</FieldLabel>
                 <Input
                   id="email"
                   type="email"
                   placeholder="m@example.com"
-                  required
+                  aria-invalid={!!errors.email}
+                  {...register("email")}
                 />
+                <FieldError>{errors.email?.message}</FieldError>
               </Field>
-              <Field>
+              <Field data-invalid={!!errors.password}>
                 <div className="flex items-center">
                   <FieldLabel htmlFor="password">رمز ورود</FieldLabel>
                   <a
@@ -72,10 +103,18 @@ export function LoginForm({
                     رمز عبود خود را فراموش کردید؟
                   </a>
                 </div>
-                <Input id="password" type="password" required />
+                <Input
+                  id="password"
+                  type="password"
+                  aria-invalid={!!errors.password}
+                  {...register("password")}
+                />
+                <FieldError>{errors.password?.message}</FieldError>
               </Field>
               <Field>
-                <Button type="submit">ورود</Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "در حال ورود…" : "ورود"}
+                </Button>
                 <FieldDescription className="text-center">
                   حساب کاربری ندارید؟ <a href="#">ثبت نام</a>
                 </FieldDescription>

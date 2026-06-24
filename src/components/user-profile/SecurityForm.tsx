@@ -2,83 +2,102 @@
 
 import ToggleSwitch from "@/components/shared/ToggleSwitch";
 import { Button } from "@/components/ui/button";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { passwordField, requiredText } from "@/lib/validation";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { KeyRound, ShieldCheck } from "lucide-react";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { z } from "zod";
 
-const empty = { current: "", next: "", confirm: "" };
+const passwordSchema = z
+  .object({
+    current: requiredText("رمز عبور فعلی الزامی است"),
+    next: passwordField,
+    confirm: z.string(),
+  })
+  .refine((data) => data.next === data.confirm, {
+    message: "رمز عبور جدید و تکرار آن یکسان نیستند",
+    path: ["confirm"],
+  });
+
+type PasswordValues = z.infer<typeof passwordSchema>;
+
+const emptyValues: PasswordValues = { current: "", next: "", confirm: "" };
 
 export default function SecurityForm() {
-  const [form, setForm] = useState(empty);
   const [twoFactor, setTwoFactor] = useState(false);
 
-  const set = (key: keyof typeof form, value: string) =>
-    setForm((prev) => ({ ...prev, [key]: value }));
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<PasswordValues>({
+    resolver: zodResolver(passwordSchema),
+    defaultValues: emptyValues,
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.current || !form.next || !form.confirm) {
-      toast.error("لطفاً همه فیلدها را تکمیل کنید");
-      return;
-    }
-    if (form.next.length < 8) {
-      toast.error("رمز عبور جدید باید حداقل ۸ کاراکتر باشد");
-      return;
-    }
-    if (form.next !== form.confirm) {
-      toast.error("رمز عبور جدید و تکرار آن یکسان نیستند");
-      return;
-    }
+  const onSubmit = handleSubmit(async () => {
+    await new Promise((r) => setTimeout(r, 400));
     toast.success("رمز عبور با موفقیت تغییر کرد");
-    setForm(empty);
-  };
+    reset(emptyValues);
+  });
 
   return (
     <div className="flex flex-col gap-6">
       {/* Change password */}
-      <form onSubmit={handleSubmit} className="card-elevated p-6">
+      <form onSubmit={onSubmit} noValidate className="card-elevated p-6">
         <div className="flex items-center gap-2 mb-5">
           <KeyRound size={18} className="text-primary" />
           <h2 className="text-sm font-700 text-foreground">تغییر رمز عبور</h2>
         </div>
 
         <FieldGroup>
-          <Field>
+          <Field data-invalid={!!errors.current}>
             <FieldLabel htmlFor="current">رمز عبور فعلی</FieldLabel>
             <Input
               id="current"
               type="password"
-              value={form.current}
-              onChange={(e) => set("current", e.target.value)}
+              aria-invalid={!!errors.current}
+              {...register("current")}
             />
+            <FieldError>{errors.current?.message}</FieldError>
           </Field>
           <Field className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field>
+            <Field data-invalid={!!errors.next}>
               <FieldLabel htmlFor="next">رمز عبور جدید</FieldLabel>
               <Input
                 id="next"
                 type="password"
-                value={form.next}
-                onChange={(e) => set("next", e.target.value)}
+                aria-invalid={!!errors.next}
+                {...register("next")}
               />
+              <FieldError>{errors.next?.message}</FieldError>
             </Field>
-            <Field>
+            <Field data-invalid={!!errors.confirm}>
               <FieldLabel htmlFor="confirm">تکرار رمز عبور جدید</FieldLabel>
               <Input
                 id="confirm"
                 type="password"
-                value={form.confirm}
-                onChange={(e) => set("confirm", e.target.value)}
+                aria-invalid={!!errors.confirm}
+                {...register("confirm")}
               />
+              <FieldError>{errors.confirm?.message}</FieldError>
             </Field>
           </Field>
           <p className="text-xs text-muted-foreground">
             رمز عبور باید حداقل ۸ کاراکتر باشد.
           </p>
           <div className="flex justify-end">
-            <Button type="submit" className="text-sm">
+            <Button type="submit" disabled={isSubmitting} className="text-sm">
               به‌روزرسانی رمز عبور
             </Button>
           </div>

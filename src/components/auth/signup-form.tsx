@@ -1,4 +1,7 @@
+"use client";
+
 import { cn } from "@/lib/utils";
+import { emailField, passwordField, requiredText } from "@/lib/validation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,16 +13,49 @@ import {
 import {
   Field,
   FieldDescription,
+  FieldError,
   FieldGroup,
   FieldLabel,
   FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
+
+const signupSchema = z
+  .object({
+    name: requiredText("نام کامل الزامی است"),
+    email: emailField,
+    password: passwordField,
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "رمز عبور و تکرار آن یکسان نیستند",
+    path: ["confirmPassword"],
+  });
+
+type SignupValues = z.infer<typeof signupSchema>;
 
 export function SignupForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<SignupValues>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
+  });
+
+  const onSubmit = handleSubmit(async () => {
+    await new Promise((r) => setTimeout(r, 600));
+    toast.success("حساب کاربری شما ساخته شد");
+  });
+
   return (
     <div className={cn("flex flex-col gap-6 ", className)} {...props} dir="rtl">
       <Card>
@@ -28,32 +64,53 @@ export function SignupForm({
           <CardDescription>اطلاعات مورد نیاز را وارد کنید.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form>
+          <form onSubmit={onSubmit} noValidate>
             <FieldGroup>
-              <Field>
+              <Field data-invalid={!!errors.name}>
                 <FieldLabel htmlFor="name">نام کامل</FieldLabel>
-                <Input id="name" type="text" placeholder="John Doe" required />
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="John Doe"
+                  aria-invalid={!!errors.name}
+                  {...register("name")}
+                />
+                <FieldError>{errors.name?.message}</FieldError>
               </Field>
-              <Field>
+              <Field data-invalid={!!errors.email}>
                 <FieldLabel htmlFor="email">ایمیل</FieldLabel>
                 <Input
                   id="email"
                   type="email"
                   placeholder="m@example.com"
-                  required
+                  aria-invalid={!!errors.email}
+                  {...register("email")}
                 />
+                <FieldError>{errors.email?.message}</FieldError>
               </Field>
               <Field>
                 <Field className="grid grid-cols-2 gap-4">
-                  <Field>
+                  <Field data-invalid={!!errors.password}>
                     <FieldLabel htmlFor="password">رمز عبور</FieldLabel>
-                    <Input id="password" type="password" required />
+                    <Input
+                      id="password"
+                      type="password"
+                      aria-invalid={!!errors.password}
+                      {...register("password")}
+                    />
+                    <FieldError>{errors.password?.message}</FieldError>
                   </Field>
-                  <Field>
+                  <Field data-invalid={!!errors.confirmPassword}>
                     <FieldLabel htmlFor="confirm-password">
                       رمز عبور را دوباره وارد کنید
                     </FieldLabel>
-                    <Input id="confirm-password" type="password" required />
+                    <Input
+                      id="confirm-password"
+                      type="password"
+                      aria-invalid={!!errors.confirmPassword}
+                      {...register("confirmPassword")}
+                    />
+                    <FieldError>{errors.confirmPassword?.message}</FieldError>
                   </Field>
                 </Field>
                 <FieldDescription className="text-center">
@@ -61,7 +118,9 @@ export function SignupForm({
                 </FieldDescription>
               </Field>
               <Field>
-                <Button type="submit">ثبت نام</Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "در حال ثبت نام…" : "ثبت نام"}
+                </Button>
                 <FieldDescription className="text-center">
                   حساب کاربری دارید؟ <a href="#">ورود</a>
                 </FieldDescription>
