@@ -88,8 +88,8 @@ export default function Footer() {
                 { label: "درباره زیرومارکت", href: "#" },
                 { label: "اعتماد و امنیت", href: "#" },
                 { label: "مرکز راهنمایی", href: "#" },
-                { label: "شرایط استفاده", href: "#" },
-                { label: "حریم خصوصی", href: "#" },
+                { label: "پنل مالک", href: "/dashboard/owner" },
+                { label: "پنل مدیر", href: "/dashboard/admin" },
               ]?.map((item) => (
                 <Link
                   key={`footer-co-${item?.label}`}

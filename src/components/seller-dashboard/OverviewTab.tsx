@@ -11,12 +11,12 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { CheckCircle, ChevronDown, MessageSquare, XCircle } from "lucide-react";
+import Link from "next/link";
 import type { ReactNode } from "react";
 import RequestStatusBadge from "./RequestStatusBadge";
 
 interface Props {
   onViewAllRequests: () => void;
-  onNewPost: () => void;
   onBulkImport: () => void;
 }
 
@@ -75,7 +75,6 @@ function RequestActions() {
 
 export default function OverviewTab({
   onViewAllRequests,
-  onNewPost,
   onBulkImport,
 }: Props) {
   return (
@@ -161,22 +160,27 @@ export default function OverviewTab({
         <div className="card-elevated p-5">
           <h3 className="text-sm font-700 text-foreground mb-3">دسترسی سریع</h3>
           <div className="flex flex-col gap-2">
-            {quickActions.map((action) => (
-              <button
-                key={`action-${action.label}`}
-                onClick={
-                  action.modal === "newPost"
-                    ? onNewPost
-                    : action.modal === "bulkImport"
-                      ? onBulkImport
-                      : undefined
-                }
-                className="flex items-center gap-2.5 px-3 py-2 text-sm font-500 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors duration-150 text-right w-full"
-              >
-                <span className={action.color}>{action.icon}</span>
-                {action.label}
-              </button>
-            ))}
+            {quickActions.map((action) =>
+              action.href ? (
+                <Link
+                  key={`action-${action.label}`}
+                  href={action.href}
+                  className="flex items-center gap-2.5 px-3 py-2 text-sm font-500 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors duration-150 text-right w-full"
+                >
+                  <span className={action.color}>{action.icon}</span>
+                  {action.label}
+                </Link>
+              ) : (
+                <button
+                  key={`action-${action.label}`}
+                  onClick={action.modal === "bulkImport" ? onBulkImport : undefined}
+                  className="flex items-center gap-2.5 px-3 py-2 text-sm font-500 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors duration-150 text-right w-full"
+                >
+                  <span className={action.color}>{action.icon}</span>
+                  {action.label}
+                </button>
+              )
+            )}
           </div>
         </div>
       </div>

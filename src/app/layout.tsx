@@ -3,6 +3,7 @@ import { DynaPuff, Vazirmatn } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/layout/header/Header";
 import Footer from "@/components/layout/footer/Footer";
+import AppProviders from "@/components/providers/AppProviders";
 import { Toaster } from "@/components/ui/sonner";
 
 const vazirMatn = Vazirmatn({
@@ -43,14 +44,16 @@ export default function RootLayout({
       className={`${vazirMatn.variable} ${dynaPuff.variable}  h-full antialiased vazir-matn`}
     >
       <body className="min-h-full flex flex-col">
-        <header className="w-full sticky top-0 z-100" dir="rtl">
-          <Header />
-        </header>
-        {children}
-        <footer dir="rtl">
-          <Footer />
-        </footer>
-        <Toaster position="top-center" dir="rtl" />
+        <AppProviders>
+          <header className="w-full sticky top-0 z-100" dir="rtl">
+            <Header />
+          </header>
+          {children}
+          <footer dir="rtl">
+            <Footer />
+          </footer>
+          <Toaster position="top-center" dir="rtl" />
+        </AppProviders>
       </body>
     </html>
   );

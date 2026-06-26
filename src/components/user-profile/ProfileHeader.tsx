@@ -1,3 +1,4 @@
+import AdminManageButton from "@/components/management/AdminManageButton";
 import VerifiedBadge from "@/components/shared/VerifiedBadeg";
 import { currentUser } from "@/context/userProfile";
 import type { SellerApplicationStatus } from "@/types/user";
@@ -43,10 +44,14 @@ export default function ProfileHeader({ appStatus }: Props) {
           </p>
         </div>
       </div>
-      <Link href="/dashboard/user" className="btn-secondary text-sm">
-        <LayoutDashboard size={14} />
-        داشبورد من
-      </Link>
+      <div className="flex items-center gap-2">
+        {/* Maps to this member's managed-platform record. */}
+        <AdminManageButton userId="usr-nima-asadi" />
+        <Link href="/dashboard/user" className="btn-secondary text-sm">
+          <LayoutDashboard size={14} />
+          داشبورد من
+        </Link>
+      </div>
     </div>
   );
 }

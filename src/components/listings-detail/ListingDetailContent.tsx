@@ -3,6 +3,10 @@ import { useState } from "react";
 import Link from "next/link";
 
 import type { Listing } from "@/types/dataTypes";
+import AdminManageButton from "../management/AdminManageButton";
+import EditProductButton from "../management/EditProductButton";
+import { sellerSlug } from "@/context/sellers";
+import { useListings } from "@/context/ListingsProvider";
 import BrandIcon from "../shared/BrandIcon";
 import StatusBadge from "../shared/StatusBadge";
 import VerifiedBadge from "../shared/VerifiedBadeg";
@@ -38,10 +42,15 @@ type RequestStatus =
   | "declined"
   | "negotiable";
 
-export default function ListingDetailContent({ listing }: Props) {
+export default function ListingDetailContent({ listing: initialListing }: Props) {
   const [auctionOpen, setAuctionOpen] = useState(false);
   const [requestStatus, setRequestStatus] = useState<RequestStatus>("none");
   const [saved, setSaved] = useState(false);
+
+  // Prefer the live (possibly edited) listing from the provider; fall back to
+  // the server-rendered prop on first paint.
+  const { getListing } = useListings();
+  const listing = getListing(initialListing.id) ?? initialListing;
 
   return (
     <>
@@ -108,6 +117,8 @@ export default function ListingDetailContent({ listing }: Props) {
 
           {/* Header actions */}
           <div className="flex items-center gap-2 shrink-0">
+            <EditProductButton listing={listing} />
+            <AdminManageButton userId={`usr-${sellerSlug(listing.sellerName)}`} />
             <Link
               href="/listings-marketplace"
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-600 text-muted-foreground border border-border rounded-lg hover:bg-muted transition-colors duration-150"

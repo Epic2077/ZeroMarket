@@ -1,3 +1,4 @@
+import AdminManageButton from "@/components/management/AdminManageButton";
 import ListingCard from "@/components/shared/ListingCard";
 import VerifiedBadge from "@/components/shared/VerifiedBadeg";
 import { toFa } from "@/context/carLabels";
@@ -90,13 +91,16 @@ export default function SellerProfile({ seller }: Props) {
             </div>
           </div>
 
-          <Link
-            href="/sellers"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-600 text-muted-foreground border border-border rounded-lg hover:bg-muted transition-colors duration-150 self-start"
-          >
-            <ArrowLeft size={13} className="rotate-180" />
-            همه فروشندگان
-          </Link>
+          <div className="flex items-center gap-2 self-start">
+            <AdminManageButton userId={`usr-${seller.slug}`} />
+            <Link
+              href="/sellers"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-600 text-muted-foreground border border-border rounded-lg hover:bg-muted transition-colors duration-150"
+            >
+              <ArrowLeft size={13} className="rotate-180" />
+              همه فروشندگان
+            </Link>
+          </div>
         </div>
 
         {/* Stats */}

@@ -1,7 +1,7 @@
 "use client";
 
 import { navLinks } from "@/context/Header";
-import { Search, User } from "lucide-react";
+import { Crown, Search, ShieldHalf, User } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import SearchModal from "./SearchModal";
@@ -42,6 +42,22 @@ export default function MobileDrawer({ setMobileOpen }: MobileDrawerProps) {
         >
           <User size={15} />
           پروفایل کاربری
+        </Link>
+        <Link
+          href="/dashboard/owner"
+          onClick={() => setMobileOpen(false)}
+          className="px-3 py-2.5 text-sm font-500 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors duration-150 flex items-center gap-2"
+        >
+          <Crown size={15} />
+          پنل مالک
+        </Link>
+        <Link
+          href="/dashboard/admin"
+          onClick={() => setMobileOpen(false)}
+          className="px-3 py-2.5 text-sm font-500 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors duration-150 flex items-center gap-2"
+        >
+          <ShieldHalf size={15} />
+          پنل مدیر
         </Link>
         <div className="pt-2 border-t border-border flex gap-2 mt-1">
           <Link

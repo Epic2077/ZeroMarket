@@ -42,14 +42,6 @@ and "پیام" (message seller) buttons do nothing. Either wire them or hide the
 
 ## 3. Features to add
 
-### Owner panel
-
-- A panel that has access to anything in the website
-
-### Admin panel
-
-- The admin should be able to manage any seller or buyer that the owner has given them access to (both their profile and their dashboard)
-
 ### Buyer
 
 - 🟠 Working **bookmark/save** flow shared between the listing detail heart button, the
@@ -110,6 +102,17 @@ and "پیام" (message seller) buttons do nothing. Either wire them or hide the
 
 ## Recently completed ✅
 
+- **Owner panel** (`/dashboard/owner`) — full platform access: overview stats,
+  searchable user directory, view any user's full info + analytics, explicit role
+  changes (make buyer / seller / confirmed seller), suspend/activate accounts, a global
+  post catalog (edit/delete), per-user post CRUD, **bulk Excel import for sellers**,
+  profile editing, **add/remove admins** + assign users to them, and an **editable
+  taxonomy** (brands, years, colors, cities, body/fuel/transmission) that drives the
+  post-form selects. Buyers can't have posts. Backed by `AdminProvider` + `TaxonomyProvider`.
+- **Admin panel** (`/dashboard/admin`) — scoped to the signed-in admin's assigned
+  users; can view full info/analytics, edit profiles + posts (incl. bulk import), and
+  manage the shared taxonomy — but not roles, status, or admin management (owner-only).
+  State is shared with the owner panel via the dashboard layout.
 - User profile + settings page (`/user-profile`) with personal info, security,
   notifications, and a "become a seller" upgrade flow.
 - Buyer dashboard (`/dashboard/user`) — saved listings, my requests, price alerts.

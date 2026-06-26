@@ -5,11 +5,10 @@ import { PlusCircle, Settings, Upload } from "lucide-react";
 import Link from "next/link";
 
 interface Props {
-  onNewPost: () => void;
   onBulkImport: () => void;
 }
 
-export default function DashboardHeader({ onNewPost, onBulkImport }: Props) {
+export default function DashboardHeader({ onBulkImport }: Props) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
       <div className="flex items-center gap-4">
@@ -31,10 +30,10 @@ export default function DashboardHeader({ onNewPost, onBulkImport }: Props) {
           <Settings size={14} />
           تنظیمات پروفایل
         </Link>
-        <button onClick={onNewPost} className="btn-primary text-sm">
+        <Link href="/dashboard/seller/products/new" className="btn-primary text-sm">
           <PlusCircle size={14} />
           ثبت آگهی جدید
-        </button>
+        </Link>
         <button onClick={onBulkImport} className="btn-secondary text-sm">
           <Upload size={14} />
           ورود گروهی (اکسل)

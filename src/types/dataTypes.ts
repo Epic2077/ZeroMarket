@@ -1,5 +1,8 @@
 export interface Listing {
   id: string;
+  // Managed-platform owner (`usr-<slug>`); attached when seeding the
+  // ListingsProvider so panels can group a seller's products.
+  ownerId?: string;
   brand: string;
   model: string;
   trim: string;
