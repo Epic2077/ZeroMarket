@@ -1,27 +1,26 @@
 "use client";
 
 import { LatestTableColumns, latestTableData } from "@/context/latestTable";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 import LatestTable from "./Table";
-import { Clock } from "lucide-react";
 
 export default function TableRender() {
-  const tableData = latestTableData;
-  const columns = LatestTableColumns;
-
   return (
-    <div className="container mx-auto py-10 w-[90%]" dir="rtl">
-      <div className="mb-6 mt-4">
-        <p className="text-[14px] text-muted-foreground">بازار زنده</p>
-        <h2 className="font-dyna text-2xl text-secondary-foreground">
-          آخرین آگهی های صفر کیلومتر
-        </h2>
+    <div className="max-w-screen-2xl mx-auto px-4 lg:px-8 xl:px-10 py-14 vazir-matn" dir="rtl">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <p className="section-label mb-1">بازار زنده</p>
+          <h2 className="text-2xl font-700 text-foreground">
+            آخرین آگهی‌های صفر کیلومتر
+          </h2>
+        </div>
+        <Link href="/market" className="btn-secondary text-sm">
+          مشاهده همه
+          <ArrowLeft size={14} />
+        </Link>
       </div>
-      <LatestTable columns={columns} data={tableData} />
-      <p className="text-[14px] text-muted-foreground mt-4 flex items-center gap-1">
-        <Clock className="inline-block w-4 h-4 ml-1 text-muted-foreground vazir-matn" />
-        آخرین بروزرسانی: 29 اردیبهشت 1405، 10:12 - داده ها هر 10 ثانیه بروز
-        میشوند.
-      </p>
+      <LatestTable columns={LatestTableColumns} data={latestTableData} />
     </div>
   );
 }

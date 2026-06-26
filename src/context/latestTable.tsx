@@ -1,9 +1,17 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  brandModelLabel,
+  colorLabel,
+  sellerFa,
+  toFa,
+} from "@/context/carLabels";
+import { listings } from "@/context/data";
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, BadgeCheck, ExternalLink } from "lucide-react";
+import Link from "next/link";
 
-type Data = {
+export type LatestRow = {
   id: string;
   brand: string;
   trim: string;
@@ -11,90 +19,56 @@ type Data = {
   color: string;
   seller: string;
   verified: boolean;
-  cost: string;
-  status: "Available" | "Sold" | "Pending";
-};
-
-export const latestTableData: Data[] = [
-  {
-    id: "1",
-    brand: "Toyota Camry",
-    trim: "XLE 2.5L",
-    year: 2026,
-    color: "مشکی",
-    seller: "Aria Motors",
-    verified: true,
-    cost: "16,000,000,000",
-    status: "Available",
-  },
-  {
-    id: "2",
-    brand: "BMW 3 Series",
-    trim: "330i xDrive",
-    year: 2025,
-    color: "سفید",
-    seller: "Tehran Auto",
-    verified: false,
-    cost: "28,500,000,000",
-    status: "Pending",
-  },
-  {
-    id: "3",
-    brand: "Mercedes C-Class",
-    trim: "C200 AMG Line",
-    year: 2026,
-    color: "نقره‌ای",
-    seller: "Aria Motors",
-    verified: true,
-    cost: "34,000,000,000",
-    status: "Available",
-  },
-  {
-    id: "4",
-    brand: "Hyundai Tucson",
-    trim: "N Line 1.6T",
-    year: 2025,
-    color: "آبی",
-    seller: "Khodro Plus",
-    verified: true,
-    cost: "9,200,000,000",
-    status: "Sold",
-  },
-  {
-    id: "5",
-    brand: "Toyota Camry",
-    trim: "XSE V6",
-    year: 2026,
-    color: "خاکستری",
-    seller: "Aria Motors",
-    verified: false,
-    cost: "18,000,000,000",
-    status: "Available",
-  },
-  {
-    id: "6",
-    brand: "Toyota Camry",
-    trim: "XSE V6",
-    year: 2026,
-    color: "خاکستری",
-    seller: "Aria Motors",
-    verified: false,
-    cost: "18,000,000,000",
-    status: "Available",
-  },
-];
-
-export type columnsType = {
-  id: string;
-  brand: string;
-  trim: string;
-  year: number;
-  color: string;
-  seller: string;
-  verified: boolean;
-  cost: string;
+  cost: number;
   status: string;
 };
+
+const statusMap: Record<string, { label: string; className: string }> = {
+  active: {
+    label: "موجود",
+    className: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  },
+  sold: {
+    label: "فروخته شد",
+    className: "bg-red-100 text-red-700 border-red-200",
+  },
+  pending: {
+    label: "در انتظار",
+    className: "bg-amber-100 text-amber-700 border-amber-200",
+  },
+  negotiable: {
+    label: "قابل مذاکره",
+    className: "bg-violet-100 text-violet-700 border-violet-200",
+  },
+  reserved: {
+    label: "رزرو شده",
+    className: "bg-slate-100 text-slate-600 border-slate-200",
+  },
+};
+
+export const latestTableData: LatestRow[] = listings.slice(0, 8).map((l) => ({
+  id: l.id,
+  brand: brandModelLabel(l),
+  trim: l.trim,
+  year: l.year,
+  color: colorLabel(l.color),
+  seller: sellerFa[l.sellerName] ?? l.sellerName,
+  verified: l.sellerVerified,
+  cost: l.price,
+  status: l.status,
+}));
+
+function formatCost(cost: number): string {
+  if (cost >= 1_000_000_000) {
+    const val = cost / 1_000_000_000;
+    return `${toFa(Number.isInteger(val) ? val : val.toFixed(1))} میلیارد`;
+  }
+  if (cost >= 1_000_000) {
+    const val = cost / 1_000_000;
+    return `${toFa(Number.isInteger(val) ? val : val.toFixed(1))} میلیون`;
+  }
+  return toFa(cost);
+}
 
 // Deterministic hue from brand name so the color is stable across renders
 function brandLogoStyle(brand: string): {
@@ -106,59 +80,22 @@ function brandLogoStyle(brand: string): {
     hash = brand.charCodeAt(i) + ((hash << 5) - hash);
   }
   const hue = Math.abs(hash) % 360;
-  const saturation = 60;
-  const lightness = 48;
-
-  // WCAG-style relative luminance: dark bg → white text, light bg → black text
-  // For HSL we approximate: lightness < 55 is dark enough for white text
-  const textColor = lightness < 55 ? "#ffffff" : "#000000";
-
   return {
-    backgroundColor: `hsl(${hue}, ${saturation}%, ${lightness}%)`,
-    color: textColor,
+    backgroundColor: `hsl(${hue}, 55%, 45%)`,
+    color: "#ffffff",
   };
 }
 
-function formatCost(cost: string): string {
-  const num = parseInt(cost.replace(/,/g, ""), 10);
-  if (num >= 1_000_000_000) {
-    const val = num / 1_000_000_000;
-    const display = Number.isInteger(val) ? val.toString() : val.toFixed(1);
-    return `${display} میلیارد`;
-  }
-  if (num >= 1_000_000) {
-    const val = num / 1_000_000;
-    const display = Number.isInteger(val) ? val.toString() : val.toFixed(1);
-    return `${display} میلیون`;
-  }
-  return cost;
-}
-
-const statusMap: Record<string, { label: string; className: string }> = {
-  Available: {
-    label: "موجود",
-    className: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  },
-  Sold: {
-    label: "فروخته شد",
-    className: "bg-red-100 text-red-700 border-red-200",
-  },
-  Pending: {
-    label: "در انتظار",
-    className: "bg-amber-100 text-amber-700 border-amber-200",
-  },
-};
-
-export const LatestTableColumns: ColumnDef<columnsType>[] = [
+export const LatestTableColumns: ColumnDef<LatestRow>[] = [
   {
     id: "logo",
     header: () => <span />,
     cell: ({ row }) => {
       const brand = row.original.brand;
-      const initials = brand.slice(0, 3).toUpperCase();
+      const initials = brand.slice(0, 2);
       return (
         <div
-          className="w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 select-none"
+          className="w-10 h-10 rounded-lg flex items-center justify-center text-xs font-700 shrink-0 select-none"
           style={brandLogoStyle(brand)}
         >
           {initials}
@@ -181,10 +118,8 @@ export const LatestTableColumns: ColumnDef<columnsType>[] = [
     ),
     cell: ({ row }) => (
       <div dir="rtl" className="flex flex-col gap-0.5">
-        <span className="font-medium text">{row.original.brand}</span>
-        <span className="text-xs text-muted-foreground">
-          {row.original.trim}
-        </span>
+        <span className="font-600">{row.original.brand}</span>
+        <span className="text-xs text-muted-foreground">{row.original.trim}</span>
       </div>
     ),
   },
@@ -195,32 +130,30 @@ export const LatestTableColumns: ColumnDef<columnsType>[] = [
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         dir="rtl"
-        className="hover:bg-transparent w-full justify-start gap-1 px-0 text-sm font-semibold  hover:text-foreground vazir-matn"
+        className="hover:bg-transparent w-full justify-start gap-1 px-0 text-sm font-semibold hover:text-foreground vazir-matn"
       >
         سال
         <ArrowUpDown className="h-3.5 w-3.5" />
       </Button>
     ),
     cell: ({ getValue }) => (
-      <span className="tabular-nums">{getValue() as number}</span>
+      <span className="font-mono-nums">{toFa(getValue() as number)}</span>
     ),
   },
   {
     accessorKey: "color",
-    header: () => (
-      <span className="text-sm font-semibold  vazir-matn">رنگ</span>
-    ),
+    header: () => <span className="text-sm font-semibold vazir-matn">رنگ</span>,
   },
   {
     accessorKey: "seller",
     header: () => (
-      <span className="text-sm font-semibold  vazir-matn">فروشنده</span>
+      <span className="text-sm font-semibold vazir-matn">فروشنده</span>
     ),
     cell: ({ row }) => (
       <div dir="rtl" className="flex items-center gap-1.5">
-        <span className="">{row.original.seller}</span>
+        <span>{row.original.seller}</span>
         {row.original.verified && (
-          <BadgeCheck className="h-4 w-4 text-blue-500 shrink-0" />
+          <BadgeCheck className="h-4 w-4 text-primary shrink-0" />
         )}
       </div>
     ),
@@ -232,15 +165,15 @@ export const LatestTableColumns: ColumnDef<columnsType>[] = [
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         dir="rtl"
-        className="w-full justify-start gap-1 px-0 text-sm font-semibold hover:text-foreground vazir-matn hover:bg-transparent"
+        className="hover:bg-transparent w-full justify-start gap-1 px-0 text-sm font-semibold hover:text-foreground vazir-matn"
       >
         قیمت (تومان)
         <ArrowUpDown className="h-3.5 w-3.5" />
       </Button>
     ),
     cell: ({ getValue }) => (
-      <span className="tabular-nums font-medium">
-        {formatCost(getValue() as string)}
+      <span className="font-mono-nums font-600">
+        {formatCost(getValue() as number)}
       </span>
     ),
   },
@@ -254,7 +187,7 @@ export const LatestTableColumns: ColumnDef<columnsType>[] = [
       return s ? (
         <Badge
           variant="outline"
-          className={`vazir-matn text-xs font-medium px-2.5 py-0.5 ${s.className}`}
+          className={`vazir-matn text-xs font-600 px-2.5 py-0.5 ${s.className}`}
         >
           {s.label}
         </Badge>
@@ -264,15 +197,15 @@ export const LatestTableColumns: ColumnDef<columnsType>[] = [
   {
     id: "actions",
     header: () => <span />,
-    cell: () => (
-      <Button
-        variant="default"
-        size="sm"
-        className="hover:bg-transparent gap-1.5 text-xs text-white cursor-pointer hover:text-foreground vazir-matn"
+    cell: ({ row }) => (
+      <Link
+        href={`/market/listings/${row.original.id}`}
+        className="btn-secondary text-xs px-2.5 py-1.5 inline-flex items-center gap-1.5"
+        onClick={(e) => e.stopPropagation()}
       >
         مشاهده
-        <ExternalLink className="h-3.5 w-3.5" />
-      </Button>
+        <ExternalLink className="h-3 w-3" />
+      </Link>
     ),
   },
 ];

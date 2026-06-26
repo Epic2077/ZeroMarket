@@ -1,6 +1,7 @@
 "use client";
 
 import { AdminProvider } from "@/context/AdminProvider";
+import { BannerProvider } from "@/context/BannerProvider";
 import { ListingsProvider } from "@/context/ListingsProvider";
 import { SessionProvider } from "@/context/SessionProvider";
 import { TaxonomyProvider } from "@/context/TaxonomyProvider";
@@ -14,7 +15,9 @@ export default function AppProviders({ children }: { children: ReactNode }) {
     <SessionProvider>
       <AdminProvider>
         <TaxonomyProvider>
-          <ListingsProvider>{children}</ListingsProvider>
+          <ListingsProvider>
+            <BannerProvider>{children}</BannerProvider>
+          </ListingsProvider>
         </TaxonomyProvider>
       </AdminProvider>
     </SessionProvider>

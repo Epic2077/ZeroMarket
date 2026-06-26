@@ -7,6 +7,7 @@ import {
 } from "@/context/userProfile";
 import type { SellerApplicationStatus } from "@/types/user";
 import { useMemo, useState } from "react";
+import BannerSettings from "./BannerSettings";
 import BecomeSellerForm from "./BecomeSellerForm";
 import NotificationSettings from "./NotificationSettings";
 import PersonalInfoForm from "./PersonalInfoForm";
@@ -36,7 +37,12 @@ export default function UserProfile() {
       <ProfileTabs tabs={visibleTabs} active={activeTab} onChange={setActiveTab} />
 
       <div className="mt-6">
-        {activeTab === "personal" && <PersonalInfoForm />}
+        {activeTab === "personal" && (
+          <div className="flex flex-col gap-6">
+            <PersonalInfoForm />
+            <BannerSettings />
+          </div>
+        )}
         {activeTab === "security" && <SecurityForm />}
         {activeTab === "notifications" && <NotificationSettings />}
         {activeTab === "seller" && (
