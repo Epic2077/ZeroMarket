@@ -45,7 +45,9 @@ interface ListingTableProps {
 }
 
 export default function ListingTable({ data = listings }: ListingTableProps) {
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "listedDate", desc: true },
+  ]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
   const navigate = useRouter();
