@@ -2,17 +2,22 @@ import type {
   MyRequest,
   NotificationPref,
   PriceAlert,
+  UserNotification,
   SavedListing,
   UserProfile,
 } from "@/types/user";
 import {
+  BadgeCheck,
   Bell,
   Bookmark,
   Eye,
+  Megaphone,
+  MessageSquareText,
   Send,
   ShieldCheck,
   Sparkles,
   Store,
+  TriangleAlert,
   TrendingDown,
   type LucideIcon,
 } from "lucide-react";
@@ -82,6 +87,7 @@ export const userStats: UserStat[] = [
 export const userDashboardTabs = [
   { id: "saved", label: "آگهی‌های ذخیره‌شده" },
   { id: "requests", label: "درخواست‌های من" },
+  { id: "notifications", label: "اعلان‌ها" },
   { id: "alerts", label: "هشدارهای قیمت" },
 ] as const;
 
@@ -203,13 +209,60 @@ export const priceAlerts: PriceAlert[] = [
   },
 ];
 
+export const userNotifications: UserNotification[] = [
+  {
+    id: "un-001",
+    title: "پاسخ جدید برای درخواست خرید شما",
+    body: "فروشنده آریا موتورز پیشنهاد شما برای تویوتا کمری XLE را دریافت کرده و خواسته درباره قیمت نهایی مذاکره کنید.",
+    time: "۱۲ دقیقه پیش",
+    unread: true,
+    kind: "request",
+    href: "/dashboard/user",
+    actionLabel: "مشاهده درخواست",
+    icon: <MessageSquareText size={18} className="text-primary" />,
+  },
+  {
+    id: "un-002",
+    title: "هشدار قیمت فعال شد",
+    body: "قیمت هیوندای توسان N-Line به سطح هدف شما نزدیک شده است. این آگهی را بررسی کنید تا از تغییرات بعدی جا نمانید.",
+    time: "۴۵ دقیقه پیش",
+    unread: true,
+    kind: "price",
+    href: "/market/listings/listing-002",
+    actionLabel: "بررسی آگهی",
+    icon: <TriangleAlert size={18} className="text-warning" />,
+  },
+  {
+    id: "un-003",
+    title: "آگهی ذخیره‌شده به‌روزرسانی شد",
+    body: "کیا اسپورتیج GT-Line از حالت فعال به قابل مذاکره تغییر کرده و ممکن است زمان مناسبی برای ارسال پیشنهاد باشد.",
+    time: "۲ ساعت پیش",
+    unread: false,
+    kind: "saved",
+    href: "/market/listings/listing-003",
+    actionLabel: "مشاهده آگهی",
+    icon: <BadgeCheck size={18} className="text-success" />,
+  },
+  {
+    id: "un-004",
+    title: "پیشنهاد ویژه برای شما",
+    body: "سیستم بازار یک افت قیمت تازه برای جیلی کول‌ری GT تشخیص داده و آن را در فهرست پیگیری شما برجسته کرده است.",
+    time: "دیروز",
+    unread: false,
+    kind: "system",
+    actionLabel: "باز کردن بازار",
+    href: "/market",
+    icon: <Megaphone size={18} className="text-accent" />,
+  },
+];
+
 /* ------------------------------- Profile --------------------------------- */
 
 export const profileTabs = [
   { id: "personal", label: "اطلاعات شخصی" },
   { id: "security", label: "امنیت" },
   { id: "notifications", label: "اعلان‌ها" },
-  { id: "seller", label: "ارتقا به فروشنده" },
+  { id: "seller", label: "ارتقا به فروشنده تایید شده" },
 ] as const;
 
 export type ProfileTabId = (typeof profileTabs)[number]["id"];
@@ -251,29 +304,32 @@ export const notificationPrefs: NotificationPref[] = [
 ];
 
 // Reasons shown in the "become a seller" call-to-action.
-export const sellerBenefits: { icon: LucideIcon; title: string; desc: string }[] =
-  [
-    {
-      icon: Store,
-      title: "ثبت نامحدود آگهی",
-      desc: "خودروهای صفر کیلومتر خود را بدون محدودیت منتشر کنید.",
-    },
-    {
-      icon: TrendingDown,
-      title: "تحلیل قیمت بازار",
-      desc: "قیمت پیشنهادی هوشمند بر اساس داده‌های زنده بازار.",
-    },
-    {
-      icon: ShieldCheck,
-      title: "نشان فروشنده تأییدشده",
-      desc: "پس از احراز هویت، نشان اعتماد دریافت می‌کنید.",
-    },
-    {
-      icon: Sparkles,
-      title: "داشبورد فروش حرفه‌ای",
-      desc: "مدیریت آگهی‌ها، درخواست‌ها و تحلیل‌ها در یک‌جا.",
-    },
-  ];
+export const sellerBenefits: {
+  icon: LucideIcon;
+  title: string;
+  desc: string;
+}[] = [
+  {
+    icon: Store,
+    title: "ثبت نامحدود آگهی",
+    desc: "خودروهای صفر کیلومتر خود را بدون محدودیت منتشر کنید.",
+  },
+  {
+    icon: TrendingDown,
+    title: "تحلیل قیمت بازار",
+    desc: "قیمت پیشنهادی هوشمند بر اساس داده‌های زنده بازار.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "نشان فروشنده تأییدشده",
+    desc: "پس از احراز هویت، نشان اعتماد دریافت می‌کنید.",
+  },
+  {
+    icon: Sparkles,
+    title: "داشبورد فروش حرفه‌ای",
+    desc: "مدیریت آگهی‌ها، درخواست‌ها و تحلیل‌ها در یک‌جا.",
+  },
+];
 
 export const businessTypeOptions = [
   { value: "dealership", label: "نمایندگی مجاز" },

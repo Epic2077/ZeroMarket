@@ -200,7 +200,7 @@ export const analyticsCards: AnalyticsCard[] = [
     change: "+۸٪",
   },
   {
-    title: "نرخ تبدیل",
+    title: "درخواست های تایید شده",
     value: "۴۸٪",
     sub: "درخواست به معامله",
     icon: <TrendingUp size={20} className="text-success" />,

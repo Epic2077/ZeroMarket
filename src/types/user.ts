@@ -1,4 +1,5 @@
 import type { RequestStatus } from "@/context/sellerDashboard";
+import type { ReactNode } from "react";
 
 export type UserRole = "user" | "seller";
 
@@ -49,6 +50,20 @@ export interface PriceAlert {
   targetPrice: number;
   currentPrice: number;
   active: boolean;
+  city?: string;
+  color?: string;
+}
+
+export interface UserNotification {
+  id: string;
+  title: string;
+  body: string;
+  time: string;
+  unread: boolean;
+  kind: "request" | "price" | "saved" | "system";
+  href?: string;
+  actionLabel?: string;
+  icon?: ReactNode;
 }
 
 export interface NotificationPref {

@@ -1,102 +1,91 @@
 # ZeroMarket — Project TODO
 
-Working backlog for ZeroMarket (زیرومارکت). The app is currently a **front-end-only
-prototype**: every screen is wired to mock data in `src/context/`, there is no
-backend, database, or real authentication. This file tracks what is needed to take
-it from prototype to product.
+Working backlog for ZeroMarket (زیرومارکت). The app is still a front-end prototype
+with mock data in `src/context/`, so this list focuses on what should be cleaned up
+before the backend is introduced.
 
-**Legend:** 🔴 blocker · 🟠 high · 🟡 medium · 🟢 nice-to-have · ✅ done
+**Priority legend:** `[p0]` must do before backend work, `[p1]` should do before the
+first backend pass, `✅` already done.
 
----
+## 1. P0 — unblock backend work
 
-## 1. Core infrastructure (no backend yet)
+- [p0] Normalize the domain model before wiring APIs.
+  - Stop deriving sellers, admins, and viewer state from unrelated mock arrays.
+  - Introduce one front-end adapter layer for `listing`, `seller`, `user`, and `session` view models so the UI has one source of truth.
+  - Refactor `Listing` so seller data is relation-shaped instead of duplicated on every record.
+- [p0] Replace the mock session model with one auth/session boundary.
+  - Remove hardcoded owner/admin viewer defaults and hardcoded ids.
+  - Make public, buyer, seller, admin, and owner screens consume the same session API so backend permissions map cleanly later.
+- [p0] Fix route drift and navigation holes.
+  - Replace `/listings-marketplace` and `#` placeholders with shared route constants.
+  - Standardize the dashboard and auth route names so future redirects and protected routes do not have to support legacy paths.
+- [p0] Centralize labels, taxonomy, and filter vocabulary.
+  - Merge overlapping brand/body/city/fuel/seller label maps into one shared vocabulary layer or a thin adapter on top of it.
+  - Make marketplace filters and backend query params read from the same vocabulary.
+- [p0] Separate UI definitions from mock records.
+  - Keep table columns, cards, and forms in components.
+  - Move seed/demo data out of files that also contain presentation logic, especially the dashboard and marketplace contexts.
+- [p0] Make all data-driven pages consume one lookup contract.
+  - Marketplace, listing detail, sellers, dashboards, and admin views should all use the same fetch/lookup helpers instead of reading raw arrays directly.
+- [p0] Remove auth and CTA dead ends.
+  - Convert login/signup cross-links, forgot-password, terms, privacy, and similar placeholder anchors to real routes or explicit disabled states.
 
-- 🔴 **Backend / API layer.** Replace the mock arrays in `src/context/` with a real
-  data source (REST/GraphQL/server actions). Define the API contracts for listings,
-  sellers, requests, and users.
-- 🔴 **Authentication.** `auth/login` and `auth/signup` forms are UI-only — they don't
-  submit, validate against a server, or create a session. Add real auth (sessions/JWT),
-  protected routes, and role-based access (buyer vs. seller).
-- 🟠 **Persisted state.** Saved listings, price alerts, notification prefs, and the
-  "become a seller" application reset on refresh (local `useState`). Persist them
-  (server, or at minimum `localStorage`) and lift to a shared store/context.
-- 🟠 **Real images.** Listings have no photos — cards/detail use brand-initial tiles.
-  Add an image model + gallery, wire `next/image` (`images.qualities` is already
-  allowlisted in `next.config.ts`), and a placeholder/blur strategy.
-- 🟡 **Dark theme.** `next-themes` is installed and a dark palette is commented out in
-  `globals.css`. Finish the dark tokens and add a theme toggle.
-- ✅ **Form library.** All data-entry forms now use `react-hook-form` + `zod`
-  (`zodResolver`), with shared field schemas in `src/lib/validation.ts`.
+## 2. P1 — make the first backend pass cleaner
 
-## 2. Bugs & quick fixes
+- [p1] Add persistence-ready boundaries for user state.
+  - Move saved listings, price alerts, notification prefs, request state, and seller onboarding behind one shared store or API facade.
+- [p1] Prepare media support.
+  - Add a listing image model and placeholder strategy so the backend can attach images without redesigning cards and detail views later.
+- [p1] Make filtering and search URL-driven.
+  - Persist marketplace filters in query params so the state is shareable and back/forward navigation behaves correctly.
+- [p1] Add loading, empty, and error states to data-heavy routes.
+  - Cover marketplace, listing detail, sellers, dashboards, and auth screens.
+- [p1] Extract shared dashboard primitives.
+  - Consolidate repeated stat cards, tabs, and table shells across admin, owner, seller, and user surfaces.
+- [p1] Wire the currently fake forms to real submit behavior.
+  - Login, signup, listing creation, bulk import, save/unsave, request submission, and profile settings should be ready to swap to API calls.
+- [p1] Add route-level metadata and accessibility cleanup.
+  - Prepare titles, descriptions, keyboard-safe interactions, and ARIA labels before backend data increases the number of interactive states.
+- [p1] Add test coverage for the shared data helpers.
+  - Cover label mapping, formatters, route helpers, and any adapter functions created for the migration.
 
-- 🟠 **Broken marketplace links on the listing page.** `ListingDetailContent.tsx`
-  breadcrumb + "بازگشت" link to `/listings-marketplace`, which doesn't exist. The real
-  route is `/market`. Fix all three occurrences.
-- 🟡 **Non-functional action buttons.** On the listing detail page the share, report,
-and "پیام" (message seller) buttons do nothing. Either wire them or hide them.
-<!-- - 🟡 **Header search box.** Confirm `SearchBox` actually searches; if it's decorative,
-  connect it to the marketplace search/filter state. -->
-- ✅ **Static params for listing detail.** `market/listings/[id]` now exports
-  `generateStaticParams` like the `sellers/[slug]` route for consistent pre-rendering.
+## 3. Bugs & quick fixes
 
-## 3. Features to add
+- [p1] Broken marketplace links on the listing page still need cleanup everywhere they appear.
+- [p1] Non-functional action buttons on listing detail should either be wired or hidden.
+
+## 4. Features to add
 
 ### Buyer
 
-- 🟠 Working **bookmark/save** flow shared between the listing detail heart button, the
-  marketplace, and the user dashboard "saved listings" tab (one source of truth).
-- 🟠 **Submit-request flow** end-to-end: the buyer's offer in `ListingAuctionModal`
-  should appear in the buyer dashboard ("درخواست‌های من") and the seller dashboard.
-- 🟡 **Price-alert creation** from a listing/market page (currently alerts only exist as
-  mock data in the dashboard).
-- 🟢 **Compare cars** side-by-side (the data model already has market price + trend).
+- [p1] Working bookmark/save flow shared between the listing detail heart button, the marketplace, and the user dashboard "saved listings" tab.
+- [p1] Submit-request flow end-to-end so the buyer's offer appears in both buyer and seller dashboards.
+- [p1] Price-alert creation from a listing or market page.
+- [p1] Compare cars side-by-side.
 
 ### Seller
 
-- 🟠 Make **New Post** and **Bulk Import** modals actually create listings that show up
-  in the seller's listings tab and the marketplace.
-- 🟡 Request management actions (approve / decline / negotiate) should persist and
-  notify the buyer.
-- 🟢 Seller onboarding: turn the "become a seller" application into a real review flow
-  that flips the account role on approval.
+- [p1] Make New Post and Bulk Import modals actually create listings that show up in the seller's listings tab and the marketplace.
+- [p1] Request management actions should persist and notify the buyer.
+- [p1] Seller onboarding should become a real review flow that flips the account role on approval.
 
 ### Marketplace & discovery
 
-- 🟡 **Saved searches & filter persistence** (URL query params) so filters survive
-  navigation and can be shared.
-- 🟡 **Pagination / infinite scroll** for listings and the sellers directory.
-- 🟢 **Map view** / city-based browsing.
+- [p1] Saved searches and filter persistence through URL query params.
+- [p1] Pagination or infinite scroll for listings and the sellers directory.
+- [p1] Map view or city-based browsing.
 
 ### Notifications
 
-- 🟡 Wire the header notification bell to a real feed (request replies, price alerts,
-  saved-listing status changes — the categories already exist in notification prefs).
-
-## 4. Pages & components to refactor / polish
-
-- 🟡 **Extract shared dashboard primitives.** `StatsGrid`/`UserStatsGrid` and
-  `DashboardTabs`/`UserDashboardTabs`/`ProfileTabs` are near-duplicates. Extract a
-  single `<StatCard>` and a generic `<Tabs>` to remove the copy-paste.
-- 🟡 **Reuse `ListingCard` everywhere.** The home "latest" table and the marketplace
-  could share the new `shared/ListingCard` for visual consistency.
-- 🟡 **Listing detail size.** `ListingDetailContent.tsx` is large; consider splitting the
-  header/trust-banner into their own components (matches the "thin composition" rule).
-- 🟢 **Empty/loading/error states.** Add `loading.tsx` / `error.tsx` per route segment
-  and skeletons for data-driven views.
-- 🟢 **Mobile pass.** Audit the dashboards, filters, and tables on small screens
-  (horizontal scroll, drawer behavior).
+- [p1] Wire the header notification bell to a real feed for request replies, price alerts, and saved-listing changes.
 
 ## 5. Quality & ops
 
-- 🟠 **Tests.** No test setup exists. Add unit tests for the data/label helpers
-  (`carLabels`, `sellers`, `formatPrice`) and component tests for the key flows.
-- 🟡 **Accessibility.** Audit focus order, keyboard nav for modals/menus, `aria` labels,
-  and color contrast across the RTL UI.
-- 🟡 **SEO / metadata.** Add per-route `metadata` (titles, descriptions, Open Graph),
-  especially for listing and seller pages.
-- 🟢 **Analytics & error monitoring** before launch.
-- 🟢 **CI** (lint + typecheck + build) on push.
+- [p1] Add unit tests for `carLabels`, `sellers`, and `formatPrice`, plus component tests for the key flows.
+- [p1] Audit focus order, keyboard navigation, ARIA labels, and color contrast across the RTL UI.
+- [p1] Add per-route metadata, especially for listing and seller pages.
+- [p1] Add analytics and error monitoring before launch.
+- [p1] Add CI for lint, typecheck, and build on push.
 
 ---
 

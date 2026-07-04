@@ -2,15 +2,12 @@
 
 import { useAdmin } from "@/context/AdminProvider";
 import type { AdminAccount, PlatformUser } from "@/types/admin";
-import { ShieldHalf, Trash2, UserPlus, X } from "lucide-react";
-import { useState } from "react";
+import { ShieldHalf, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
-import ConfirmDialog from "../management/ConfirmDialog";
 import RoleBadge from "../management/RoleBadge";
-import AssignUsersModal from "./AssignUsersModal";
 
-// One admin card: shows the users they manage and lets the owner add/remove
-// access, or remove the admin entirely.
+// One admin card: access is global for every admin, so the owner only reviews
+// the roster and can remove an admin entirely if needed.
 function AdminAssignmentCard({
   admin,
   users,
@@ -18,13 +15,7 @@ function AdminAssignmentCard({
   admin: AdminAccount;
   users: PlatformUser[];
 }) {
-  const { unassignUser, removeAdmin } = useAdmin();
-  const [confirmRemove, setConfirmRemove] = useState(false);
-  const [assignOpen, setAssignOpen] = useState(false);
-
-  const assigned = admin.assignedUserIds
-    .map((id) => users.find((u) => u.id === id))
-    .filter((u): u is PlatformUser => Boolean(u));
+  const { removeAdmin } = useAdmin();
 
   return (
     <div className="card-elevated p-5">
@@ -43,87 +34,23 @@ function AdminAssignmentCard({
             {admin.email}
           </div>
         </div>
-        <div className="mr-auto flex items-center gap-2 shrink-0">
-          <span className="text-2xs text-muted-foreground">
-            {assigned.length.toLocaleString("fa-IR")} کاربر
-          </span>
-          <button
-            onClick={() => setConfirmRemove(true)}
-            aria-label="حذف مدیر"
-            title="حذف مدیر"
-            className="flex items-center justify-center w-7 h-7 rounded-lg text-muted-foreground hover:text-danger hover:bg-danger/10 transition-colors duration-150"
-          >
-            <Trash2 size={14} />
-          </button>
-        </div>
-      </div>
-
-      {/* Assigned users */}
-      <div className="flex flex-col gap-2 mb-4">
-        {assigned.length === 0 ? (
-          <p className="text-xs text-muted-foreground py-2 text-center rounded-lg border border-dashed border-border">
-            هنوز کاربری اختصاص نیافته است.
-          </p>
-        ) : (
-          assigned.map((user) => (
-            <div
-              key={user.id}
-              className="flex items-center justify-between gap-2 rounded-lg bg-muted/50 px-3 py-2"
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-7 h-7 rounded-lg bg-card flex items-center justify-center text-2xs font-700 text-foreground shrink-0">
-                  {user.avatar}
-                </div>
-                <span className="text-xs font-600 text-foreground truncate">
-                  {user.name}
-                </span>
-                <RoleBadge role={user.role} />
-              </div>
-              <button
-                onClick={() => {
-                  unassignUser(admin.id, user.id);
-                  toast.success(`دسترسی به «${user.name}» لغو شد`);
-                }}
-                aria-label="لغو دسترسی"
-                title="لغو دسترسی"
-                className="flex items-center justify-center w-7 h-7 rounded-lg text-muted-foreground hover:text-danger hover:bg-danger/10 transition-colors duration-150 shrink-0"
-              >
-                <X size={14} />
-              </button>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* Assign new */}
-      <button
-        onClick={() => setAssignOpen(true)}
-        className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-primary/40 text-primary text-sm font-600 hover:bg-primary/5 transition-colors duration-150"
-      >
-        <UserPlus size={14} />
-        افزودن کاربر…
-      </button>
-
-      {assignOpen && (
-        <AssignUsersModal
-          admin={admin}
-          users={users}
-          onClose={() => setAssignOpen(false)}
-        />
-      )}
-
-      {confirmRemove && (
-        <ConfirmDialog
-          title="حذف مدیر"
-          description={`دسترسی مدیریتی «${admin.name}» حذف می‌شود.`}
-          confirmLabel="حذف"
-          onConfirm={() => {
+        <button
+          onClick={() => {
             removeAdmin(admin.id);
             toast.success("مدیر حذف شد");
           }}
-          onClose={() => setConfirmRemove(false)}
-        />
-      )}
+          aria-label="حذف مدیر"
+          title="حذف مدیر"
+          className="mr-auto flex items-center justify-center w-7 h-7 rounded-lg text-muted-foreground hover:text-danger hover:bg-danger/10 transition-colors duration-150 shrink-0"
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
+
+        <div className="rounded-lg border border-dashed border-border bg-muted/20 px-3 py-3 text-xs leading-6 text-muted-foreground">
+          این مدیر به همه کاربران دسترسی دارد و تخصیص جداگانه‌ای وجود ندارد.
+          {users.length.toLocaleString("fa-IR")} کاربر در کل سامانه قابل مدیریت است.
+        </div>
     </div>
   );
 }
@@ -191,9 +118,9 @@ export default function AdminAssignments() {
       <AddAdminForm />
 
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <UserPlus size={14} className="text-primary" />
-        کاربران را به مدیران اختصاص دهید تا بتوانند پروفایل و آگهی‌های آن‌ها را
-        مدیریت کنند. می‌توانید یک کاربر را از پروفایلش نیز به مدیر تبدیل کنید.
+        <Users size={14} className="text-primary" />
+        همه مدیران به همه کاربران دسترسی دارند. از این بخش فقط می‌توانید مدیران
+        را اضافه یا حذف کنید.
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

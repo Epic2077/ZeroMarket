@@ -31,12 +31,10 @@ export default function AdminDashboard() {
   }, [setViewer]);
 
   const admin = admins.find((a) => a.id === CURRENT_ADMIN_ID) ?? admins[0];
-  const assignedUsers = users.filter((u) =>
-    admin?.assignedUserIds.includes(u.id),
-  );
+  const accessibleUsers = users;
 
-  const sellerCount = assignedUsers.filter((u) => u.role !== "buyer").length;
-  const postCount = assignedUsers.reduce(
+  const sellerCount = accessibleUsers.filter((u) => u.role !== "buyer").length;
+  const postCount = accessibleUsers.reduce(
     (sum, u) => sum + listingsByOwner(u.id).length,
     0,
   );
@@ -45,8 +43,8 @@ export default function AdminDashboard() {
     [
       {
         id: "assigned",
-        label: "کاربران اختصاص‌یافته",
-        value: faNum(assignedUsers.length),
+        label: "کل کاربران",
+        value: faNum(accessibleUsers.length),
         icon: <Users size={18} className="text-primary" />,
       },
       {
@@ -68,7 +66,7 @@ export default function AdminDashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-negotiable/15 text-negotiable flex items-center justify-center font-800 text-lg flex-shrink-0">
+          <div className="w-14 h-14 rounded-2xl bg-negotiable/15 text-negotiable flex items-center justify-center font-800 text-lg shrink-0">
             {admin?.avatar}
           </div>
           <div>
@@ -80,7 +78,7 @@ export default function AdminDashboard() {
               </span>
             </div>
             <p className="text-sm text-muted-foreground mt-0.5">
-              مدیریت پروفایل و آگهی‌های کاربرانِ اختصاص‌یافته
+              مدیریت پروفایل و آگهی‌های همه کاربران پلتفرم
             </p>
           </div>
         </div>
@@ -122,10 +120,7 @@ export default function AdminDashboard() {
       </div>
 
       {active === "users" && (
-        <UserManagementTable
-          users={assignedUsers}
-          emptyText="هنوز کاربری به شما اختصاص نیافته است."
-        />
+        <UserManagementTable users={accessibleUsers} emptyText="کاربری یافت نشد." />
       )}
       {active === "options" && <TaxonomyManager />}
     </div>

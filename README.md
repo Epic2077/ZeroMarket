@@ -102,8 +102,8 @@ flow. It describes **using** ZeroMarket — not installing it.
    - **اطلاعات شخصی** — name, contact details, city, avatar, bio.
    - **امنیت** — change password and toggle two-factor authentication.
    - **اعلان‌ها** — choose which events notify you.
-   - **ارتقا به فروشنده** — *(regular accounts only)* apply to become a seller by
-     submitting business details. After submitting, the application shows a **pending**
+   - **ارتقا به فروشنده** — _(regular accounts only)_ Every one is a seller just as a buyer but confirmed sellers need to
+     submit business details. After submitting, the application shows a **pending**
      review state; once approved it unlocks the seller dashboard.
 
 ### Signing in
@@ -114,18 +114,18 @@ flow. It describes **using** ZeroMarket — not installing it.
 
 ## Tech stack
 
-| Area | Tools |
-|------|-------|
-| Framework | **Next.js 16** (App Router, Turbopack), **React 19** |
-| Language | **TypeScript** (strict) |
-| Styling | **Tailwind CSS v4** (CSS-first theme, no config file), `tw-animate-css` |
-| UI components | **shadcn/ui** on the unified **Radix UI** package |
-| Icons | **lucide-react** |
-| Tables | **@tanstack/react-table** |
-| Charts | **recharts** |
-| Animation | **motion** (Framer Motion v12) |
-| Toasts | **sonner** |
-| Forms | **react-hook-form** |
+| Area          | Tools                                                                   |
+| ------------- | ----------------------------------------------------------------------- |
+| Framework     | **Next.js 16** (App Router, Turbopack), **React 19**                    |
+| Language      | **TypeScript** (strict)                                                 |
+| Styling       | **Tailwind CSS v4** (CSS-first theme, no config file), `tw-animate-css` |
+| UI components | **shadcn/ui** on the unified **Radix UI** package                       |
+| Icons         | **lucide-react**                                                        |
+| Tables        | **@tanstack/react-table**                                               |
+| Charts        | **recharts**                                                            |
+| Animation     | **motion** (Framer Motion v12)                                          |
+| Toasts        | **sonner**                                                              |
+| Forms         | **react-hook-form**                                                     |
 
 The UI is fully right-to-left; all numbers render in Persian digits and prices/dates use
 the Persian (Jalali) calendar. Design tokens and reusable utility classes live in

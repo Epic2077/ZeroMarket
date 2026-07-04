@@ -1,14 +1,16 @@
 "use client";
 
+import NewPriceAlertModal from "./NewPriceAlertModal";
 import ToggleSwitch from "@/components/shared/ToggleSwitch";
 import { formatPrice } from "@/context/data";
 import { priceAlerts } from "@/context/userProfile";
-import { Bell, Trash2 } from "lucide-react";
+import { Bell, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 export default function PriceAlertsTab() {
   const [alerts, setAlerts] = useState(priceAlerts);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   const toggle = (id: string, next: boolean) => {
     setAlerts((prev) =>
@@ -22,12 +24,36 @@ export default function PriceAlertsTab() {
     toast.success(`هشدار «${title}» حذف شد`);
   };
 
+  const createAlert = (nextAlert: {
+    title: string;
+    targetPrice: number;
+    currentPrice: number;
+    city?: string;
+    color?: string;
+  }) => {
+    setAlerts((prev) => [
+      {
+        id: `al-${String(Date.now())}`,
+        ...nextAlert,
+        active: true,
+      },
+      ...prev,
+    ]);
+  };
+
   return (
     <div className="card-elevated overflow-hidden">
-      <div className="px-5 py-4 border-b border-border">
+      <div className="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-sm font-700 text-foreground">
           هشدارهای قیمت ({alerts.length.toLocaleString("fa-IR")})
         </h2>
+        <button
+          onClick={() => setIsCreateOpen(true)}
+          className="btn-primary text-sm"
+        >
+          <Plus size={16} />
+          ثبت هشدار جدید
+        </button>
       </div>
 
       {alerts.length === 0 ? (
@@ -48,7 +74,7 @@ export default function PriceAlertsTab() {
               >
                 <div className="flex items-center gap-3">
                   <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                       alert.active
                         ? "bg-warning/10 text-warning"
                         : "bg-muted text-muted-foreground"
@@ -101,6 +127,13 @@ export default function PriceAlertsTab() {
             );
           })}
         </div>
+      )}
+
+      {isCreateOpen && (
+        <NewPriceAlertModal
+          onClose={() => setIsCreateOpen(false)}
+          onCreate={createAlert}
+        />
       )}
     </div>
   );

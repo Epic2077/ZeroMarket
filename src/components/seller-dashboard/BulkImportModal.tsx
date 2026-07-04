@@ -59,7 +59,7 @@ export default function BulkImportModal({ onClose }: Props) {
 
   const handleUpload = () => {
     if (!file) {
-      toast.error("لطفاً ابتدا فایل اکسل را انتخاب کنید");
+      toast.error("لطفاً ابتدا فایل اکسل تکمیل شده را انتخاب کنید");
       return;
     }
     toast.success(`فایل «${file.name}» برای پردازش ارسال شد`);
@@ -148,7 +148,7 @@ export default function BulkImportModal({ onClose }: Props) {
             ) : (
               <>
                 <span className="text-sm font-600 text-foreground">
-                  فایل اکسل را اینجا بکشید یا کلیک کنید
+                  فایل اکسل تکمیل شده را اینجا بکشید یا کلیک کنید
                 </span>
                 <span className="text-2xs text-muted-foreground">
                   فرمت‌های مجاز: xlsx، xls، csv

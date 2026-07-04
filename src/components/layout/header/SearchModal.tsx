@@ -10,7 +10,19 @@ import { formatPrice, listings } from "@/context/data";
 import { sellers } from "@/context/sellers";
 import VerifiedBadge from "@/components/shared/VerifiedBadeg";
 import StatusBadge from "@/components/shared/StatusBadge";
-import { Car, Search, Store, X } from "lucide-react";
+import {
+  bodyTypeOptions,
+  brandOptions,
+  cityOptions,
+  fuelTypeOptions,
+  statusOptions,
+  brandFa,
+  bodyTypeFa,
+  cityFa,
+  fuelTypeFa,
+  type SelectOption,
+} from "@/context/marketFilters";
+import { Car, Search, Store, X, Sliders, Shield, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -21,8 +33,54 @@ interface Props {
 const CAR_LIMIT = 6;
 const SELLER_LIMIT = 4;
 
+const fieldClass =
+  "h-8 rounded-lg border border-border bg-card text-xs focus:outline-none focus:ring-2 focus:ring-primary/30";
+
+const SelectField = ({
+  value,
+  onChange,
+  options,
+  placeholder,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  options: SelectOption[];
+  placeholder: string;
+}) => (
+  <div className="relative">
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={`${fieldClass} appearance-none pl-3 pr-7 py-1.5 font-500 text-foreground cursor-pointer min-w-[110px] text-right`}
+      dir="rtl"
+    >
+      <option value="">{placeholder}</option>
+      {options.map((o) => (
+        <option key={`opt-${placeholder}-${o.value}`} value={o.value}>
+          {o.label}
+        </option>
+      ))}
+    </select>
+    <ChevronDown
+      size={11}
+      className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+    />
+  </div>
+);
+
 export default function SearchModal({ onClose }: Props) {
   const [query, setQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Filters State
+  const [brand, setBrand] = useState("");
+  const [bodyType, setBodyType] = useState("");
+  const [city, setCity] = useState("");
+  const [fuelType, setFuelType] = useState("");
+  const [status, setStatus] = useState("");
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
 
   // Close on Escape.
   useEffect(() => {
@@ -34,38 +92,99 @@ export default function SearchModal({ onClose }: Props) {
   }, [onClose]);
 
   const q = query.trim().toLowerCase();
+  const BILLION = 1_000_000_000;
+  const min = parseFloat(priceMin);
+  const max = parseFloat(priceMax);
+
+  const activeFilterCount = useMemo(() => {
+    return [
+      brand,
+      bodyType,
+      city,
+      fuelType,
+      status,
+      priceMin,
+      priceMax,
+      verifiedOnly,
+    ].filter(Boolean).length;
+  }, [brand, bodyType, city, fuelType, status, priceMin, priceMax, verifiedOnly]);
+
+  const handleReset = () => {
+    setBrand("");
+    setBodyType("");
+    setCity("");
+    setFuelType("");
+    setStatus("");
+    setPriceMin("");
+    setPriceMax("");
+    setVerifiedOnly(false);
+  };
+
+  const hasActiveFilter = useMemo(() => {
+    return !!(
+      q ||
+      brand ||
+      bodyType ||
+      city ||
+      fuelType ||
+      status ||
+      priceMin ||
+      priceMax ||
+      verifiedOnly
+    );
+  }, [q, brand, bodyType, city, fuelType, status, priceMin, priceMax, verifiedOnly]);
 
   const carResults = useMemo(() => {
-    if (!q) return [];
+    if (!hasActiveFilter) return [];
     return listings
       .filter((l) => {
-        const haystack = [
-          brandModelLabel(l),
-          l.brand,
-          l.model,
-          l.trim,
-          cityLabel(l.city),
-          sellerLabel(l.sellerName),
-          String(l.year),
-        ]
-          .join(" ")
-          .toLowerCase();
-        return haystack.includes(q);
+        if (q) {
+          const haystack = [
+            brandModelLabel(l),
+            l.brand,
+            l.model,
+            l.trim,
+            cityLabel(l.city),
+            sellerLabel(l.sellerName),
+            String(l.year),
+          ]
+            .join(" ")
+            .toLowerCase();
+          if (!haystack.includes(q)) return false;
+        }
+
+        if (brand && brandFa[l.brand] !== brand) return false;
+        if (bodyType && bodyTypeFa[l.bodyType] !== bodyType) return false;
+        if (city && cityFa[l.city] !== city) return false;
+        if (fuelType && fuelTypeFa[l.fuelType] !== fuelType) return false;
+        if (status && l.status !== status) return false;
+        if (verifiedOnly && !l.sellerVerified) return false;
+        if (!Number.isNaN(min) && l.price < min * BILLION) return false;
+        if (!Number.isNaN(max) && l.price > max * BILLION) return false;
+
+        return true;
       })
       .slice(0, CAR_LIMIT);
-  }, [q]);
+  }, [hasActiveFilter, q, brand, bodyType, city, fuelType, status, verifiedOnly, min, max]);
 
   const sellerResults = useMemo(() => {
-    if (!q) return [];
+    if (!hasActiveFilter) return [];
     return sellers
-      .filter((s) =>
-        [s.name, s.nameEn, s.city, ...s.brands]
-          .join(" ")
-          .toLowerCase()
-          .includes(q),
-      )
+      .filter((s) => {
+        if (q) {
+          const match = [s.name, s.nameEn, s.city, ...s.brands]
+            .join(" ")
+            .toLowerCase()
+            .includes(q);
+          if (!match) return false;
+        }
+        if (brand && !s.brands.includes(brand)) return false;
+        if (city && s.city !== city) return false;
+        if (verifiedOnly && !s.verified) return false;
+        return true;
+      })
       .slice(0, SELLER_LIMIT);
-  }, [q]);
+  }, [hasActiveFilter, q, brand, city, verifiedOnly]);
 
   const hasResults = carResults.length > 0 || sellerResults.length > 0;
 
@@ -95,6 +214,21 @@ export default function SearchModal({ onClose }: Props) {
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
           />
           <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-600 transition-colors duration-150 shrink-0 ${showFilters
+              ? "bg-primary/10 text-primary"
+              : "text-muted-foreground hover:bg-muted"
+              }`}
+          >
+            <Sliders size={14} />
+            فیلترها
+            {activeFilterCount > 0 && (
+              <span className="bg-primary text-white text-[10px] w-4.5 h-4.5 flex items-center justify-center rounded-full font-mono font-700">
+                {toFa(activeFilterCount)}
+              </span>
+            )}
+          </button>
+          <button
             onClick={onClose}
             aria-label="بستن"
             className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted transition-colors duration-150 shrink-0"
@@ -103,15 +237,93 @@ export default function SearchModal({ onClose }: Props) {
           </button>
         </div>
 
+        {/* Filters drawer/panel */}
+        {showFilters && (
+          <div className="px-5 py-3 border-b border-border bg-muted/20 flex flex-wrap items-center gap-2 max-h-[160px] overflow-y-auto shrink-0 select-none">
+            <SelectField
+              value={brand}
+              onChange={setBrand}
+              options={brandOptions}
+              placeholder="برند"
+            />
+            <SelectField
+              value={bodyType}
+              onChange={setBodyType}
+              options={bodyTypeOptions}
+              placeholder="نوع بدنه"
+            />
+            <SelectField
+              value={city}
+              onChange={setCity}
+              options={cityOptions}
+              placeholder="شهر"
+            />
+            <SelectField
+              value={fuelType}
+              onChange={setFuelType}
+              options={fuelTypeOptions}
+              placeholder="نوع سوخت"
+            />
+            <SelectField
+              value={status}
+              onChange={setStatus}
+              options={statusOptions}
+              placeholder="وضعیت"
+            />
+
+            {/* Price range */}
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                value={priceMin}
+                onChange={(e) => setPriceMin(e.target.value)}
+                placeholder="حداقل (میلیارد)"
+                className={`${fieldClass} w-50 px-2 py-1 font-mono text-center`}
+              />
+              <span className="text-xs text-muted-foreground">–</span>
+              <input
+                type="number"
+                value={priceMax}
+                onChange={(e) => setPriceMax(e.target.value)}
+                placeholder="حداکثر (میلیارد)"
+                className={`${fieldClass} w-50 px-2 py-1 font-mono text-center`}
+              />
+            </div>
+
+            {/* Verified toggle */}
+            <button
+              onClick={() => setVerifiedOnly(!verifiedOnly)}
+              className={`flex items-center gap-1.5 h-8 px-2.5 text-xs font-500 rounded-lg border transition-colors duration-150 ${verifiedOnly
+                ? "bg-accent/10 border-accent/30 text-accent"
+                : "bg-card border-border text-muted-foreground hover:text-foreground"
+                }`}
+            >
+              <Shield size={12} />
+              فقط تأییدشده
+            </button>
+
+            {/* Reset button */}
+            {activeFilterCount > 0 && (
+              <button
+                onClick={handleReset}
+                className="text-xs text-danger font-600 hover:underline flex items-center gap-0.5 ml-auto"
+              >
+                <X size={12} />
+                حذف فیلترها
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Results */}
         <div className="overflow-y-auto px-2 py-2">
-          {!q ? (
+          {!hasActiveFilter ? (
             <p className="px-3 py-10 text-center text-sm text-muted-foreground">
-              نام خودرو، برند یا فروشنده را وارد کنید.
+              نام خودرو، برند یا فروشنده را وارد کنید یا فیلترها را اعمال کنید.
             </p>
           ) : !hasResults ? (
             <p className="px-3 py-10 text-center text-sm text-muted-foreground">
-              نتیجه‌ای برای «{query}» یافت نشد.
+              {q ? `نتیجه‌ای برای «${query}» یافت نشد.` : "هیچ نتیجه‌ای با فیلترهای انتخابی یافت نشد."}
             </p>
           ) : (
             <>

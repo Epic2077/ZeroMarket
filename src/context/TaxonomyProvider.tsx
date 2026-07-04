@@ -14,6 +14,18 @@ import {
   type ReactNode,
 } from "react";
 
+export type TaxonomyChangeAction = "add" | "remove" | "rename";
+
+export interface TaxonomyChangeRequest {
+  id: string;
+  category: TaxonomyCategory;
+  action: TaxonomyChangeAction;
+  value: string;
+  newValue?: string;
+  requestedBy: "admin" | "owner";
+  status: "pending";
+}
+
 interface TaxonomyContextValue {
   taxonomy: TaxonomyState;
   addOption: (category: TaxonomyCategory, value: string) => boolean;
@@ -23,12 +35,68 @@ interface TaxonomyContextValue {
     oldValue: string,
     newValue: string,
   ) => boolean;
+  pendingChanges: TaxonomyChangeRequest[];
+  submitChange: (
+    request: Omit<TaxonomyChangeRequest, "id" | "status">,
+  ) => string;
+  approveChange: (id: string) => boolean;
+  rejectChange: (id: string) => void;
 }
 
 const TaxonomyContext = createContext<TaxonomyContextValue | null>(null);
 
 export function TaxonomyProvider({ children }: { children: ReactNode }) {
   const [taxonomy, setTaxonomy] = useState<TaxonomyState>(initialTaxonomy);
+  const [pendingChanges, setPendingChanges] = useState<TaxonomyChangeRequest[]>(
+    [],
+  );
+  const [changeSeq, setChangeSeq] = useState(0);
+
+  const nextChangeId = () =>
+    `tax-change-${String(changeSeq + 1).padStart(3, "0")}`;
+
+  const applyChange = useCallback(
+    (request: Omit<TaxonomyChangeRequest, "id" | "status">): boolean => {
+      if (request.action === "add") {
+        const trimmed = request.value.trim();
+        if (!trimmed) return false;
+        let added = false;
+        setTaxonomy((prev) => {
+          const exists = prev[request.category].some(
+            (v) => v.toLowerCase() === trimmed.toLowerCase(),
+          );
+          if (exists) return prev;
+          added = true;
+          return {
+            ...prev,
+            [request.category]: [...prev[request.category], trimmed],
+          };
+        });
+        return added;
+      }
+
+      if (request.action === "remove") {
+        setTaxonomy((prev) => ({
+          ...prev,
+          [request.category]: prev[request.category].filter(
+            (v) => v !== request.value,
+          ),
+        }));
+        return true;
+      }
+
+      const trimmed = request.newValue?.trim();
+      if (!trimmed) return false;
+      setTaxonomy((prev) => ({
+        ...prev,
+        [request.category]: prev[request.category].map((v) =>
+          v === request.value ? trimmed : v,
+        ),
+      }));
+      return true;
+    },
+    [],
+  );
 
   // Returns false when the value already exists (case-insensitive, trimmed).
   const addOption = useCallback(
@@ -74,9 +142,56 @@ export function TaxonomyProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const submitChange = useCallback(
+    (request: Omit<TaxonomyChangeRequest, "id" | "status">): string => {
+      const id = `tax-change-${String(changeSeq + 1).padStart(3, "0")}`;
+      setChangeSeq((prev) => prev + 1);
+      setPendingChanges((prev) => [...prev, { ...request, id, status: "pending" }]);
+      return id;
+    },
+    [changeSeq],
+  );
+
+  const approveChange = useCallback(
+    (id: string): boolean => {
+      let approved = false;
+      setPendingChanges((prev) =>
+        prev.filter((request) => {
+          if (request.id !== id) return true;
+          approved = applyChange(request);
+          return false;
+        }),
+      );
+      return approved;
+    },
+    [applyChange],
+  );
+
+  const rejectChange = useCallback((id: string) => {
+    setPendingChanges((prev) => prev.filter((request) => request.id !== id));
+  }, []);
+
   const value = useMemo<TaxonomyContextValue>(
-    () => ({ taxonomy, addOption, removeOption, renameOption }),
-    [taxonomy, addOption, removeOption, renameOption],
+    () => ({
+      taxonomy,
+      addOption,
+      removeOption,
+      renameOption,
+      pendingChanges,
+      submitChange,
+      approveChange,
+      rejectChange,
+    }),
+    [
+      taxonomy,
+      addOption,
+      removeOption,
+      renameOption,
+      pendingChanges,
+      submitChange,
+      approveChange,
+      rejectChange,
+    ],
   );
 
   return (
