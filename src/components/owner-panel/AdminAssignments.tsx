@@ -2,9 +2,9 @@
 
 import { useAdmin } from "@/context/AdminProvider";
 import type { AdminAccount, PlatformUser } from "@/types/admin";
-import { ShieldHalf, Trash2, Users } from "lucide-react";
+import { ShieldHalf, Trash2, UserPlus, Users } from "lucide-react";
 import { toast } from "sonner";
-import RoleBadge from "../management/RoleBadge";
+import { useState } from "react";
 
 // One admin card: access is global for every admin, so the owner only reviews
 // the roster and can remove an admin entirely if needed.
@@ -47,10 +47,11 @@ function AdminAssignmentCard({
         </button>
       </div>
 
-        <div className="rounded-lg border border-dashed border-border bg-muted/20 px-3 py-3 text-xs leading-6 text-muted-foreground">
-          این مدیر به همه کاربران دسترسی دارد و تخصیص جداگانه‌ای وجود ندارد.
-          {users.length.toLocaleString("fa-IR")} کاربر در کل سامانه قابل مدیریت است.
-        </div>
+      <div className="rounded-lg border border-dashed border-border bg-muted/20 px-3 py-3 text-xs leading-6 text-muted-foreground">
+        این مدیر به همه کاربران دسترسی دارد و تخصیص جداگانه‌ای وجود ندارد.
+        {users.length.toLocaleString("fa-IR")} کاربر در کل سامانه قابل مدیریت
+        است.
+      </div>
     </div>
   );
 }
