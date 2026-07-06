@@ -12,7 +12,10 @@ interface LogoProps {
   onClick?: () => void; // Click handler
 }
 
-const logoSizeMap: Record<Exclude<LogoProps["size"], number>, number> = {
+const logoSizeMap: Record<
+  Exclude<NonNullable<LogoProps["size"]>, number>,
+  number
+> = {
   small: 32,
   medium: 64,
   large: 230,
