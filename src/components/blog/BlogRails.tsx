@@ -1,96 +1,126 @@
-import {
-  blogNotifications,
-  blogPosts,
-  confirmedAgencies,
-  getRelatedBlogPosts,
-} from "@/context/blog";
+"use client";
+
+import { getRelatedBlogPosts } from "@/context/blog";
+import { useBlog } from "@/context/BlogProvider";
 import { toFa } from "@/context/carLabels";
+import { useSession } from "@/context/SessionProvider";
 import type { BlogPost } from "@/types/blog";
-import { Bell, Bookmark, Home, ShieldCheck, Sparkles } from "lucide-react";
+import {
+  Bell,
+  Bookmark,
+  Compass,
+  Home,
+  PencilLine,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { BlogMediaPreview } from "./BlogMedia";
 import BlogPostCard from "./BlogPostCard";
 
 export function BlogRightRail() {
+  const pathname = usePathname();
+  const { notifications } = useBlog();
+  const { role } = useSession();
+  const canCreate = role === "owner" || role === "admin";
+
+  const navItems = [
+    { href: "/blog", label: "خانه", icon: Home },
+    { href: "/blog/notifications", label: "اعلان ها", icon: Bell },
+    { href: "/blog/agencies", label: "آژانس های تاییدشده", icon: Compass },
+  ];
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 xl:sticky xl:top-24">
+      <nav className="card-elevated p-3 space-y-1">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const active =
+            pathname === item.href ||
+            (item.href !== "/blog" && pathname.startsWith(item.href));
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-700 transition-colors duration-150 ${
+                active
+                  ? "bg-primary text-primary-foreground"
+                  : "text-foreground hover:bg-muted"
+              }`}
+            >
+              <Icon size={18} />
+              {item.label}
+              {item.href === "/blog/notifications" && (
+                <span
+                  className={`mr-auto rounded-full px-2 py-0.5 text-2xs ${
+                    active
+                      ? "bg-primary-foreground/20 text-primary-foreground"
+                      : "bg-primary/10 text-primary"
+                  }`}
+                >
+                  {toFa(notifications.filter((n) => n.unread).length)}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </nav>
+
       <div className="card-elevated p-4 space-y-3">
-        <div className="flex items-center gap-2 text-foreground font-800">
-          <Home size={16} className="text-primary" />
-          خانه
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-foreground font-800">
+            <PencilLine size={16} className="text-accent" />
+            انتشار نوشته
+          </div>
+          {!canCreate && <span className="status-pending">owner/admin</span>}
         </div>
+
         <p className="text-xs leading-6 text-muted-foreground">
-          خلاصه‌ای از نوشته‌ها، رویدادها و تحلیل‌های تازه.
+          فقط مالک یا مدیر می تواند نوشته جدید ثبت کند. کاربران عادی همچنان به
+          فید و جزئیات دسترسی کامل دارند.
         </p>
+
         <Link
-          href="/blog"
-          className="btn-primary w-full justify-center text-sm"
+          href="/blog/new"
+          className={`w-full justify-center text-sm ${canCreate ? "btn-primary" : "btn-secondary opacity-80"}`}
+          aria-disabled={!canCreate}
         >
-          رفتن به فید
+          نوشتن پست جدید
         </Link>
       </div>
 
       <div className="card-elevated p-4 space-y-3">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-foreground font-800">
-            <Bookmark size={16} className="text-accent" />
-            رزرو اشتراک
+            <Bookmark size={16} className="text-warning" />
+            دنبال شده ها
           </div>
           <span className="status-pending">soon</span>
         </div>
+
         <p className="text-xs leading-6 text-muted-foreground">
-          این مسیر هنوز فعال نشده و فعلاً فقط به‌صورت teaser در سایدبار دیده
-          می‌شود.
+          لیست دنبال شده ها در فاز بعدی فعال می شود. در حال حاضر می توانید از
+          صفحه اعلان ها برای پیگیری به روزرسانی ها استفاده کنید.
         </p>
-      </div>
 
-      <div className="card-elevated p-4 space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-foreground font-800">
-            <Bell size={16} className="text-warning" />
-            اعلان‌ها
-          </div>
-          <Link
-            href="/blog/notifications"
-            className="text-xs font-700 text-primary"
-          >
-            همه
-          </Link>
-        </div>
-
-        <div className="space-y-2">
-          {blogNotifications.slice(0, 3).map((notification) => (
-            <Link
-              key={notification.id}
-              href={notification.href ?? "/blog/notifications"}
-              className={`block rounded-xl border px-3 py-2.5 transition-colors duration-150 ${notification.unread ? "border-primary/30 bg-primary/5" : "border-border bg-muted/40"}`}
-            >
-              <div className="flex items-start gap-2">
-                <div
-                  className={`mt-1 w-2 h-2 rounded-full shrink-0 ${notification.unread ? "bg-primary" : "bg-muted-foreground"}`}
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs font-700 text-foreground">
-                    {notification.title}
-                  </div>
-                  <div className="mt-0.5 text-2xs leading-5 text-muted-foreground">
-                    {notification.body}
-                  </div>
-                  <div className="mt-1 text-2xs text-muted-foreground">
-                    {notification.time}
-                  </div>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+        <Link
+          href="/blog/notifications"
+          className="btn-secondary w-full justify-center text-sm"
+        >
+          رفتن به اعلان ها
+        </Link>
       </div>
     </div>
   );
 }
 
 export function BlogLeftRail() {
+  const { agencies } = useBlog();
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 xl:sticky xl:top-24">
       <div className="card-elevated p-4 space-y-3">
         <div className="flex items-center gap-2 text-foreground font-800">
           <ShieldCheck size={16} className="text-success" />
@@ -101,13 +131,13 @@ export function BlogLeftRail() {
         </p>
 
         <div className="space-y-2">
-          {confirmedAgencies.slice(0, 4).map((agency) => (
+          {agencies.slice(0, 4).map((agency) => (
             <Link
               key={agency.slug}
               href="/blog/agencies"
               className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 px-3 py-2.5 hover:bg-muted transition-colors duration-150"
             >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent text-white font-800 text-xs flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-primary to-accent text-white font-800 text-xs flex items-center justify-center shrink-0">
                 {agency.avatar}
               </div>
               <div className="min-w-0 flex-1">
@@ -142,9 +172,11 @@ export function BlogLeftRail() {
 }
 
 export function BlogNotificationsView() {
+  const { notifications } = useBlog();
+
   return (
     <div className="space-y-4">
-      {blogNotifications.map((notification) => (
+      {notifications.map((notification) => (
         <article
           key={notification.id}
           className={`card-elevated p-4 ${notification.unread ? "border-primary/20" : ""}`}
@@ -182,12 +214,14 @@ export function BlogNotificationsView() {
 }
 
 export function BlogAgenciesView() {
+  const { agencies } = useBlog();
+
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      {confirmedAgencies.map((agency) => (
+      {agencies.map((agency) => (
         <article key={agency.slug} className="card-elevated p-4 space-y-3">
           <div className="flex items-start gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-accent text-white font-800 text-sm flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-primary to-accent text-white font-800 text-sm flex items-center justify-center shrink-0">
               {agency.avatar}
             </div>
             <div className="min-w-0 flex-1">
@@ -228,9 +262,11 @@ export function BlogAgenciesView() {
 }
 
 export function BlogFeedView() {
+  const { posts } = useBlog();
+
   return (
     <div className="space-y-4">
-      <article className="card-elevated p-4 sm:p-5 border-primary/20 bg-gradient-to-br from-background to-primary/5">
+      <article className="card-elevated p-4 sm:p-5 border-primary/20 bg-linear-to-br from-background to-primary/5">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
             <div className="section-label">فید</div>
@@ -245,7 +281,7 @@ export function BlogFeedView() {
         </div>
       </article>
 
-      {blogPosts.map((post, index) => (
+      {posts.map((post, index) => (
         <BlogPostCard key={post.slug} post={post} featured={index === 0} />
       ))}
     </div>
@@ -253,7 +289,12 @@ export function BlogFeedView() {
 }
 
 export function BlogRelatedView({ currentPost }: { currentPost: BlogPost }) {
-  const relatedPosts = getRelatedBlogPosts(currentPost.slug, currentPost.tags);
+  const { posts } = useBlog();
+  const relatedPosts = getRelatedBlogPosts(
+    currentPost.slug,
+    currentPost.tags,
+    posts,
+  );
 
   return (
     <div className="space-y-4">
@@ -273,13 +314,20 @@ export function BlogRelatedView({ currentPost }: { currentPost: BlogPost }) {
           <span>{toFa(currentPost.readTime)} دقیقه مطالعه</span>
         </div>
 
-        <div className="rounded-3xl bg-gradient-to-br from-foreground to-slate-800 p-5 text-white space-y-3">
+        <div className="rounded-3xl bg-linear-to-br from-foreground to-slate-800 p-5 text-white space-y-3">
           <p className="text-sm leading-7 text-slate-200">
             {currentPost.excerpt}
           </p>
-          <p className="text-xs leading-6 text-slate-400">
-            {currentPost.content[0]}
-          </p>
+          {currentPost.media?.length ? (
+            <BlogMediaPreview
+              media={currentPost.media}
+              className="overflow-hidden rounded-2xl"
+            />
+          ) : (
+            <p className="text-xs leading-6 text-slate-400">
+              {currentPost.content[0]}
+            </p>
+          )}
         </div>
 
         <div className="space-y-4 text-sm leading-8 text-foreground/90">

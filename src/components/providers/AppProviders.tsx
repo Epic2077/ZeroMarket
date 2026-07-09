@@ -2,6 +2,7 @@
 
 import { AdminProvider } from "@/context/AdminProvider";
 import { BannerProvider } from "@/context/BannerProvider";
+import { BlogProvider } from "@/context/BlogProvider";
 import { ListingsProvider } from "@/context/ListingsProvider";
 import { SessionProvider } from "@/context/SessionProvider";
 import { TaxonomyProvider } from "@/context/TaxonomyProvider";
@@ -15,9 +16,11 @@ export default function AppProviders({ children }: { children: ReactNode }) {
     <SessionProvider>
       <AdminProvider>
         <TaxonomyProvider>
-          <ListingsProvider>
-            <BannerProvider>{children}</BannerProvider>
-          </ListingsProvider>
+          <BlogProvider>
+            <ListingsProvider>
+              <BannerProvider>{children}</BannerProvider>
+            </ListingsProvider>
+          </BlogProvider>
         </TaxonomyProvider>
       </AdminProvider>
     </SessionProvider>

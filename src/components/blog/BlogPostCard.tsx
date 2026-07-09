@@ -9,6 +9,7 @@ import {
   Eye,
 } from "lucide-react";
 import Link from "next/link";
+import { BlogMediaPreview } from "./BlogMedia";
 
 interface Props {
   post: BlogPost;
@@ -41,7 +42,7 @@ export default function BlogPostCard({ post, featured = false }: Props) {
       <Link href={`/blog/${post.slug}`} className="block p-4 sm:p-5">
         <div className="flex items-start gap-3">
           <div
-            className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white font-800 text-xs shrink-0 bg-gradient-to-br ${tone}`}
+            className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white font-800 text-xs shrink-0 bg-linear-to-br ${tone}`}
           >
             {post.author.avatar}
           </div>
@@ -87,11 +88,18 @@ export default function BlogPostCard({ post, featured = false }: Props) {
               </div>
 
               <div
-                className={`rounded-2xl bg-gradient-to-br ${tone} p-4 text-white/90`}
+                className={`rounded-2xl bg-linear-to-br ${tone} p-4 text-white/90`}
               >
-                <p className="text-xs sm:text-sm leading-6 line-clamp-3">
-                  {post.content[0]}
-                </p>
+                {post.media?.length ? (
+                  <BlogMediaPreview
+                    media={post.media}
+                    className="overflow-hidden rounded-xl"
+                  />
+                ) : (
+                  <p className="text-xs sm:text-sm leading-6 line-clamp-3">
+                    {post.content[0]}
+                  </p>
+                )}
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">

@@ -1,4 +1,5 @@
 import type { BlogPost } from "@/types/blog";
+import BlogComposer from "./BlogComposer";
 import BlogShell from "./BlogShell";
 import {
   BlogAgenciesView,
@@ -57,6 +58,19 @@ export function BlogPostPage({ post }: { post: BlogPost }) {
       leftRail={<BlogLeftRail />}
     >
       <BlogRelatedView currentPost={post} />
+    </BlogShell>
+  );
+}
+
+export function BlogCreatePage() {
+  return (
+    <BlogShell
+      title="نوشتن پست جدید"
+      description="مدیر یا مالک می تواند پست تازه منتشر کند، به آن تصویر یا ویدیو اضافه کند و بلافاصله در فید نمایش دهد."
+      rightRail={<BlogRightRail />}
+      leftRail={<BlogLeftRail />}
+    >
+      <BlogComposer />
     </BlogShell>
   );
 }

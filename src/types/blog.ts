@@ -6,6 +6,14 @@ export interface BlogAuthor {
   verified: boolean;
 }
 
+export interface BlogMedia {
+  id: string;
+  kind: "image" | "video";
+  url: string;
+  alt?: string;
+  caption?: string;
+}
+
 export interface BlogPost {
   slug: string;
   title: string;
@@ -15,6 +23,7 @@ export interface BlogPost {
   publishedAt: string;
   readTime: number;
   featured?: boolean;
+  media?: BlogMedia[];
   author: BlogAuthor;
   stats: {
     views: number;

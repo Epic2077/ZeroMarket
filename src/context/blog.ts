@@ -1,6 +1,6 @@
 import type { BlogNotification, BlogPost, ConfirmedAgency } from "@/types/blog";
 
-export const blogPosts: BlogPost[] = [
+export const seedBlogPosts: BlogPost[] = [
   {
     slug: "market-signal-q2-zero-km",
     title: "سیگنال‌های بازار صفرکیلومتر در نیمه دوم سال چه می‌گویند؟",
@@ -15,6 +15,15 @@ export const blogPosts: BlogPost[] = [
     publishedAt: "2026-06-28",
     readTime: 4,
     featured: true,
+    media: [
+      {
+        id: "media-market-signal-cover",
+        kind: "image",
+        url: "/assets/images/verified-seller-1.webp",
+        alt: "تحلیل بازار خودرو",
+        caption: "مرور سیگنال های قیمت در بازار صفرکیلومتر",
+      },
+    ],
     author: {
       name: "مریم رضوی",
       handle: "@maryamrad",
@@ -192,12 +201,21 @@ export const confirmedAgencies: ConfirmedAgency[] = [
   },
 ];
 
-export function getBlogPostBySlug(slug: string) {
-  return blogPosts.find((post) => post.slug === slug);
+export const blogPosts = seedBlogPosts;
+
+export function getBlogPostBySlug(
+  slug: string,
+  posts: BlogPost[] = seedBlogPosts,
+) {
+  return posts.find((post) => post.slug === slug);
 }
 
-export function getRelatedBlogPosts(currentSlug: string, tags: string[]) {
-  return blogPosts
+export function getRelatedBlogPosts(
+  currentSlug: string,
+  tags: string[],
+  posts: BlogPost[] = seedBlogPosts,
+) {
+  return posts
     .filter((post) => post.slug !== currentSlug)
     .sort((left, right) => {
       const leftScore = left.tags.filter((tag) => tags.includes(tag)).length;

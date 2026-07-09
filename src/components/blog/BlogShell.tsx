@@ -35,11 +35,11 @@ export default function BlogShell({
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-auto">
-          <Link href="/blog/notifications" className="btn-secondary text-sm">
-            اعلان‌ها
+          <Link href="/blog/new" className="btn-primary text-sm">
+            انتشار پست
           </Link>
-          <Link href="/blog/agencies" className="btn-primary text-sm">
-            آژانس‌های تأییدشده
+          <Link href="/blog/notifications" className="btn-secondary text-sm">
+            صندوق اعلان
           </Link>
         </div>
       </div>
