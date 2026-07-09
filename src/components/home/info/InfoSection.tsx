@@ -16,7 +16,7 @@ export default function InfoSection() {
                   {stat?.label}
                 </div>
                 <div
-                  className={`text-2xs font-500 mt-0.5 ${stat?.positive ? "text-success" : "text-danger"}`}
+                  className={`text-xs md:text-sm font-500 mt-0.5 ${stat?.positive ? "text-success" : "text-danger"}`}
                 >
                   {stat?.sub}
                 </div>

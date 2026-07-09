@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { emailField, passwordField, requiredText } from "@/lib/validation";
+import { signupSchema, type SignupValues } from "@/lib/validation/auth";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,24 +19,17 @@ import {
   FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cityOptions } from "@/context/userProfile";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
-
-const signupSchema = z
-  .object({
-    name: requiredText("نام کامل الزامی است"),
-    email: emailField,
-    password: passwordField,
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "رمز عبور و تکرار آن یکسان نیستند",
-    path: ["confirmPassword"],
-  });
-
-type SignupValues = z.infer<typeof signupSchema>;
 
 export function SignupForm({
   className,
@@ -45,23 +38,37 @@ export function SignupForm({
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<SignupValues>({
     resolver: zodResolver(signupSchema),
-    defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+      city: "",
+      password: "",
+      confirmPassword: "",
+    },
   });
 
-  const onSubmit = handleSubmit(async () => {
+  const onSubmit = handleSubmit(async (data) => {
     await new Promise((r) => setTimeout(r, 600));
-    toast.success("حساب کاربری شما ساخته شد");
+    toast.success(`حساب کاربری شما ساخته شد — ${data.name} عزیز، خوش آمدید`);
   });
 
   return (
-    <div className={cn("flex flex-col gap-6 ", className)} {...props} dir="rtl">
-      <Card>
-        <CardHeader className="text-center">
-          <CardTitle className="text-xl">ثبت نام حساب کاربری</CardTitle>
-          <CardDescription>اطلاعات مورد نیاز را وارد کنید.</CardDescription>
+    <div
+      className={cn("flex flex-col gap-6 reveal-in w-full max-w-sm", className)}
+      {...props}
+      dir="rtl"
+    >
+      <Card className="shadow-xl shadow-primary/5 ring-1 ring-border/80">
+        <CardHeader className="text-center pb-2">
+          <CardTitle className="text-xl font-800">
+            ثبت نام حساب کاربری
+          </CardTitle>
+          <CardDescription>اطلاعات مورد نیاز را وارد کنید</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} noValidate>
@@ -87,6 +94,44 @@ export function SignupForm({
                   {...register("email")}
                 />
                 <FieldError>{errors.email?.message}</FieldError>
+              </Field>
+              <Field className="grid grid-cols-2 gap-4">
+                <Field data-invalid={!!errors.phone}>
+                  <FieldLabel htmlFor="phone">شماره تماس</FieldLabel>
+                  <Input
+                    id="phone"
+                    placeholder="۰۹۱۲ ۰۰۰ ۰۰۰۰"
+                    aria-invalid={!!errors.phone}
+                    {...register("phone")}
+                  />
+                  <FieldError>{errors.phone?.message}</FieldError>
+                </Field>
+                <Field data-invalid={!!errors.city}>
+                  <FieldLabel htmlFor="city">شهر</FieldLabel>
+                  <Controller
+                    control={control}
+                    name="city"
+                    render={({ field }) => (
+                      <Select
+                        dir="rtl"
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <SelectTrigger id="city" className="w-full vazir-matn">
+                          <SelectValue placeholder="انتخاب شهر" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {cityOptions.map((o) => (
+                            <SelectItem key={o.value} value={o.value}>
+                              {o.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  <FieldError>{errors.city?.message}</FieldError>
+                </Field>
               </Field>
               <Field>
                 <Field className="grid grid-cols-2 gap-4">
@@ -118,11 +163,21 @@ export function SignupForm({
                 </FieldDescription>
               </Field>
               <Field>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full h-11 font-700"
+                >
                   {isSubmitting ? "در حال ثبت نام…" : "ثبت نام"}
                 </Button>
                 <FieldDescription className="text-center">
-                  حساب کاربری دارید؟ <a href="#">ورود</a>
+                  حساب کاربری دارید؟{" "}
+                  <a
+                    href="/auth/login"
+                    className="text-primary font-600 hover:underline"
+                  >
+                    ورود
+                  </a>
                 </FieldDescription>
               </Field>
               <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
@@ -161,10 +216,23 @@ export function SignupForm({
           </form>
         </CardContent>
       </Card>
-      <FieldDescription className="px-6 text-center">
-        By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-        and <a href="#">Privacy Policy</a>.
-      </FieldDescription>
+      <p className="px-4 text-center text-2xs text-muted-foreground leading-relaxed">
+        با ثبت‌نام،{" "}
+        <a
+          href="#"
+          className="underline underline-offset-2 hover:text-foreground transition-colors"
+        >
+          شرایط استفاده
+        </a>{" "}
+        و{" "}
+        <a
+          href="#"
+          className="underline underline-offset-2 hover:text-foreground transition-colors"
+        >
+          حریم خصوصی
+        </a>{" "}
+        را می‌پذیرید.
+      </p>
     </div>
   );
 }
