@@ -181,7 +181,7 @@ export default function ListingTable({ data = listings }: ListingTableProps) {
 
                   <div className="flex flex-col items-end gap-2">
                     <span
-                      className="inline-flex items-center gap-2"
+                      className="md:inline-flex items-center gap-2 hidden"
                       onClick={(event) => event.stopPropagation()}
                     >
                       <Checkbox
@@ -226,7 +226,7 @@ export default function ListingTable({ data = listings }: ListingTableProps) {
                       {cityLabel(listing.city)}
                     </span>
                   </div>
-                  <div className="flex flex-col gap-0.5">
+                  <div className="hidden md:flex flex-col gap-0.5">
                     <span className="text-muted-foreground">سگمنت</span>
                     <span className="font-medium">
                       {bodyTypeLabel(listing.bodyType)}

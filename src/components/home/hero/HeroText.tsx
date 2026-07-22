@@ -14,7 +14,7 @@ export default function HeroText() {
         <br />
         <span className="text-accent font-bold">مثل یک حرفه‌ای</span>
       </h1>
-      <p className="text-base sm:text-lg text-white/70 mb-4 max-w-xl leading-relaxed">
+      <p className="text-sm md:text-base sm:text-lg text-white/70 mb-4 max-w-xl leading-relaxed">
         آگهی‌های ساختارمند، فروشندگان تأییدشده، تحلیل قیمت لحظه‌ای — تنها پلتفرم
         تخصصی خودروهای صفرکیلومتر کارخانه.
       </p>

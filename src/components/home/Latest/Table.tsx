@@ -57,9 +57,13 @@ export default function LatestTable<TData>({
       {renderMobileRow && (
         <div className="lg:hidden space-y-3">
           {rows.length ? (
-            rows.map((row) => (
-              <Fragment key={row.id}>{renderMobileRow(row.original)}</Fragment>
-            ))
+            rows
+              .slice(0, 3)
+              .map((row) => (
+                <Fragment key={row.id}>
+                  {renderMobileRow(row.original)}
+                </Fragment>
+              ))
           ) : (
             <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
               داده‌ای یافت نشد

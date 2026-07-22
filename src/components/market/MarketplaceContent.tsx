@@ -67,7 +67,7 @@ export default function MarketplaceContent() {
           {/* Mobile analytics modal trigger */}
           <button
             onClick={() => setAnalyticsOpen(true)}
-            className="xl:hidden flex items-center gap-2 px-3 py-2 text-sm font-600 text-muted-foreground border border-border rounded-lg hover:bg-muted transition-colors duration-150"
+            className="xl:hidden mb-5 flex items-center gap-2 px-3 py-2 text-sm font-600 text-muted-foreground border border-border rounded-lg hover:bg-muted transition-colors duration-150"
             aria-haspopup="dialog"
             aria-expanded={analyticsOpen}
           >
