@@ -23,7 +23,7 @@ export type LatestRow = {
   status: string;
 };
 
-const statusMap: Record<string, { label: string; className: string }> = {
+export const statusMap: Record<string, { label: string; className: string }> = {
   active: {
     label: "موجود",
     className: "bg-emerald-100 text-emerald-700 border-emerald-200",
@@ -58,7 +58,7 @@ export const latestTableData: LatestRow[] = listings.slice(0, 8).map((l) => ({
   status: l.status,
 }));
 
-function formatCost(cost: number): string {
+export function formatCost(cost: number): string {
   if (cost >= 1_000_000_000) {
     const val = cost / 1_000_000_000;
     return `${toFa(Number.isInteger(val) ? val : val.toFixed(1))} میلیارد`;
@@ -71,7 +71,7 @@ function formatCost(cost: number): string {
 }
 
 // Deterministic hue from brand name so the color is stable across renders
-function brandLogoStyle(brand: string): {
+export function brandLogoStyle(brand: string): {
   backgroundColor: string;
   color: string;
 } {
@@ -119,7 +119,9 @@ export const LatestTableColumns: ColumnDef<LatestRow>[] = [
     cell: ({ row }) => (
       <div dir="rtl" className="flex flex-col gap-0.5">
         <span className="font-600">{row.original.brand}</span>
-        <span className="text-xs text-muted-foreground">{row.original.trim}</span>
+        <span className="text-xs text-muted-foreground">
+          {row.original.trim}
+        </span>
       </div>
     ),
   },

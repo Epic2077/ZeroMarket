@@ -87,8 +87,8 @@ export default function BecomeSellerForm({ status, onSubmitted }: Props) {
           درخواست شما در حال بررسی است
         </h2>
         <p className="text-sm text-muted-foreground max-w-md">
-          کارشناسان زیرومارکت اطلاعات کسب‌وکار شما را بررسی می‌کنند. نتیجه طی
-          ۲۴ تا ۴۸ ساعت آینده از طریق ایمیل به شما اطلاع داده می‌شود.
+          کارشناسان زیرومارکت اطلاعات کسب‌وکار شما را بررسی می‌کنند. نتیجه طی ۲۴
+          تا ۴۸ ساعت آینده از طریق ایمیل به شما اطلاع داده می‌شود.
         </p>
       </div>
     );
@@ -148,7 +148,8 @@ export default function BecomeSellerForm({ status, onSubmitted }: Props) {
         <div className="mb-5">
           <h3 className="text-sm font-700 text-foreground">اطلاعات کسب‌وکار</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
-            برای احراز هویت و فعال‌سازی حساب فروشندگی، اطلاعات زیر را تکمیل کنید.
+            برای احراز هویت و فعال‌سازی حساب فروشندگی، اطلاعات زیر را تکمیل
+            کنید.
           </p>
         </div>
 
@@ -175,7 +176,10 @@ export default function BecomeSellerForm({ status, onSubmitted }: Props) {
                     value={field.value || undefined}
                     onValueChange={field.onChange}
                   >
-                    <SelectTrigger id="businessType" className="w-full vazir-matn">
+                    <SelectTrigger
+                      id="businessType"
+                      className="w-full vazir-matn"
+                    >
                       <SelectValue placeholder="انتخاب نوع فعالیت" />
                     </SelectTrigger>
                     <SelectContent>
@@ -252,7 +256,7 @@ export default function BecomeSellerForm({ status, onSubmitted }: Props) {
             />
           </Field>
 
-          <Field data-invalid={!!errors.website}>
+          {/* <Field data-invalid={!!errors.website}>
             <FieldLabel htmlFor="website">
               وب‌سایت{" "}
               <span className="text-muted-foreground font-normal">(اختیاری)</span>
@@ -264,7 +268,7 @@ export default function BecomeSellerForm({ status, onSubmitted }: Props) {
               {...register("website")}
             />
             <FieldError>{errors.website?.message}</FieldError>
-          </Field>
+          </Field> */}
 
           <div>
             <label className="flex items-start gap-2.5 cursor-pointer">

@@ -34,6 +34,14 @@ export default function Header() {
           <Notification />
           <Profile />
           <AuthHeader />
+          <div className="lg:hidden">
+            <Link
+              href="#register"
+              className="btn-primary flex-1 justify-center text-sm"
+            >
+              ثبت آگهی
+            </Link>
+          </div>
 
           {/* Mobile hamburger */}
           <Button

@@ -25,12 +25,15 @@ interface TableProps<TData> {
   data: TData[];
   /** When provided, rows become expandable and this renders the expanded panel. */
   renderSubRow?: (row: TData) => ReactNode;
+  /** Optional mobile layout override to avoid horizontal scrolling. */
+  renderMobileRow?: (row: TData) => ReactNode;
 }
 
 export default function LatestTable<TData>({
   columns,
   data,
   renderSubRow,
+  renderMobileRow,
 }: TableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [expanded, setExpanded] = useState<ExpandedState>({});
@@ -47,69 +50,89 @@ export default function LatestTable<TData>({
     state: { sorting, expanded },
   });
 
+  const rows = table.getRowModel().rows;
+
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-background shadow-sm">
-      <Table>
-        <TableHeader className="bg-secondary ">
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow
-              key={headerGroup.id}
-              className="border-b border-border hover:bg-transparent "
-            >
-              {headerGroup.headers.map((header) => (
-                <TableHead
-                  key={header.id}
-                  className="px-4 py-3 text-sm font-semibold text-right vazir-matn"
-                >
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext(),
-                      )}
-                </TableHead>
-              ))}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows.length ? (
-            table.getRowModel().rows.map((row) => (
-              <Fragment key={row.id}>
-                <TableRow className="border-b border-border/50 transition-colors hover:bg-accent/10">
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className="px-4 py-3 text-sm vazir-matn"
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-                {renderSubRow && row.getIsExpanded() && (
-                  <TableRow className="hover:bg-transparent">
-                    <TableCell colSpan={columns.length} className="p-0">
-                      {renderSubRow(row.original)}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </Fragment>
+    <div className="space-y-3">
+      {renderMobileRow && (
+        <div className="lg:hidden space-y-3">
+          {rows.length ? (
+            rows.map((row) => (
+              <Fragment key={row.id}>{renderMobileRow(row.original)}</Fragment>
             ))
           ) : (
-            <TableRow>
-              <TableCell
-                colSpan={columns.length}
-                className="h-24 text-center text-muted-foreground vazir-matn"
-              >
-                داده‌ای یافت نشد
-              </TableCell>
-            </TableRow>
+            <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+              داده‌ای یافت نشد
+            </div>
           )}
-        </TableBody>
-      </Table>
+        </div>
+      )}
+
+      <div
+        className={`${renderMobileRow ? "hidden lg:block" : ""} overflow-hidden rounded-xl border border-border bg-background shadow-sm`}
+      >
+        <Table>
+          <TableHeader className="bg-secondary ">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow
+                key={headerGroup.id}
+                className="border-b border-border hover:bg-transparent "
+              >
+                {headerGroup.headers.map((header) => (
+                  <TableHead
+                    key={header.id}
+                    className="px-4 py-3 text-sm font-semibold text-right vazir-matn"
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {rows.length ? (
+              rows.map((row) => (
+                <Fragment key={row.id}>
+                  <TableRow className="border-b border-border/50 transition-colors hover:bg-accent/10">
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell
+                        key={cell.id}
+                        className="px-4 py-3 text-sm vazir-matn"
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                  {renderSubRow && row.getIsExpanded() && (
+                    <TableRow className="hover:bg-transparent">
+                      <TableCell colSpan={columns.length} className="p-0">
+                        {renderSubRow(row.original)}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </Fragment>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center text-muted-foreground vazir-matn"
+                >
+                  داده‌ای یافت نشد
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

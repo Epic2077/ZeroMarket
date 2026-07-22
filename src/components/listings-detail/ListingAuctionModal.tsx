@@ -242,23 +242,13 @@ export default function ListingAuctionModal({
 
             {/* Contact phone */}
             <div>
-              <label className="block text-xs font-600 text-foreground mb-1">
-                شماره تماس <span className="text-danger">*</span>
-              </label>
-              <p className="text-2xs text-muted-foreground mb-1.5">
-                فقط در صورت پاسخ قابل مذاکره با فروشنده به اشتراک گذاشته می‌شود
-              </p>
-              <input
-                type="tel"
-                {...register("contactPhone")}
-                placeholder="۰۹xx-xxx-xxxx"
-                className="w-full px-3 py-2.5 text-sm border border-border rounded-lg bg-card font-mono focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-              {errors.contactPhone && (
-                <p className="text-xs text-danger mt-1">
-                  {errors.contactPhone.message}
+              <div className="flex items-start gap-2 bg-amber-200 border border-primary/15 rounded-xl px-3 py-2.5">
+                <Phone size={13} className="text-primary mt-0.5 shrink-0" />
+                <p className="text-xs text-primary/80 leading-relaxed">
+                  در صورت <strong>تایید</strong> فروشنده شماره تماس شما با
+                  فروشنده به اشتراک گذاشته میشود
                 </p>
-              )}
+              </div>
             </div>
 
             {/* Message */}

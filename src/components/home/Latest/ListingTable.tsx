@@ -1,6 +1,8 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -16,6 +18,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import VerifiedBadge from "@/components/shared/VerifiedBadeg";
+import {
+  bodyTypeLabel,
+  brandModelLabel,
+  cityLabel,
+  colorLabel,
+  sellerLabel,
+  toFa,
+} from "@/context/carLabels";
 import { listings } from "@/context/data";
 import { listingColumns } from "@/context/listingTable";
 import { Listing } from "@/types/dataTypes";
@@ -39,6 +50,62 @@ import { useState } from "react";
 
 const PAGE_SIZE_OPTIONS = [50, 100];
 const faNum = (n: number) => n.toLocaleString("fa-IR");
+
+const dateFormatter = new Intl.DateTimeFormat("fa-IR", {
+  year: "numeric",
+  month: "numeric",
+  day: "numeric",
+});
+const formatUploadDate = (iso: string): string =>
+  dateFormatter.format(new Date(iso));
+
+const statusFa: Record<
+  Listing["status"],
+  { label: string; className: string }
+> = {
+  active: {
+    label: "موجود",
+    className: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  },
+  pending: {
+    label: "در انتظار",
+    className: "bg-amber-100 text-amber-700 border-amber-200",
+  },
+  sold: {
+    label: "فروخته شد",
+    className: "bg-red-100 text-red-700 border-red-200",
+  },
+  negotiable: {
+    label: "قابل مذاکره",
+    className: "bg-violet-100 text-violet-700 border-violet-200",
+  },
+  reserved: {
+    label: "رزرو شده",
+    className: "bg-blue-100 text-blue-700 border-blue-200",
+  },
+};
+
+function formatPriceFa(price: number): string {
+  if (price >= 1_000_000_000) {
+    return `${toFa((price / 1_000_000_000).toFixed(3))} میلیارد`;
+  }
+  if (price >= 1_000_000) {
+    return `${toFa((price / 1_000_000).toFixed(0))} میلیون`;
+  }
+  return toFa(price.toLocaleString("en-US"));
+}
+
+function brandLogoStyle(brand: string): {
+  backgroundColor: string;
+  color: string;
+} {
+  let hash = 0;
+  for (let i = 0; i < brand.length; i++) {
+    hash = brand.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash) % 360;
+  return { backgroundColor: `hsl(${hue}, 60%, 48%)`, color: "#ffffff" };
+}
 
 interface ListingTableProps {
   data?: Listing[];
@@ -73,7 +140,129 @@ export default function ListingTable({ data = listings }: ListingTableProps) {
 
   return (
     <div dir="rtl" className="space-y-3">
-      <div className="overflow-hidden rounded-xl border border-border bg-background shadow-sm">
+      <div className="lg:hidden space-y-3">
+        {table.getRowModel().rows.length ? (
+          table.getRowModel().rows.map((row) => {
+            const listing = row.original;
+            const status = statusFa[listing.status];
+            return (
+              <div
+                key={row.id}
+                className="group cursor-pointer rounded-2xl border border-border/70 bg-gradient-to-br from-background via-background to-muted/30 p-4 shadow-sm transition hover:border-primary/30 hover:shadow-md"
+                onClick={() => navigate.push(`/market/listings/${listing.id}`)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    navigate.push(`/market/listings/${listing.id}`);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xs font-bold"
+                      style={brandLogoStyle(listing.brand)}
+                    >
+                      {listing.brand.slice(0, 3).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm font-semibold text-foreground">
+                          {brandModelLabel(listing)}
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {listing.trim}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-2">
+                    <span
+                      className="inline-flex items-center gap-2"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <Checkbox
+                        checked={row.getIsSelected()}
+                        onCheckedChange={(value) => row.toggleSelected(!!value)}
+                        aria-label="انتخاب ردیف"
+                      />
+                    </span>
+                    <div className="text-left">
+                      <div className="text-xs text-muted-foreground">قیمت</div>
+                      <div className="text-sm font-semibold tabular-nums">
+                        {formatPriceFa(listing.price)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  {status && (
+                    <Badge
+                      variant="outline"
+                      className={`text-xs font-medium ${status.className}`}
+                    >
+                      {status.label}
+                    </Badge>
+                  )}
+                  <span className="text-xs text-muted-foreground">
+                    تاریخ ثبت {formatUploadDate(listing.listedDate)}
+                  </span>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-muted-foreground">سال ساخت</span>
+                    <span className="font-medium tabular-nums">
+                      {toFa(listing.year)}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-muted-foreground">شهر</span>
+                    <span className="font-medium">
+                      {cityLabel(listing.city)}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-muted-foreground">سگمنت</span>
+                    <span className="font-medium">
+                      {bodyTypeLabel(listing.bodyType)}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-muted-foreground">رنگ</span>
+                    <span className="font-medium">
+                      {colorLabel(listing.color)}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-muted-foreground">فروشنده</span>
+                    <span className="flex items-center gap-1 font-medium">
+                      {sellerLabel(listing.sellerName)}
+                      {listing.sellerVerified && <VerifiedBadge size="sm" />}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-muted-foreground">شناسه آگهی</span>
+                    <span className="font-medium tabular-nums">
+                      {toFa(listing.id)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+            داده‌ای یافت نشد
+          </div>
+        )}
+      </div>
+
+      <div className="hidden lg:block overflow-hidden rounded-xl border border-border bg-background shadow-sm">
         <Table>
           <TableHeader className="bg-secondary">
             {table.getHeaderGroups().map((headerGroup) => (

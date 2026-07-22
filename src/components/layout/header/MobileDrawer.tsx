@@ -66,12 +66,6 @@ export default function MobileDrawer({ setMobileOpen }: MobileDrawerProps) {
           >
             ورود
           </Link>
-          <Link
-            href="#register"
-            className="btn-primary flex-1 justify-center text-sm"
-          >
-            ثبت آگهی
-          </Link>
         </div>
       </div>
 

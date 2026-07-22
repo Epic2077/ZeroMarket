@@ -26,23 +26,23 @@ export default function HowItWorks() {
 
           {steps?.map((step, i) => (
             <Reveal key={step?.id} delay={i * 0.1} className="relative z-10">
-              <div className="card-elevated card-hover p-6 h-full">
-              <div className="flex items-start gap-4">
-                <div className="shrink-0">
-                  <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mb-3">
-                    {step?.icon}
+              <div className="bg-slate-200 rounded-2xl card-hover p-6 h-full">
+                <div className="flex items-start gap-4">
+                  <div className="shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mb-3">
+                      {step?.icon}
+                    </div>
+                    <span className="font-mono text-3xl font-800 text-border">
+                      {step?.number}
+                    </span>
                   </div>
-                  <span className="font-mono text-3xl font-800 text-border">
-                    {step?.number}
-                  </span>
                 </div>
-              </div>
-              <h3 className="text-base font-700 text-foreground mb-2 mt-2">
-                {step?.title}
-              </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {step?.description}
-              </p>
+                <h3 className="text-base font-700 text-foreground mb-2 mt-2">
+                  {step?.title}
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {step?.description}
+                </p>
               </div>
             </Reveal>
           ))}

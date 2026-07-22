@@ -22,7 +22,15 @@ import {
   fuelTypeFa,
   type SelectOption,
 } from "@/context/marketFilters";
-import { Car, Search, Store, X, Sliders, Shield, ChevronDown } from "lucide-react";
+import {
+  Car,
+  Search,
+  Store,
+  X,
+  Sliders,
+  Shield,
+  ChevronDown,
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -70,7 +78,7 @@ const SelectField = ({
 
 export default function SearchModal({ onClose }: Props) {
   const [query, setQuery] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
 
   // Filters State
   const [brand, setBrand] = useState("");
@@ -107,7 +115,16 @@ export default function SearchModal({ onClose }: Props) {
       priceMax,
       verifiedOnly,
     ].filter(Boolean).length;
-  }, [brand, bodyType, city, fuelType, status, priceMin, priceMax, verifiedOnly]);
+  }, [
+    brand,
+    bodyType,
+    city,
+    fuelType,
+    status,
+    priceMin,
+    priceMax,
+    verifiedOnly,
+  ]);
 
   const handleReset = () => {
     setBrand("");
@@ -132,7 +149,17 @@ export default function SearchModal({ onClose }: Props) {
       priceMax ||
       verifiedOnly
     );
-  }, [q, brand, bodyType, city, fuelType, status, priceMin, priceMax, verifiedOnly]);
+  }, [
+    q,
+    brand,
+    bodyType,
+    city,
+    fuelType,
+    status,
+    priceMin,
+    priceMax,
+    verifiedOnly,
+  ]);
 
   const carResults = useMemo(() => {
     if (!hasActiveFilter) return [];
@@ -165,7 +192,18 @@ export default function SearchModal({ onClose }: Props) {
         return true;
       })
       .slice(0, CAR_LIMIT);
-  }, [hasActiveFilter, q, brand, bodyType, city, fuelType, status, verifiedOnly, min, max]);
+  }, [
+    hasActiveFilter,
+    q,
+    brand,
+    bodyType,
+    city,
+    fuelType,
+    status,
+    verifiedOnly,
+    min,
+    max,
+  ]);
 
   const sellerResults = useMemo(() => {
     if (!hasActiveFilter) return [];
@@ -215,10 +253,11 @@ export default function SearchModal({ onClose }: Props) {
           />
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-600 transition-colors duration-150 shrink-0 ${showFilters
-              ? "bg-primary/10 text-primary"
-              : "text-muted-foreground hover:bg-muted"
-              }`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-600 transition-colors duration-150 shrink-0 ${
+              showFilters
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-muted"
+            }`}
           >
             <Sliders size={14} />
             فیلترها
@@ -293,10 +332,11 @@ export default function SearchModal({ onClose }: Props) {
             {/* Verified toggle */}
             <button
               onClick={() => setVerifiedOnly(!verifiedOnly)}
-              className={`flex items-center gap-1.5 h-8 px-2.5 text-xs font-500 rounded-lg border transition-colors duration-150 ${verifiedOnly
-                ? "bg-accent/10 border-accent/30 text-accent"
-                : "bg-card border-border text-muted-foreground hover:text-foreground"
-                }`}
+              className={`flex items-center gap-1.5 h-8 px-2.5 text-xs font-500 rounded-lg border transition-colors duration-150 ${
+                verifiedOnly
+                  ? "bg-accent/10 border-accent/30 text-accent"
+                  : "bg-card border-border text-muted-foreground hover:text-foreground"
+              }`}
             >
               <Shield size={12} />
               فقط تأییدشده
@@ -323,7 +363,9 @@ export default function SearchModal({ onClose }: Props) {
             </p>
           ) : !hasResults ? (
             <p className="px-3 py-10 text-center text-sm text-muted-foreground">
-              {q ? `نتیجه‌ای برای «${query}» یافت نشد.` : "هیچ نتیجه‌ای با فیلترهای انتخابی یافت نشد."}
+              {q
+                ? `نتیجه‌ای برای «${query}» یافت نشد.`
+                : "هیچ نتیجه‌ای با فیلترهای انتخابی یافت نشد."}
             </p>
           ) : (
             <>

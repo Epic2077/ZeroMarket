@@ -102,7 +102,7 @@ function Section({
     <div className="card-elevated p-5">
       <div className="flex items-center gap-2 mb-4">
         {icon}
-        <h2 className="text-sm font-700 text-foreground">{title}</h2>
+        <h2 className="text-base font-bold text-foreground">{title}</h2>
       </div>
       {children}
     </div>
@@ -128,7 +128,9 @@ function SelectField({
 }) {
   return (
     <Field data-invalid={!!error}>
-      <FieldLabel htmlFor={id}>{label}</FieldLabel>
+      <FieldLabel htmlFor={id} className="font-bold">
+        {label}
+      </FieldLabel>
       <Controller
         control={control}
         name={name}
@@ -277,19 +279,29 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
               />
               <Field data-invalid={!!errors.model}>
                 <FieldLabel htmlFor="p-model">مدل</FieldLabel>
-                <Input id="p-model" aria-invalid={!!errors.model} {...register("model")} />
+                <Input
+                  id="p-model"
+                  aria-invalid={!!errors.model}
+                  placeholder="مدل"
+                  {...register("model")}
+                />
                 <FieldError>{errors.model?.message}</FieldError>
               </Field>
             </Field>
             <Field className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Field data-invalid={!!errors.trim}>
                 <FieldLabel htmlFor="p-trim">تریم / نسخه</FieldLabel>
-                <Input id="p-trim" aria-invalid={!!errors.trim} {...register("trim")} />
+                <Input
+                  id="p-trim"
+                  placeholder="تریم / نسخه"
+                  aria-invalid={!!errors.trim}
+                  {...register("trim")}
+                />
                 <FieldError>{errors.trim?.message}</FieldError>
               </Field>
               <SelectField
                 id="p-year"
-                label="سال مدل"
+                label="سال ساخت"
                 control={control}
                 name="year"
                 options={withCurrent(
@@ -320,7 +332,7 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
           <FieldGroup>
             <Field className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Field data-invalid={!!errors.engine}>
-                <FieldLabel htmlFor="p-engine">موتور</FieldLabel>
+                <FieldLabel htmlFor="p-engine">حجم موتور</FieldLabel>
                 <Input
                   id="p-engine"
                   placeholder="مثلاً ۲.۵ لیتر هیبریدی"
@@ -334,7 +346,10 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
                 label="گیربکس"
                 control={control}
                 name="transmission"
-                options={withCurrent(taxonomy.transmissions, listing?.transmission)}
+                options={withCurrent(
+                  taxonomy.transmissions,
+                  listing?.transmission,
+                )}
                 placeholder="انتخاب گیربکس"
                 error={errors.transmission?.message}
               />
@@ -431,8 +446,15 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
                   control={control}
                   name="status"
                   render={({ field }) => (
-                    <Select dir="rtl" value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger id="p-status" className="w-full vazir-matn">
+                    <Select
+                      dir="rtl"
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger
+                        id="p-status"
+                        className="w-full vazir-matn"
+                      >
                         <SelectValue placeholder="انتخاب وضعیت" />
                       </SelectTrigger>
                       <SelectContent>
