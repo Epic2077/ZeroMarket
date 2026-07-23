@@ -15,13 +15,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cityOptions, currentUser } from "@/context/userProfile";
+import { supabase } from "@/lib/supabase/client";
+import { useUserInfo } from "@/context/UserInfoProvider";
+import { cityOptions } from "@/context/userProfile";
 import { emailField, requiredText } from "@/lib/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Save, Upload } from "lucide-react";
+import { useRef, useState, useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import Avatar from "../shared/Avatar";
 
 const personalInfoSchema = z.object({
   fullName: requiredText("نام کامل الزامی است"),
@@ -33,47 +37,203 @@ const personalInfoSchema = z.object({
 
 type PersonalInfoValues = z.infer<typeof personalInfoSchema>;
 
+const MAX_SIZE = 2 * 1024 * 1024; // 2 MB
+const AVATAR_SIZE = 256; // compress to 256×256
+
+/** Compress an image file to a JPEG blob at the target size. */
+function compressImage(file: File): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+
+      const canvas = document.createElement("canvas");
+      canvas.width = AVATAR_SIZE;
+      canvas.height = AVATAR_SIZE;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("Failed to get canvas context"));
+        return;
+      }
+
+      // Cover-crop: scale to fill the square, centered
+      const size = Math.min(img.width, img.height);
+      const sx = (img.width - size) / 2;
+      const sy = (img.height - size) / 2;
+      ctx.drawImage(img, sx, sy, size, size, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
+
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error("Canvas toBlob returned null"));
+          }
+        },
+        "image/jpeg",
+        0.8,
+      );
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Failed to load image"));
+    };
+
+    img.src = url;
+  });
+}
+
 export default function PersonalInfoForm() {
+  const { user, profile, refreshProfile } = useUserInfo();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
   const {
     register,
     handleSubmit,
     control,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<PersonalInfoValues>({
     resolver: zodResolver(personalInfoSchema),
     defaultValues: {
-      fullName: currentUser.fullName,
-      email: currentUser.email,
-      phone: currentUser.phone,
-      city: currentUser.city,
-      bio: currentUser.bio,
+      fullName: profile?.full_name,
+      email: profile?.email,
+      phone: profile?.phone || "",
+      city: profile?.city || "",
+      bio: profile?.bio || "",
     },
   });
 
-  const onSubmit = handleSubmit(async () => {
-    await new Promise((r) => setTimeout(r, 400));
+  const onSubmit = handleSubmit(async (data) => {
+    if (!user) {
+      toast.error("ابتدا وارد حساب کاربری خود شوید");
+      return;
+    }
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        full_name: data.fullName,
+        phone: data.phone || null,
+        city: data.city || null,
+        bio: data.bio || null,
+      })
+      .eq("id", user.id);
+
+    if (error) {
+      toast.error("خطا در ذخیره اطلاعات");
+      return;
+    }
+
+    await refreshProfile();
     toast.success("اطلاعات شخصی با موفقیت ذخیره شد");
   });
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) {
+      return;
+    }
+
+    // Reset so the same file can be re-selected
+    e.target.value = "";
+
+    if (file.size > MAX_SIZE) {
+      toast.error("حجم فایل نباید بیشتر از ۲ مگابایت باشد");
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("فقط فایل‌های تصویری مجاز هستند");
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      // 1. Compress
+      const compressed = await compressImage(file);
+
+      // 2. Upload to Storage
+      const filePath = `${user.id}/${crypto.randomUUID()}.jpg`;
+      const { error: uploadError } = await supabase.storage
+        .from("avatar")
+        .upload(filePath, compressed, {
+          contentType: "image/jpeg",
+          upsert: false,
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // 4. Save path to profiles
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_path: filePath })
+        .eq("id", user.id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      // 5. Refresh profile context so the UI updates immediately
+      await refreshProfile();
+      toast.success("تصویر پروفایل با موفقیت به‌روز شد");
+    } catch {
+      toast.error("خطا در بارگذاری تصویر. لطفاً دوباره تلاش کنید.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Sync profile data into the form whenever profile loads/changes
+  useEffect(() => {
+    if (profile) {
+      reset({
+        fullName: profile.full_name ?? "",
+        email: profile.email ?? "",
+        phone: profile.phone ?? "",
+        city: profile.city ?? "",
+        bio: profile.bio ?? "",
+      });
+    }
+  }, [profile, reset]);
 
   return (
     <form onSubmit={onSubmit} noValidate className="card-elevated p-6">
       {/* Avatar row */}
       <div className="flex items-center gap-4 pb-6 mb-6 border-b border-border">
-        <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-white font-800 text-xl flex-shrink-0">
-          {currentUser.avatar}
-        </div>
+        <Avatar
+          src={profile?.avatar_path}
+          name={profile?.full_name}
+          size="w-16 h-16"
+          className="text-lg"
+        />
         <div>
           <h2 className="text-sm font-700 text-foreground">تصویر پروفایل</h2>
           <p className="text-xs text-muted-foreground mt-0.5 mb-2">
             فرمت‌های مجاز: JPG یا PNG، حداکثر ۲ مگابایت.
           </p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={handleAvatarUpload}
+            className="hidden"
+          />
           <button
             type="button"
-            onClick={() => toast.info("بارگذاری تصویر در نسخه نمایشی غیرفعال است")}
+            disabled={uploading}
+            onClick={() => fileInputRef.current?.click()}
             className="btn-secondary text-xs"
           >
             <Upload size={13} />
-            تغییر تصویر
+            {uploading ? "در حال بارگذاری…" : "تغییر تصویر"}
           </button>
         </div>
       </div>
@@ -86,6 +246,7 @@ export default function PersonalInfoForm() {
               id="fullName"
               placeholder="نام و نام خانوادگی"
               aria-invalid={!!errors.fullName}
+              defaultValue={profile?.full_name ?? ""}
               {...register("fullName")}
             />
             <FieldError>{errors.fullName?.message}</FieldError>
@@ -95,7 +256,9 @@ export default function PersonalInfoForm() {
             <Input
               id="phone"
               placeholder="۰۹۱۲ ۰۰۰ ۰۰۰۰"
+              dir="ltr"
               aria-invalid={!!errors.phone}
+              defaultValue={profile?.phone ?? ""}
               {...register("phone")}
             />
             <FieldError>{errors.phone?.message}</FieldError>
@@ -110,6 +273,7 @@ export default function PersonalInfoForm() {
               type="email"
               placeholder="m@example.com"
               aria-invalid={!!errors.email}
+              defaultValue={profile?.email ?? ""}
               {...register("email")}
             />
             <FieldError>{errors.email?.message}</FieldError>
@@ -120,9 +284,16 @@ export default function PersonalInfoForm() {
               control={control}
               name="city"
               render={({ field }) => (
-                <Select dir="rtl" value={field.value} onValueChange={field.onChange}>
+                <Select
+                  dir="rtl"
+                  value={field.value}
+                  onValueChange={field.onChange}
+                >
                   <SelectTrigger id="city" className="w-full vazir-matn">
-                    <SelectValue placeholder="انتخاب شهر" />
+                    <SelectValue
+                      placeholder="انتخاب شهر"
+                      defaultValue={profile?.city ?? ""}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {cityOptions.map((o) => (
@@ -145,6 +316,7 @@ export default function PersonalInfoForm() {
             rows={3}
             placeholder="توضیح کوتاهی درباره خودتان بنویسید…"
             className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+            defaultValue={profile?.bio ?? ""}
             {...register("bio")}
           />
           <FieldError>{errors.bio?.message}</FieldError>

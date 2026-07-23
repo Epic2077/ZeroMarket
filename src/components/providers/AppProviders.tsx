@@ -6,6 +6,7 @@ import { BlogProvider } from "@/context/BlogProvider";
 import { ListingsProvider } from "@/context/ListingsProvider";
 import { SessionProvider } from "@/context/SessionProvider";
 import { TaxonomyProvider } from "@/context/TaxonomyProvider";
+import { UserInfoProvider } from "@/context/UserInfoProvider";
 import type { ReactNode } from "react";
 
 // App-wide client providers. Platform management state lives here (not just in
@@ -13,16 +14,18 @@ import type { ReactNode } from "react";
 // current viewer.
 export default function AppProviders({ children }: { children: ReactNode }) {
   return (
-    <SessionProvider>
-      <AdminProvider>
-        <TaxonomyProvider>
-          <BlogProvider>
-            <ListingsProvider>
-              <BannerProvider>{children}</BannerProvider>
-            </ListingsProvider>
-          </BlogProvider>
-        </TaxonomyProvider>
-      </AdminProvider>
-    </SessionProvider>
+    <UserInfoProvider>
+      <SessionProvider>
+        <AdminProvider>
+          <TaxonomyProvider>
+            <BlogProvider>
+              <ListingsProvider>
+                <BannerProvider>{children}</BannerProvider>
+              </ListingsProvider>
+            </BlogProvider>
+          </TaxonomyProvider>
+        </AdminProvider>
+      </SessionProvider>
+    </UserInfoProvider>
   );
 }

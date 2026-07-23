@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabase/client";
 import { loginSchema, type LoginValues } from "@/lib/validation/auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +21,8 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -27,6 +30,9 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const {
     register,
     handleSubmit,
@@ -36,9 +42,26 @@ export function LoginForm({
     defaultValues: { email: "", password: "" },
   });
 
-  const onSubmit = handleSubmit(async () => {
-    await new Promise((r) => setTimeout(r, 600));
+  const onSubmit = handleSubmit(async (data) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
+    });
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    const redirectTo = searchParams.get("redirectTo");
+    const targetPath =
+      redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
+        ? redirectTo
+        : "/";
+
     toast.success("خوش آمدید");
+    router.push(targetPath);
+    router.refresh();
   });
 
   return (
@@ -135,12 +158,12 @@ export function LoginForm({
                 </Button>
                 <FieldDescription className="text-center">
                   حساب کاربری ندارید؟{" "}
-                  <a
+                  <Link
                     href="/auth/signup"
                     className="text-primary font-600 hover:underline"
                   >
                     ثبت نام
-                  </a>
+                  </Link>
                 </FieldDescription>
               </Field>
             </FieldGroup>

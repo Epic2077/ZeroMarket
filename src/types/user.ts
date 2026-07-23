@@ -4,7 +4,12 @@ import type { ReactNode } from "react";
 export type UserRole = "user" | "seller";
 
 // Lifecycle of a regular user's request to be upgraded to a verified seller.
-export type SellerApplicationStatus = "none" | "pending" | "approved";
+export type SellerApplicationStatus =
+  | "NONE"
+  | "APPROVED"
+  | "PENDING"
+  | "REJECTED"
+  | undefined;
 
 export interface UserProfile {
   id: string;

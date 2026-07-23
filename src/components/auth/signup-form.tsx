@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabase/client";
 import { signupSchema, type SignupValues } from "@/lib/validation/auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,12 +30,16 @@ import {
 import { cityOptions } from "@/context/userProfile";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 export function SignupForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  const router = useRouter();
+
   const {
     register,
     handleSubmit,
@@ -53,8 +58,32 @@ export function SignupForm({
   });
 
   const onSubmit = handleSubmit(async (data) => {
-    await new Promise((r) => setTimeout(r, 600));
+    const { data: signupData, error } = await supabase.auth.signUp({
+      email: data.email,
+      password: data.password,
+      options: {
+        data: {
+          full_name: data.name,
+          phone: data.phone || null,
+          city: data.city || null,
+        },
+      },
+    });
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    if (!signupData.session) {
+      toast.success("حساب شما ساخته شد. لطفا لینک تایید ایمیل را بررسی کنید.");
+      router.push("/auth/login");
+      return;
+    }
+
     toast.success(`حساب کاربری شما ساخته شد — ${data.name} عزیز، خوش آمدید`);
+    router.push("/");
+    router.refresh();
   });
 
   return (
@@ -172,12 +201,12 @@ export function SignupForm({
                 </Button>
                 <FieldDescription className="text-center">
                   حساب کاربری دارید؟{" "}
-                  <a
+                  <Link
                     href="/auth/login"
                     className="text-primary font-600 hover:underline"
                   >
                     ورود
-                  </a>
+                  </Link>
                 </FieldDescription>
               </Field>
               <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
