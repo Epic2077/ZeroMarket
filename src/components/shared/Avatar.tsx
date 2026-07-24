@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 interface AvatarProps {
   /** Image URL. When provided, the image is shown; otherwise initials are displayed. */
@@ -31,48 +32,66 @@ export default function Avatar({
 }: AvatarProps) {
   const initials = name ? getInitials(name) : "";
 
-  // Normalize the path: if a caller passes a full path including the bucket name (e.g. "avatar/xxx.jpg"),
-  // strip the bucket prefix to avoid duplicating it in the public URL (which can cause
-  // "requested path is invalid" errors).
-  const normalizedPath = src
-    ? typeof src === "string"
-      ? src.replace(/^avatar\//, "")
-      : undefined
-    : undefined;
+  // Track only the URL that has failed loading.
+  // This avoids setState-inside-effect patterns and still lets us recover when src changes.
+  const [failedUrl, setFailedUrl] = useState<string | undefined>(undefined);
 
-  const avatarUrl = normalizedPath
-    ? (supabase.storage.from("avatar").getPublicUrl(normalizedPath).data
-        ?.publicUrl ?? undefined)
-    : undefined;
-
-  // Local state to gracefully fallback if remote image cannot be loaded
-  const [imageSrc, setImageSrc] = useState<string | undefined>(undefined);
-
-  // Synchronize imageSrc with the latest avatarUrl when it changes
-  useEffect(() => {
-    if (avatarUrl !== imageSrc) {
-      setImageSrc(avatarUrl);
+  // Public-bucket flow:
+  // - support full URL if already stored
+  // - otherwise treat src as bucket-relative path and build public URL
+  const resolvedAvatarUrl = useMemo(() => {
+    if (!src) {
+      return undefined;
     }
-  }, [avatarUrl]);
+
+    const raw = src.trim();
+    if (!raw) {
+      return undefined;
+    }
+
+    if (/^https?:\/\//i.test(raw)) {
+      return raw;
+    }
+
+    const normalizedPath = raw
+      .replace(/^\/+/, "")
+      .replace(/^avatar\//, "")
+      .replace(/^storage\/v1\/object\/public\/avatar\//, "");
+
+    if (!normalizedPath) {
+      return undefined;
+    }
+
+    return (
+      supabase.storage.from("avatar").getPublicUrl(normalizedPath).data
+        ?.publicUrl ?? undefined
+    );
+  }, [src]);
+
+  const imageSrc =
+    resolvedAvatarUrl && failedUrl !== resolvedAvatarUrl
+      ? resolvedAvatarUrl
+      : undefined;
 
   return (
     <div
       className={cn(
-        "rounded-2xl bg-primary flex items-center justify-center text-white font-800 shrink-0 overflow-hidden",
+        "relative rounded-2xl bg-primary flex items-center justify-center text-white font-800 shrink-0 overflow-hidden",
         size,
         className,
       )}
     >
       {imageSrc ? (
-        <img
+        <Image
           src={imageSrc}
           alt={name ?? ""}
-          className="w-full h-full object-cover"
-          width={56}
-          height={56}
+          fill
+          sizes="64px"
+          className="object-cover"
+          unoptimized
           onError={() => {
             // If the remote image fails to load, fall back to initials
-            setImageSrc(undefined);
+            setFailedUrl(imageSrc);
           }}
         />
       ) : (
