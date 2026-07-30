@@ -20,7 +20,7 @@ export interface Listing {
   sellerResponseRate: number;
   sellerMemberSince: string;
   sellerActiveListings: number;
-  sellerAvatar: string;
+  sellerAvatar: string | null;
   price: number;
   priceUnit: string;
   status: "active" | "pending" | "sold" | "negotiable" | "reserved";
@@ -30,4 +30,6 @@ export interface Listing {
   marketAvgSell: number;
   priceVsMarket: number;
   trend7d: number;
+  /** Admin / seller-only internal note, not shown on the public listing. */
+  sellerNotes?: string;
 }

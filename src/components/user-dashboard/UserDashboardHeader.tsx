@@ -1,10 +1,18 @@
 import { useUserInfo } from "@/context/UserInfoProvider";
 import Avatar from "@/components/shared/Avatar";
-import { Settings, Store } from "lucide-react";
+import { LogOut, Settings, Store } from "lucide-react";
 import Link from "next/link";
+import { Button } from "../ui/button";
+import { useRouter } from "next/navigation";
 
 export default function UserDashboardHeader() {
-  const { profile } = useUserInfo();
+  const { profile, signOut } = useUserInfo();
+  const navigate = useRouter();
+
+  const logout = () => {
+    signOut();
+    navigate.push("/");
+  };
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
@@ -25,7 +33,7 @@ export default function UserDashboardHeader() {
             </div>
           </div>
           <p className="text-sm text-muted-foreground mt-0.5">
-            داشبورد خریدار · عضو از{" "}
+            داشبورد کاربر · عضو از{" "}
             {profile?.created_at
               ? new Date(profile.created_at).toLocaleDateString("fa-IR", {
                   year: "numeric",
@@ -41,6 +49,14 @@ export default function UserDashboardHeader() {
           <Store size={14} />
           مشاهده بازار
         </Link>
+        <Button
+          variant={"destructive"}
+          className="h-10 px-5 border-danger border"
+          onClick={logout}
+        >
+          <LogOut />
+          خروج
+        </Button>
         <Link href="/user-profile" className="btn-secondary text-sm">
           <Settings size={14} />
           تنظیمات پروفایل

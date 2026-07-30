@@ -2,12 +2,20 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 type AppRole = "USER" | "ADMIN" | "OWNER";
+type AppStatus = "ACTIVE" | "SUSPENDED";
 
 const AUTH_PAGES = ["/auth/login", "/auth/signup"];
 const AUTH_REQUIRED_PREFIXES = [
   "/dashboard",
   "/user-profile",
   "/market/listings",
+];
+const SUSPENDED_SAFE_PAGES = [
+  "/suspended",
+  "/auth",
+  "/api",
+  "/_next",
+  "/favicon.ico",
 ];
 const OWNER_ONLY_PREFIXES = ["/dashboard/owner"];
 const ADMIN_OR_OWNER_PREFIXES = ["/dashboard/admin", "/dashboard/manage"];
@@ -30,6 +38,11 @@ function normalizeRole(value: unknown): AppRole {
   }
 
   return "USER";
+}
+
+function redirectSuspendedAccount(request: NextRequest) {
+  const suspendedUrl = new URL("/suspended", request.url);
+  return NextResponse.redirect(suspendedUrl);
 }
 
 function isSafeInternalRedirect(path: string | null) {
@@ -106,13 +119,29 @@ export async function proxy(request: NextRequest) {
   }
 
   let role: AppRole = "USER";
+  let status: AppStatus = "ACTIVE";
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, status")
     .eq("id", user.id)
-    .maybeSingle<{ role: AppRole | string | null }>();
+    .maybeSingle<{
+      role: AppRole | string | null;
+      status: AppStatus | string | null;
+    }>();
 
   role = normalizeRole(profile?.role);
+  status = (
+    profile?.status?.toUpperCase() === "SUSPENDED" ? "SUSPENDED" : "ACTIVE"
+  ) as AppStatus;
+
+  const isOnSuspendedSafePage = SUSPENDED_SAFE_PAGES.some((route) =>
+    matchesPrefix(pathname, route),
+  );
+
+  // Redirect suspended users to the suspended page (unless already on a safe page)
+  if (status === "SUSPENDED" && !isOnSuspendedSafePage) {
+    return redirectSuspendedAccount(request);
+  }
 
   if (isAuthPage) {
     const redirectTo = request.nextUrl.searchParams.get("redirectTo");

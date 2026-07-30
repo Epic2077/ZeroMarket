@@ -4,28 +4,18 @@ import type {
   AdminAccount,
   PlatformRole,
   PlatformUser,
+  ProfileRole,
 } from "@/types/admin";
 
 /* ------------------------------ Role helpers ----------------------------- */
 
-// Ordered progression — the index drives promote/demote.
-export const ROLE_ORDER: PlatformRole[] = [
-  "buyer",
-  "seller",
-  "confirmed_seller",
-];
-
-export const roleLabel: Record<PlatformRole, string> = {
-  buyer: "خریدار",
-  seller: "فروشنده",
-  confirmed_seller: "فروشنده تأییدشده",
+export const roleLabel: Record<ProfileRole, string> = {
+  USER: "کاربر",
+  ADMIN: "مدیر",
+  OWNER: "مالک",
 };
 
-export const nextRole = (role: PlatformRole): PlatformRole | null =>
-  ROLE_ORDER[ROLE_ORDER.indexOf(role) + 1] ?? null;
-
-export const prevRole = (role: PlatformRole): PlatformRole | null =>
-  ROLE_ORDER[ROLE_ORDER.indexOf(role) - 1] ?? null;
+export const ROLE_ORDER: ProfileRole[] = ["USER", "ADMIN", "OWNER"];
 
 /* --------------------------- Derived seller users ------------------------ */
 
@@ -67,7 +57,7 @@ const buyerUsers: PlatformUser[] = [
     status: "active",
     joinedAt: "۱۴۰۲",
     analytics: {
-      requests:3,
+      requests: 3,
       views: 126,
       salesVolume: 0,
       responseRate: 0,
@@ -85,7 +75,7 @@ const buyerUsers: PlatformUser[] = [
     status: "active",
     joinedAt: "۱۴۰۳",
     analytics: {
-      requests:5,
+      requests: 5,
       views: 212,
       salesVolume: 0,
       responseRate: 0,
@@ -103,7 +93,7 @@ const buyerUsers: PlatformUser[] = [
     status: "suspended",
     joinedAt: "۱۴۰۱",
     analytics: {
-      requests:1,
+      requests: 1,
       views: 64,
       salesVolume: 0,
       responseRate: 0,

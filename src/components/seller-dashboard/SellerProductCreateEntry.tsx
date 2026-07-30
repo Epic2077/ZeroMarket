@@ -1,14 +1,12 @@
 "use client";
 
-import { useAdmin } from "@/context/AdminProvider";
-import { CURRENT_SELLER_ID } from "@/context/adminData";
 import ProductEditor from "@/components/management/ProductEditor";
+import { useUserInfo } from "@/context/UserInfoProvider";
 
 export default function SellerProductCreateEntry() {
-  const { users } = useAdmin();
-  const seller = users.find((u) => u.id === CURRENT_SELLER_ID);
+  const { profile } = useUserInfo();
 
-  if (!seller) return null;
+  if (!profile) return null;
 
-  return <ProductEditor owner={seller} backHref="/dashboard/seller" />;
+  return <ProductEditor owner={profile} backHref="/dashboard/seller" />;
 }

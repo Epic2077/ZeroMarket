@@ -15,16 +15,29 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useListings } from "@/context/ListingsProvider";
-import { useTaxonomy } from "@/context/TaxonomyProvider";
 import { requiredText } from "@/lib/validation";
-import type { PlatformUser, ProductInput } from "@/types/admin";
+import type { ProductInput } from "@/types/admin";
 import type { Listing } from "@/types/dataTypes";
+import {
+  brandOptions,
+  bodyTypeOptions,
+  cityOptions,
+  colorOptions,
+  getCarSpecs,
+  getColorHex,
+  getModelsForBrand,
+  productStatusOptions,
+  toPersianYear,
+  withCurrent,
+  yearOptions,
+} from "@/context/productFormOptions";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   ArrowRight,
   Car,
   CheckCircle,
   Gauge,
+  NotebookPen,
   Palette,
   Plus,
   Tag,
@@ -32,20 +45,19 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { UserProfileRow } from "@/types/user-profile-types";
 
 interface Props {
   // Edit mode when a listing is provided; create mode otherwise.
   listing?: Listing;
   // The seller this product belongs to (drives create + back link).
-  owner: PlatformUser;
+  owner: UserProfileRow;
   backHref: string;
 }
-
-const YEARS = [2027, 2026, 2025, 2024, 2023, 2022];
 
 const productSchema = z.object({
   brand: requiredText("برند را انتخاب کنید"),
@@ -67,27 +79,15 @@ const productSchema = z.object({
     .min(1, "قیمت الزامی است")
     .refine((v) => Number(v.replace(/\D/g, "")) > 0, "قیمت نامعتبر است"),
   status: z.enum(["active", "pending", "sold", "negotiable", "reserved"]),
+  sellerNotes: z.string().optional(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
-
-const statusOptions: { value: ProductFormValues["status"]; label: string }[] = [
-  { value: "active", label: "موجود" },
-  { value: "pending", label: "در انتظار" },
-  { value: "negotiable", label: "قابل مذاکره" },
-  { value: "reserved", label: "رزرو شده" },
-  { value: "sold", label: "فروخته شد" },
-];
 
 const groupThousands = (raw: string) => {
   const digits = raw.replace(/\D/g, "");
   return digits ? Number(digits).toLocaleString("en-US") : "";
 };
-
-// Ensure the current value is selectable even if it isn't in the taxonomy yet
-// (seeded listings use English source values).
-const withCurrent = (list: string[], current?: string) =>
-  current && !list.includes(current) ? [current, ...list] : list;
 
 function Section({
   icon,
@@ -160,7 +160,6 @@ function SelectField({
 
 export default function ProductEditor({ listing, owner, backHref }: Props) {
   const router = useRouter();
-  const { taxonomy } = useTaxonomy();
   const { createListing, updateListing } = useListings();
   const [factoryOptions, setFactoryOptions] = useState<string[]>(
     listing?.factoryOptions ?? [],
@@ -179,7 +178,7 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
       brand: listing?.brand ?? "",
       model: listing?.model ?? "",
       trim: listing?.trim ?? "",
-      year: listing ? String(listing.year) : "",
+      year: listing ? toPersianYear(listing.year) : "",
       color: listing?.color ?? "",
       colorHex: listing?.colorHex ?? "#1b4fd8",
       engine: listing?.engine ?? "",
@@ -190,8 +189,34 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
       deliveryDays: listing ? String(listing.deliveryDays) : "0",
       price: listing ? listing.price.toLocaleString("en-US") : "",
       status: listing?.status ?? "active",
+      sellerNotes: listing?.sellerNotes ?? "",
     },
   });
+
+  // Watch brand to cascade model options
+  const selectedBrand = useWatch({ control, name: "brand" });
+  const selectedModel = useWatch({ control, name: "model" });
+  const selectedYear = useWatch({ control, name: "year" });
+  const modelOpts = selectedBrand ? getModelsForBrand(selectedBrand) : [];
+  const modelValues = modelOpts.map((o) => o.value);
+
+  // Cache specs so the effect and display stay in perfect sync
+  const carSpecs = useMemo(
+    () =>
+      selectedBrand && selectedModel
+        ? getCarSpecs(selectedBrand, selectedModel, selectedYear || undefined)
+        : null,
+    [selectedBrand, selectedModel, selectedYear],
+  );
+
+  // Auto-fill engine, transmission, fuel & body when brand+model are chosen
+  useEffect(() => {
+    if (!carSpecs) return;
+    setValue("engine", carSpecs.engine, { shouldValidate: true });
+    setValue("transmission", carSpecs.transmission, { shouldValidate: true });
+    setValue("fuelType", carSpecs.fuelType, { shouldValidate: true });
+    setValue("bodyType", carSpecs.bodyType, { shouldValidate: true });
+  }, [carSpecs, setValue]);
 
   const addOption = () => {
     const value = optDraft.trim();
@@ -217,6 +242,7 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
       price: Number(values.price.replace(/\D/g, "")),
       status: values.status,
       factoryOptions,
+      sellerNotes: values.sellerNotes || undefined,
     };
 
     if (listing) {
@@ -227,10 +253,10 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
       const id = createListing(
         owner.id,
         {
-          sellerName: owner.name,
-          sellerAvatar: owner.avatar,
-          sellerVerified: owner.role === "confirmed_seller",
-          sellerMemberSince: owner.joinedAt,
+          sellerName: owner.full_name,
+          sellerAvatar: owner.avatar_path,
+          sellerVerified: owner.verified === true,
+          sellerMemberSince: owner.created_at,
         },
         input,
       );
@@ -256,7 +282,7 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
           {listing ? "ویرایش محصول" : "ثبت محصول جدید"}
         </h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          فروشنده: {owner.name}
+          فروشنده: {owner.full_name}
         </p>
       </div>
 
@@ -273,17 +299,47 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
                 label="برند"
                 control={control}
                 name="brand"
-                options={withCurrent(taxonomy.brands, listing?.brand)}
+                options={withCurrent(
+                  brandOptions.map((o) => o.value),
+                  listing?.brand,
+                )}
                 placeholder="انتخاب برند"
                 error={errors.brand?.message}
               />
               <Field data-invalid={!!errors.model}>
-                <FieldLabel htmlFor="p-model">مدل</FieldLabel>
-                <Input
-                  id="p-model"
-                  aria-invalid={!!errors.model}
-                  placeholder="مدل"
-                  {...register("model")}
+                <FieldLabel htmlFor="p-model" className="font-bold">
+                  مدل
+                </FieldLabel>
+                <Controller
+                  control={control}
+                  name="model"
+                  render={({ field }) => (
+                    <Select
+                      dir="rtl"
+                      value={field.value || undefined}
+                      onValueChange={field.onChange}
+                      disabled={!selectedBrand || modelOpts.length === 0}
+                    >
+                      <SelectTrigger id="p-model" className="w-full vazir-matn">
+                        <SelectValue
+                          placeholder={
+                            !selectedBrand
+                              ? "ابتدا برند را انتخاب کنید"
+                              : modelOpts.length === 0
+                                ? "مدلی یافت نشد"
+                                : "انتخاب مدل"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {withCurrent(modelValues, listing?.model).map((m) => (
+                          <SelectItem key={m} value={m}>
+                            {m}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 />
                 <FieldError>{errors.model?.message}</FieldError>
               </Field>
@@ -305,65 +361,82 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
                 control={control}
                 name="year"
                 options={withCurrent(
-                  YEARS.map(String),
+                  yearOptions.map((o) => o.value),
                   listing ? String(listing.year) : undefined,
                 )}
                 placeholder="انتخاب سال"
                 error={errors.year?.message}
               />
-              <SelectField
-                id="p-body"
-                label="نوع بدنه"
-                control={control}
-                name="bodyType"
-                options={withCurrent(taxonomy.bodyTypes, listing?.bodyType)}
-                placeholder="انتخاب بدنه"
-                error={errors.bodyType?.message}
-              />
+              <Field data-invalid={!!errors.bodyType}>
+                <FieldLabel htmlFor="p-body">نوع بدنه</FieldLabel>
+                <Controller
+                  control={control}
+                  name="bodyType"
+                  render={({ field }) => (
+                    <Select
+                      dir="rtl"
+                      value={field.value || undefined}
+                      onValueChange={field.onChange}
+                      disabled
+                    >
+                      <SelectTrigger
+                        id="p-body"
+                        className="w-full vazir-matn opacity-70"
+                      >
+                        <SelectValue placeholder="بر اساس مدل انتخاب می‌شود" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {withCurrent(
+                          bodyTypeOptions.map((o) => o.value),
+                          listing?.bodyType,
+                        ).map((b) => (
+                          <SelectItem key={b} value={b}>
+                            {b}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                <FieldError>{errors.bodyType?.message}</FieldError>
+              </Field>
             </Field>
           </FieldGroup>
         </Section>
 
-        {/* Powertrain */}
+        {/* Technical specs — auto-filled from brand + model */}
         <Section
           icon={<Gauge size={16} className="text-accent" />}
-          title="موتور و انتقال قدرت"
+          title="مشخصات فنی"
         >
-          <FieldGroup>
-            <Field className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Field data-invalid={!!errors.engine}>
-                <FieldLabel htmlFor="p-engine">حجم موتور</FieldLabel>
-                <Input
-                  id="p-engine"
-                  placeholder="مثلاً ۲.۵ لیتر هیبریدی"
-                  aria-invalid={!!errors.engine}
-                  {...register("engine")}
-                />
-                <FieldError>{errors.engine?.message}</FieldError>
-              </Field>
-              <SelectField
-                id="p-transmission"
-                label="گیربکس"
-                control={control}
-                name="transmission"
-                options={withCurrent(
-                  taxonomy.transmissions,
-                  listing?.transmission,
-                )}
-                placeholder="انتخاب گیربکس"
-                error={errors.transmission?.message}
-              />
-              <SelectField
-                id="p-fuel"
-                label="نوع سوخت"
-                control={control}
-                name="fuelType"
-                options={withCurrent(taxonomy.fuelTypes, listing?.fuelType)}
-                placeholder="انتخاب سوخت"
-                error={errors.fuelType?.message}
-              />
-            </Field>
-          </FieldGroup>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-muted rounded-xl p-3">
+              <div className="text-2xs text-muted-foreground mb-1">
+                حجم موتور
+              </div>
+              <div className="text-sm font-700 text-foreground">
+                {carSpecs?.engine ?? "—"}
+              </div>
+            </div>
+            <div className="bg-muted rounded-xl p-3">
+              <div className="text-2xs text-muted-foreground mb-1">گیربکس</div>
+              <div className="text-sm font-700 text-foreground">
+                {carSpecs?.transmission ?? "—"}
+              </div>
+            </div>
+            <div className="bg-muted rounded-xl p-3">
+              <div className="text-2xs text-muted-foreground mb-1">
+                نوع سوخت
+              </div>
+              <div className="text-sm font-700 text-foreground">
+                {carSpecs?.fuelType ?? "—"}
+              </div>
+            </div>
+          </div>
+          <p className="text-2xs text-muted-foreground mt-3">
+            مشخصات فنی بر اساس برند و مدل انتخاب‌شده به‌صورت خودکار تکمیل
+            می‌شود.
+          </p>
         </Section>
 
         {/* Color */}
@@ -373,15 +446,42 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
         >
           <FieldGroup>
             <Field className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <SelectField
-                id="p-color"
-                label="رنگ"
-                control={control}
-                name="color"
-                options={withCurrent(taxonomy.colors, listing?.color)}
-                placeholder="انتخاب رنگ"
-                error={errors.color?.message}
-              />
+              <Field data-invalid={!!errors.color}>
+                <FieldLabel htmlFor="p-color" className="font-bold">
+                  رنگ
+                </FieldLabel>
+                <Controller
+                  control={control}
+                  name="color"
+                  render={({ field }) => (
+                    <Select
+                      dir="rtl"
+                      value={field.value || undefined}
+                      onValueChange={(v) => {
+                        field.onChange(v);
+                        setValue("colorHex", getColorHex(v), {
+                          shouldValidate: true,
+                        });
+                      }}
+                    >
+                      <SelectTrigger id="p-color" className="w-full vazir-matn">
+                        <SelectValue placeholder="انتخاب رنگ" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {withCurrent(
+                          colorOptions.map((o) => o.value),
+                          listing?.color,
+                        ).map((c) => (
+                          <SelectItem key={c} value={c}>
+                            {c}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                <FieldError>{errors.color?.message}</FieldError>
+              </Field>
               <Field data-invalid={!!errors.colorHex}>
                 <FieldLabel htmlFor="p-colorhex">کد رنگ</FieldLabel>
                 <Controller
@@ -424,7 +524,10 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
                 label="شهر"
                 control={control}
                 name="city"
-                options={withCurrent(taxonomy.cities, listing?.city)}
+                options={withCurrent(
+                  cityOptions.map((o) => o.value),
+                  listing?.city,
+                )}
                 placeholder="انتخاب شهر"
                 error={errors.city?.message}
               />
@@ -458,7 +561,7 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
                         <SelectValue placeholder="انتخاب وضعیت" />
                       </SelectTrigger>
                       <SelectContent>
-                        {statusOptions.map((o) => (
+                        {productStatusOptions.map((o) => (
                           <SelectItem key={o.value} value={o.value}>
                             {o.label}
                           </SelectItem>
@@ -545,6 +648,21 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
               ))}
             </div>
           )}
+        </Section>
+        <Section
+          icon={<NotebookPen size={16} className="text-negotiable" />}
+          title="یادداشت های شخصی فروشنده"
+        >
+          <textarea
+            {...register("sellerNotes")}
+            rows={4}
+            placeholder="یادداشت‌های داخلی درباره این آگهی…"
+            className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          <p className="text-2xs text-muted-foreground mt-1.5">
+            این یادداشت‌ها فقط برای شما قابل مشاهده است و در آگهی عمومی نمایش
+            داده نمی‌شود.
+          </p>
         </Section>
 
         {/* Actions */}

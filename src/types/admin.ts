@@ -1,11 +1,20 @@
 import type { Listing } from "@/types/dataTypes";
+import type { UserProfileRow } from "@/types/user-profile-types";
 
 // Account status used across the platform-management panels.
-export type AccountStatus = "active" | "suspended";
+export type AccountStatus = UserProfileRow["status"];
 
-// The progression a member moves through: a buyer can be promoted to a seller,
-// and a seller to a verified ("confirmed") seller — and demoted back down.
-export type PlatformRole = "buyer" | "seller" | "confirmed_seller";
+// Platform roles are sourced from backend profile rows.
+export type PlatformRole = UserProfileRow["role"];
+
+export type platformVerified = UserProfileRow["verified"];
+
+// Backend profile row types are sourced from user-profile-types.ts
+export type ProfileRole = UserProfileRow["role"];
+export type ProfileStatus = UserProfileRow["status"];
+export type SellerApplicationStatus =
+  UserProfileRow["seller_application_status"];
+export type AdminUserRow = UserProfileRow;
 
 // Aggregated performance figures shown on a user's detail view. Product counts
 // are derived live from the ListingsProvider, not stored here.
@@ -24,7 +33,9 @@ export interface PlatformUser {
   phone: string;
   city: string; // Persian city label
   avatar: string; // initials
+  avatarPath: string | null; // supabase storage path in "avatar" bucket
   role: PlatformRole;
+  verified: platformVerified;
   status: AccountStatus;
   joinedAt: string; // Persian year
   analytics: UserAnalytics;
@@ -63,4 +74,5 @@ export interface ProductInput {
   price: number;
   status: Listing["status"];
   factoryOptions: string[];
+  sellerNotes?: string;
 }

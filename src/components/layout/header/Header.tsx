@@ -34,13 +34,17 @@ export default function Header() {
           <Notification />
           <Profile />
           <AuthHeader />
-          <div className="lg:hidden">
-            <Link
-              href="#register"
+          <div className="md:hidden">
+            <Button
+              variant="default"
+              // onClick={() => setOpen(true)}
+              onClick={() =>
+                (window.location.href = "/dashboard/seller/products/new")
+              }
               className="btn-primary flex-1 justify-center text-sm"
             >
               ثبت آگهی
-            </Link>
+            </Button>
           </div>
 
           {/* Mobile hamburger */}

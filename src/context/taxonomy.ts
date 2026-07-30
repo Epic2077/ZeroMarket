@@ -1,5 +1,10 @@
 import { brandFa, cityFa, fuelTypeFa } from "@/context/marketFilters";
-import { colorOptions, transmissionOptions, yearOptions } from "@/context/newPostForm";
+import {
+  colorOptions,
+  transmissionOptions,
+  yearOptions,
+} from "@/context/newPostForm";
+import { listings } from "@/context/data";
 
 // The editable option lists that power the "make a post" selects. Owners and
 // admins can add / rename / remove entries; the post form reads them live.
@@ -28,6 +33,34 @@ export const taxonomyCategories: {
   { id: "fuelTypes", label: "نوع سوخت", noun: "سوخت" },
   { id: "transmissions", label: "گیربکس", noun: "گیربکس" },
 ];
+
+// Status labels for the product editor.
+export const statusOptions: { value: string; label: string }[] = [
+  { value: "active", label: "موجود" },
+  { value: "pending", label: "در انتظار" },
+  { value: "negotiable", label: "قابل مذاکره" },
+  { value: "reserved", label: "رزرو شده" },
+  { value: "sold", label: "فروخته شد" },
+];
+
+// ── Brand → models ─────────────────────────────────────────────────────
+// Keyed by Persian brand name (e.g. "تویوتا"), values are model names from
+// the listing catalog. Derived automatically so it stays in sync with data.
+export const modelsByBrand: Record<string, string[]> = {};
+for (const l of listings) {
+  const brand = brandFa[l.brand];
+  if (!brand) continue;
+  if (!modelsByBrand[brand]) modelsByBrand[brand] = [];
+  if (!modelsByBrand[brand].includes(l.model)) {
+    modelsByBrand[brand].push(l.model);
+  }
+}
+
+// Return the models available for the given (Persian) brand, defaulting to an
+// empty array when the brand has no known models.
+export function getModelsForBrand(brand: string): string[] {
+  return modelsByBrand[brand] ?? [];
+}
 
 // Seeded from the existing static option sources so the panels start in sync
 // with the rest of the app.

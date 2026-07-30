@@ -20,7 +20,7 @@ import { useUserInfo } from "@/context/UserInfoProvider";
 import { cityOptions } from "@/context/userProfile";
 import { emailField, requiredText } from "@/lib/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Save, Upload } from "lucide-react";
+import { Save, Trash2, Upload } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -91,6 +91,7 @@ export default function PersonalInfoForm() {
   const { user, profile, refreshProfile } = useUserInfo();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const {
     register,
     handleSubmit,
@@ -191,6 +192,43 @@ export default function PersonalInfoForm() {
     }
   };
 
+  const handleAvatarRemove = async () => {
+    if (!user || !profile?.avatar_path) {
+      return;
+    }
+
+    setRemoving(true);
+
+    try {
+      // 1. Remove from Storage
+      const { error: removeError } = await supabase.storage
+        .from("avatar")
+        .remove([profile.avatar_path]);
+
+      if (removeError) {
+        throw removeError;
+      }
+
+      // 2. Remove path from profiles
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_path: null })
+        .eq("id", user.id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      // 3. Refresh profile context so the UI updates immediately
+      await refreshProfile();
+      toast.success("تصویر پروفایل با موفقیت حذف شد");
+    } catch {
+      toast.error("خطا در حذف تصویر. لطفاً دوباره تلاش کنید.");
+    } finally {
+      setRemoving(false);
+    }
+  };
+
   // Sync profile data into the form whenever profile loads/changes
   useEffect(() => {
     if (profile) {
@@ -219,7 +257,7 @@ export default function PersonalInfoForm() {
           <p className="text-xs text-muted-foreground mt-0.5 mb-2">
             فرمت‌های مجاز: JPG یا PNG، حداکثر ۲ مگابایت.
           </p>
-          <input
+          {/* <input
             ref={fileInputRef}
             type="file"
             accept="image/jpeg,image/png,image/webp"
@@ -234,6 +272,15 @@ export default function PersonalInfoForm() {
           >
             <Upload size={13} />
             {uploading ? "در حال بارگذاری…" : "تغییر تصویر"}
+          </button> */}
+          <button
+            type="button"
+            disabled={removing}
+            onClick={handleAvatarRemove}
+            className="btn-secondary mr-2 text-danger! border-danger! text-xs"
+          >
+            <Trash2 size={13} />
+            {removing ? "در حال حذف تصویر..." : "حذف تصویر"}
           </button>
         </div>
       </div>

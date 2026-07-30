@@ -2,13 +2,12 @@
 
 import { useAdmin } from "@/context/AdminProvider";
 import { CURRENT_ADMIN_ID } from "@/context/adminData";
-import { useListings } from "@/context/ListingsProvider";
 import { useSession } from "@/context/SessionProvider";
-import { FileText, ShieldHalf, Store, Users } from "lucide-react";
-import Link from "next/link";
+import { FileText, ShieldHalf, Users } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import TaxonomyManager from "../management/TaxonomyManager";
 import UserManagementTable from "../management/UserManagementTable";
+import { useAdminUsers } from "@/hooks/useAdminUsers";
 
 const faNum = (n: number) => n.toLocaleString("fa-IR");
 
@@ -20,10 +19,19 @@ const tabs = [
 type TabId = (typeof tabs)[number]["id"];
 
 export default function AdminDashboard() {
-  const { admins, users } = useAdmin();
-  const { listingsByOwner } = useListings();
+  const { admins } = useAdmin();
   const { setViewer } = useSession();
   const [active, setActive] = useState<TabId>("users");
+  const {
+    users: apiUsers,
+    total: usersTotal,
+    page: usersPage,
+    limit: usersLimit,
+    loading: usersLoading,
+    error: usersError,
+    goToPage,
+    setPageSize,
+  } = useAdminUsers(1, 20);
 
   // Acting as this admin while on the admin panel.
   useEffect(() => {
@@ -31,32 +39,30 @@ export default function AdminDashboard() {
   }, [setViewer]);
 
   const admin = admins.find((a) => a.id === CURRENT_ADMIN_ID) ?? admins[0];
-  const accessibleUsers = users;
 
-  const sellerCount = accessibleUsers.filter((u) => u.role !== "buyer").length;
-  const postCount = accessibleUsers.reduce(
-    (sum, u) => sum + listingsByOwner(u.id).length,
-    0,
-  );
+  const totalUsers = usersTotal;
+  const adminCount = apiUsers.filter(
+    (u) => u.role === "ADMIN" || u.role === "OWNER",
+  ).length;
 
   const stats: { id: string; label: string; value: string; icon: ReactNode }[] =
     [
       {
         id: "assigned",
         label: "کل کاربران",
-        value: faNum(accessibleUsers.length),
+        value: faNum(totalUsers),
         icon: <Users size={18} className="text-primary" />,
       },
       {
-        id: "sellers",
-        label: "فروشندگان",
-        value: faNum(sellerCount),
-        icon: <Store size={18} className="text-accent" />,
+        id: "admins",
+        label: "مدیران",
+        value: faNum(adminCount),
+        icon: <ShieldHalf size={18} className="text-negotiable" />,
       },
       {
         id: "posts",
         label: "آگهی‌های تحت مدیریت",
-        value: faNum(postCount),
+        value: faNum(0),
         icon: <FileText size={18} className="text-warning" />,
       },
     ];
@@ -82,9 +88,9 @@ export default function AdminDashboard() {
             </p>
           </div>
         </div>
-        <Link href="/dashboard/owner" className="btn-secondary text-sm">
+        {/* <Link href="/dashboard/owner" className="btn-secondary text-sm">
           نمای پنل مالک
-        </Link>
+        </Link> */}
       </div>
 
       {/* Stats */}
@@ -120,7 +126,16 @@ export default function AdminDashboard() {
       </div>
 
       {active === "users" && (
-        <UserManagementTable users={accessibleUsers} emptyText="کاربری یافت نشد." />
+        <UserManagementTable
+          users={apiUsers}
+          loading={usersLoading}
+          emptyText={usersError ?? "کاربری یافت نشد."}
+          total={usersTotal}
+          page={usersPage}
+          pageSize={usersLimit}
+          onPageChange={goToPage}
+          onPageSizeChange={setPageSize}
+        />
       )}
       {active === "options" && <TaxonomyManager />}
     </div>
