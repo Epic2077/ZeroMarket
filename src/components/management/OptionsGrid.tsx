@@ -5,11 +5,16 @@ import { OptionRow } from "./OptionRow";
 interface OptionsGridProps {
   options: string[];
   canEdit: boolean;
-  onRemove: (value: string) => void;
-  onRename: (oldVal: string, newVal: string) => void;
+  onRemove: (value: string) => Promise<void>;
+  onRename: (oldVal: string, newVal: string) => Promise<void>;
 }
 
-export function OptionsGrid({ options, canEdit, onRemove, onRename }: OptionsGridProps) {
+export function OptionsGrid({
+  options,
+  canEdit,
+  onRemove,
+  onRename,
+}: OptionsGridProps) {
   if (options.length === 0) {
     return (
       <p className="rounded-lg border border-dashed border-border py-8 text-center text-xs text-muted-foreground">

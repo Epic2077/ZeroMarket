@@ -6,8 +6,8 @@ interface ColorsGridProps {
   colors: string[];
   taxonomy: any;
   canEdit: boolean;
-  onRemove: (color: string) => void;
-  onRename: (oldVal: string, newVal: string) => void;
+  onRemove: (color: string) => Promise<void>;
+  onRename: (oldVal: string, newVal: string) => Promise<void>;
 }
 
 function getColorHex(taxonomy: any, colorName: string): string {
@@ -17,7 +17,13 @@ function getColorHex(taxonomy: any, colorName: string): string {
   );
 }
 
-export function ColorsGrid({ colors, taxonomy, canEdit, onRemove, onRename }: ColorsGridProps) {
+export function ColorsGrid({
+  colors,
+  taxonomy,
+  canEdit,
+  onRemove,
+  onRename,
+}: ColorsGridProps) {
   if (colors.length === 0) {
     return (
       <p className="rounded-lg border border-dashed border-border py-8 text-center text-xs text-muted-foreground">
@@ -41,7 +47,9 @@ export function ColorsGrid({ colors, taxonomy, canEdit, onRemove, onRename }: Co
                 style={{ backgroundColor: hex }}
               />
               <span className="text-sm text-foreground truncate">{color}</span>
-              <span className="text-2xs text-muted-foreground font-mono-nums shrink-0">{hex}</span>
+              <span className="text-2xs text-muted-foreground font-mono-nums shrink-0">
+                {hex}
+              </span>
             </div>
             {canEdit && (
               <OptionActions

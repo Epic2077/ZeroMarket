@@ -23,7 +23,7 @@ export default function AdminManageButton({
   const { role, adminId } = useSession();
   const { users, admins } = useAdmin();
 
-  if (role === "guest") return null;
+  if (role === "user") return null;
   if (!users.some((u) => u.id === userId)) return null;
 
   if (role === "admin") {

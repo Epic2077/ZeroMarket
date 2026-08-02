@@ -12,12 +12,12 @@ interface BrandAccordionProps {
   onToggleBrand: (brand: string) => void;
   modelDrafts: Record<string, string>;
   onModelDraftChange: (brand: string, value: string) => void;
-  onAddModel: (brand: string) => void;
+  onAddModel: (brand: string) => Promise<void>;
   canEdit: boolean;
-  onRemoveBrand: (brand: string) => void;
-  onRenameBrand: (oldVal: string, newVal: string) => void;
-  onRemoveModel: (model: string) => void;
-  onRenameModel: (oldVal: string, newVal: string) => void;
+  onRemoveBrand: (brand: string) => Promise<void>;
+  onRenameBrand: (oldVal: string, newVal: string) => Promise<void>;
+  onRemoveModel: (model: string) => Promise<void>;
+  onRenameModel: (oldVal: string, newVal: string) => Promise<void>;
 }
 
 export function BrandAccordion({
@@ -106,7 +106,9 @@ export function BrandAccordion({
                               <OptionActions
                                 value={model}
                                 onRemove={() => onRemoveModel(model)}
-                                onRename={(newVal) => onRenameModel(model, newVal)}
+                                onRename={(newVal) =>
+                                  onRenameModel(model, newVal)
+                                }
                               />
                             )}
                           </div>
@@ -123,15 +125,21 @@ export function BrandAccordion({
                     >
                       <input
                         value={modelDrafts[brand] ?? ""}
-                        onChange={(e) => onModelDraftChange(brand, e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && onAddModel(brand)}
+                        onChange={(e) =>
+                          onModelDraftChange(brand, e.target.value)
+                        }
+                        onKeyDown={(e) =>
+                          e.key === "Enter" && onAddModel(brand)
+                        }
                         placeholder={`افزودن مدل به ${brand}…`}
                         className="flex-1 h-8 rounded-lg border border-border bg-card px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30"
                         disabled={modelsLoading}
                       />
                       <button
                         type="submit"
-                        disabled={!(modelDrafts[brand] ?? "").trim() || modelsLoading}
+                        disabled={
+                          !(modelDrafts[brand] ?? "").trim() || modelsLoading
+                        }
                         className="btn-primary text-xs h-8 shrink-0 disabled:pointer-events-none disabled:opacity-40"
                       >
                         <Plus size={12} />

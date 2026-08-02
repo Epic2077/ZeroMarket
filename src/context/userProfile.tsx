@@ -35,7 +35,7 @@ export const currentUser: UserProfile = {
   memberSince: "۱۴۰۲",
   role: "user",
   verified: false,
-  sellerApplicationStatus: "none",
+  sellerApplicationStatus: "NONE",
 };
 
 /* ------------------------------ Dashboard -------------------------------- */

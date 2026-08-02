@@ -23,13 +23,13 @@ export default function ProductsManager({ user }: Props) {
   const [bulkOpen, setBulkOpen] = useState(false);
 
   // Buyers don't list cars — only sellers can have products.
-  const canHaveProducts = user.role !== "buyer";
+  const canHaveProducts = user.role !== "USER";
   const products = listingsByOwner(user.id);
 
   const sellerBase: Partial<Listing> = {
     sellerName: user.name,
     sellerAvatar: user.avatar,
-    sellerVerified: user.role === "confirmed_seller",
+    sellerVerified: user.role === "OWNER" || user.role === "ADMIN",
     sellerMemberSince: user.joinedAt,
   };
 

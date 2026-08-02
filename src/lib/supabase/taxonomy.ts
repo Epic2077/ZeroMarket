@@ -226,6 +226,20 @@ export async function fetchTaxonomyChangeRequests(): Promise<
   return (data ?? []) as TaxonomyChangeRequest[];
 }
 
+/** Fetch the current admin's own submitted taxonomy change requests (all statuses). */
+export async function fetchMyTaxonomyChangeRequests(
+  requestedBy: string,
+): Promise<TaxonomyChangeRequest[]> {
+  const { data, error } = await supabase
+    .from("taxonomy_change_requests")
+    .select("*")
+    .eq("requested_by", requestedBy)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []) as TaxonomyChangeRequest[];
+}
+
 /** Get Persian label for category. */
 export function getCategoryLabel(category: TaxonomyCategory): string {
   const meta = taxonomyCategoryMeta.find((c) => c.id === category);
@@ -274,11 +288,13 @@ export async function approveTaxonomyChangeRequest(
   let applied = false;
   switch (request.action) {
     case "ADD": {
-      const { error: addError } = await supabase.from("taxonomy_options").insert({
-        category: request.category,
-        value: request.value,
-        metadata: request.metadata ?? null,
-      });
+      const { error: addError } = await supabase
+        .from("taxonomy_options")
+        .insert({
+          category: request.category,
+          value: request.value,
+          metadata: request.metadata ?? null,
+        });
       if (addError) {
         // If duplicate (23505), the value already exists - treat as success
         if (addError.code === "23505") {
@@ -405,7 +421,9 @@ export async function fetchOwnerNotifications(): Promise<OwnerNotification[]> {
 }
 
 /** Fetch all notifications for the owner (resolved + unresolved). */
-export async function fetchAllOwnerNotifications(limit = 50): Promise<OwnerNotification[]> {
+export async function fetchAllOwnerNotifications(
+  limit = 50,
+): Promise<OwnerNotification[]> {
   const { data, error } = await supabase
     .from("owner_notifications")
     .select("*")

@@ -36,34 +36,36 @@ function buildSellers(): SellerSummary[] {
     bySeller.set(listing.sellerName, group);
   }
 
-  return Array.from(bySeller.entries())
-    .map(([nameEn, sellerListings]) => {
-      const [first] = sellerListings;
-      const brands = Array.from(
-        new Set(sellerListings.map((l) => brandFa[l.brand] ?? l.brand)),
-      );
-      return {
-        slug: sellerSlug(nameEn),
-        name: sellerLabel(nameEn),
-        nameEn,
-        avatar: first.sellerAvatar,
-        city: cityLabel(first.city),
-        verified: first.sellerVerified,
-        responseRate: first.sellerResponseRate,
-        memberSince: first.sellerMemberSince,
-        activeListings: sellerListings.filter((l) => l.status === "active")
-          .length,
-        totalListings: sellerListings.length,
-        brands,
-        listings: sellerListings,
-      };
-    })
-    // Verified sellers first, then by number of listings.
-    .sort(
-      (a, b) =>
-        Number(b.verified) - Number(a.verified) ||
-        b.totalListings - a.totalListings,
-    );
+  return (
+    Array.from(bySeller.entries())
+      .map(([nameEn, sellerListings]) => {
+        const [first] = sellerListings;
+        const brands = Array.from(
+          new Set(sellerListings.map((l) => brandFa[l.brand] ?? l.brand)),
+        );
+        return {
+          slug: sellerSlug(nameEn),
+          name: sellerLabel(nameEn),
+          nameEn,
+          avatar: first.sellerAvatar ?? "S",
+          city: cityLabel(first.city),
+          verified: first.sellerVerified,
+          responseRate: first.sellerResponseRate,
+          memberSince: first.sellerMemberSince,
+          activeListings: sellerListings.filter((l) => l.status === "active")
+            .length,
+          totalListings: sellerListings.length,
+          brands,
+          listings: sellerListings,
+        };
+      })
+      // Verified sellers first, then by number of listings.
+      .sort(
+        (a, b) =>
+          Number(b.verified) - Number(a.verified) ||
+          b.totalListings - a.totalListings,
+      )
+  );
 }
 
 export const sellers: SellerSummary[] = buildSellers();

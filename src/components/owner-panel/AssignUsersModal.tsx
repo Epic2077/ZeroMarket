@@ -19,9 +19,9 @@ type RoleFilter = "all" | PlatformRole;
 
 const roleFilters: { value: RoleFilter; label: string }[] = [
   { value: "all", label: "همه" },
-  { value: "buyer", label: roleLabel.buyer },
-  { value: "seller", label: roleLabel.seller },
-  { value: "confirmed_seller", label: roleLabel.confirmed_seller },
+  { value: "USER", label: roleLabel.USER },
+  { value: "ADMIN", label: roleLabel.ADMIN },
+  { value: "OWNER", label: roleLabel.OWNER },
 ];
 
 export default function AssignUsersModal({ admin, users, onClose }: Props) {

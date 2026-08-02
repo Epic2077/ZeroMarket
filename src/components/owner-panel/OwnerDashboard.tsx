@@ -16,6 +16,7 @@ import {
   fetchOwnerNotifications,
   type OwnerNotification,
 } from "@/lib/supabase/taxonomy";
+import Avatar from "../shared/Avatar";
 
 const tabs = [
   { id: "overview", label: "مرور کلی" },
@@ -77,7 +78,11 @@ export default function OwnerDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-foreground flex items-center justify-center text-warning shrink-0">
-            <Crown size={26} />
+            <Avatar
+              src={profile?.avatar_path}
+              name={profile?.full_name}
+              size={"w-14 h-14"}
+            />
           </div>
           <div>
             <div className="flex gap-2 items-center">
