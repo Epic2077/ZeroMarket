@@ -1,7 +1,7 @@
 export interface Listing {
   id: string;
-  // Managed-platform owner (`usr-<slug>`); attached when seeding the
-  // ListingsProvider so panels can group a seller's products.
+  // Supabase `listings.seller_id`; also used as `ownerId` in mock/admin contexts.
+  seller_id?: string;
   ownerId?: string;
   brand: string;
   model: string;
@@ -15,6 +15,7 @@ export interface Listing {
   bodyType: string;
   city: string;
   deliveryDays: number;
+  // Seller display fields — populated from mock data or joined seller lookups.
   sellerName: string;
   sellerVerified: boolean;
   sellerResponseRate: number;

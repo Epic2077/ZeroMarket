@@ -7,10 +7,10 @@ import {
   brandModelFa,
   cityFa,
   colorFa,
-  sellerFa,
   toFa,
 } from "@/context/carLabels";
 import { Listing } from "@/types/dataTypes";
+import type { SellerSummary } from "@/context/sellers";
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 
@@ -106,159 +106,175 @@ function SortHeader({
   );
 }
 
-export const listingColumns: ColumnDef<Listing>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        className="mr-2"
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="انتخاب همه"
-      />
-    ),
-    cell: ({ row }) => (
-      // Stop the click from bubbling to the row's navigate-on-click handler.
-      <span className="flex items-center" onClick={(e) => e.stopPropagation()}>
+export function listingColumns(
+  sellersMap: Map<string, Pick<SellerSummary, "name" | "verified">>,
+): ColumnDef<Listing>[] {
+  return [
+    {
+      id: "select",
+      header: ({ table }) => (
         <Checkbox
           className="mr-2"
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="انتخاب ردیف"
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="انتخاب همه"
         />
-      </span>
-    ),
-    enableSorting: false,
-  },
-  {
-    id: "logo",
-    header: () => <span />,
-    cell: ({ row }) => {
-      const brand = row.original.brand;
-      const initials = brand.slice(0, 3).toUpperCase();
-      return (
-        <div
-          className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-lg text-xs font-bold -mr-5"
-          style={brandLogoStyle(brand)}
-        >
-          {initials}
-        </div>
-      );
-    },
-    enableSorting: false,
-  },
-  {
-    id: "brandModel",
-    accessorFn: (row) => `${row.brand} ${row.model}`,
-    header: ({ column }) => (
-      <SortHeader label="برند / مدل / تریم" column={column} />
-    ),
-    cell: ({ row }) => {
-      const key = `${row.original.brand} ${row.original.model}`;
-      return (
-        <div dir="rtl" className="flex flex-col gap-0.5">
-          <span className="font-medium">{brandModelFa[key] ?? key}</span>
-          <span className="text-xs text-muted-foreground">
-            {row.original.trim}
-          </span>
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "year",
-    header: ({ column }) => <SortHeader label="سال" column={column} />,
-    cell: ({ getValue }) => (
-      <div>
-        <span className="tabular-nums">{toFa(getValue() as number)}</span>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "color",
-    header: () => <span className="text-sm font-semibold vazir-matn">رنگ</span>,
-    cell: ({ row }) => (
-      <div dir="rtl" className="flex items-center gap-2">
+      ),
+      cell: ({ row }) => (
+        // Stop the click from bubbling to the row's navigate-on-click handler.
         <span
-          className="h-4 w-4 shrink-0 rounded-full border border-border"
-          style={{ backgroundColor: row.original.colorHex }}
-        />
-        <span>{colorFa[row.original.color] ?? row.original.color}</span>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "bodyType",
-    header: () => (
-      <span className="text-sm font-semibold vazir-matn">سگمنت</span>
-    ),
-    cell: ({ getValue }) => {
-      const type = getValue() as string;
-      return (
-        <Badge variant="secondary" className="vazir-matn text-xs font-medium">
-          {bodyTypeFa[type] ?? type}
-        </Badge>
-      );
-    },
-  },
-  {
-    accessorKey: "city",
-    header: () => <span className="text-sm font-semibold vazir-matn">شهر</span>,
-    cell: ({ getValue }) => {
-      const city = getValue() as string;
-      return <span>{cityFa[city] ?? city}</span>;
-    },
-  },
-  {
-    accessorKey: "sellerName",
-    header: () => (
-      <span className="text-sm font-semibold vazir-matn">فروشنده</span>
-    ),
-    cell: ({ row }) => (
-      <div dir="rtl" className="flex items-center gap-1.5">
-        <span>
-          {sellerFa[row.original.sellerName] ?? row.original.sellerName}
-        </span>
-        {row.original.sellerVerified && <VerifiedBadge size="sm" />}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "price",
-    header: ({ column }) => <SortHeader label="قیمت (تومان)" column={column} />,
-    cell: ({ getValue }) => (
-      <span className="font-medium tabular-nums">
-        {formatPriceFa(getValue() as number)}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "status",
-    header: () => (
-      <span className="text-sm font-semibold vazir-matn">وضعیت</span>
-    ),
-    cell: ({ getValue }) => {
-      const s = statusFa[getValue() as Listing["status"]];
-      return s ? (
-        <Badge
-          variant="outline"
-          className={`vazir-matn text-xs font-medium px-2.5 py-0.5 ${s.className}`}
+          className="flex items-center"
+          onClick={(e) => e.stopPropagation()}
         >
-          {s.label}
-        </Badge>
-      ) : null;
+          <Checkbox
+            className="mr-2"
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="انتخاب ردیف"
+          />
+        </span>
+      ),
+      enableSorting: false,
     },
-  },
-  {
-    accessorKey: "listedDate",
-    header: ({ column }) => <SortHeader label="تاریخ ثبت" column={column} />,
-    cell: ({ getValue }) => (
-      <span className="whitespace-nowrap text-muted-foreground">
-        {formatUploadDate(getValue() as string)}
-      </span>
-    ),
-  },
-];
+    {
+      id: "logo",
+      header: () => <span />,
+      cell: ({ row }) => {
+        const brand = row.original.brand;
+        const initials = brand.slice(0, 3).toUpperCase();
+        return (
+          <div
+            className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-lg text-xs font-bold -mr-5"
+            style={brandLogoStyle(brand)}
+          >
+            {initials}
+          </div>
+        );
+      },
+      enableSorting: false,
+    },
+    {
+      id: "brandModel",
+      accessorFn: (row) => `${row.brand} ${row.model}`,
+      header: ({ column }) => (
+        <SortHeader label="برند / مدل / تریم" column={column} />
+      ),
+      cell: ({ row }) => {
+        const key = `${row.original.brand} ${row.original.model}`;
+        return (
+          <div dir="rtl" className="flex flex-col gap-0.5">
+            <span className="font-medium">{brandModelFa[key] ?? key}</span>
+            <span className="text-xs text-muted-foreground">
+              {row.original.trim}
+            </span>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "year",
+      header: ({ column }) => <SortHeader label="سال" column={column} />,
+      cell: ({ getValue }) => (
+        <div>
+          <span className="tabular-nums">{toFa(getValue() as number)}</span>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "color",
+      header: () => (
+        <span className="text-sm font-semibold vazir-matn">رنگ</span>
+      ),
+      cell: ({ row }) => (
+        <div dir="rtl" className="flex items-center gap-2">
+          <span
+            className="h-4 w-4 shrink-0 rounded-full border border-border"
+            style={{ backgroundColor: row.original.colorHex }}
+          />
+          <span>{colorFa[row.original.color] ?? row.original.color}</span>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "bodyType",
+      header: () => (
+        <span className="text-sm font-semibold vazir-matn">سگمنت</span>
+      ),
+      cell: ({ getValue }) => {
+        const type = getValue() as string;
+        return (
+          <Badge variant="secondary" className="vazir-matn text-xs font-medium">
+            {bodyTypeFa[type] ?? type}
+          </Badge>
+        );
+      },
+    },
+    {
+      accessorKey: "city",
+      header: () => (
+        <span className="text-sm font-semibold vazir-matn">شهر</span>
+      ),
+      cell: ({ getValue }) => {
+        const city = getValue() as string;
+        return <span>{cityFa[city] ?? city}</span>;
+      },
+    },
+    {
+      accessorKey: "sellerName",
+      header: () => (
+        <span className="text-sm font-semibold vazir-matn">فروشنده</span>
+      ),
+      cell: ({ row }) => {
+        const seller = sellersMap.get(row.original.seller_id ?? "");
+        return (
+          <div dir="rtl" className="flex items-center gap-1.5">
+            <span>{seller?.name ?? row.original.sellerName}</span>
+            {(seller?.verified ?? row.original.sellerVerified) && (
+              <VerifiedBadge size="sm" />
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "price",
+      header: ({ column }) => (
+        <SortHeader label="قیمت (تومان)" column={column} />
+      ),
+      cell: ({ getValue }) => (
+        <span className="font-medium tabular-nums">
+          {formatPriceFa(getValue() as number)}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: () => (
+        <span className="text-sm font-semibold vazir-matn">وضعیت</span>
+      ),
+      cell: ({ getValue }) => {
+        const s = statusFa[getValue() as Listing["status"]];
+        return s ? (
+          <Badge
+            variant="outline"
+            className={`vazir-matn text-xs font-medium px-2.5 py-0.5 ${s.className}`}
+          >
+            {s.label}
+          </Badge>
+        ) : null;
+      },
+    },
+    {
+      accessorKey: "listedDate",
+      header: ({ column }) => <SortHeader label="تاریخ ثبت" column={column} />,
+      cell: ({ getValue }) => (
+        <span className="whitespace-nowrap text-muted-foreground">
+          {formatUploadDate(getValue() as string)}
+        </span>
+      ),
+    },
+  ];
+}

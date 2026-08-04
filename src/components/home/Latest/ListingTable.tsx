@@ -24,12 +24,11 @@ import {
   brandModelLabel,
   cityLabel,
   colorLabel,
-  sellerLabel,
   toFa,
 } from "@/context/carLabels";
-import { listings } from "@/context/data";
 import { listingColumns } from "@/context/listingTable";
 import { Listing } from "@/types/dataTypes";
+import { useSellers } from "@/hooks/useSellers";
 import {
   flexRender,
   getCoreRowModel,
@@ -108,20 +107,25 @@ function brandLogoStyle(brand: string): {
 }
 
 interface ListingTableProps {
-  data?: Listing[];
+  data: Listing[];
 }
 
-export default function ListingTable({ data = listings }: ListingTableProps) {
+export default function ListingTable({ data }: ListingTableProps) {
   const [sorting, setSorting] = useState<SortingState>([
     { id: "listedDate", desc: true },
   ]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
+  const { sellers } = useSellers();
+  const sellersMap = new Map(sellers.map((s) => [s.id, s]));
+
+  const columns = listingColumns(sellersMap);
+
   const navigate = useRouter();
 
   const table = useReactTable({
     data,
-    columns: listingColumns,
+    columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     onSortingChange: setSorting,
@@ -145,6 +149,7 @@ export default function ListingTable({ data = listings }: ListingTableProps) {
           table.getRowModel().rows.map((row) => {
             const listing = row.original;
             const status = statusFa[listing.status];
+            const seller = sellersMap.get(listing.seller_id ?? "");
             return (
               <div
                 key={row.id}
@@ -241,8 +246,10 @@ export default function ListingTable({ data = listings }: ListingTableProps) {
                   <div className="flex flex-col gap-0.5">
                     <span className="text-muted-foreground">فروشنده</span>
                     <span className="flex items-center gap-1 font-medium">
-                      {sellerLabel(listing.sellerName)}
-                      {listing.sellerVerified && <VerifiedBadge size="sm" />}
+                      {seller?.name ?? listing.sellerName}
+                      {(seller?.verified ?? listing.sellerVerified) && (
+                        <VerifiedBadge size="sm" />
+                      )}
                     </span>
                   </div>
                   <div className="flex flex-col gap-0.5">
@@ -313,7 +320,7 @@ export default function ListingTable({ data = listings }: ListingTableProps) {
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={listingColumns.length}
+                  colSpan={columns.length}
                   className="h-24 text-center text-muted-foreground vazir-matn"
                 >
                   داده‌ای یافت نشد

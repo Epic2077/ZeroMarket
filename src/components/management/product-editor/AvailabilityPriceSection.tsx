@@ -23,7 +23,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { withCurrent } from "@/lib/utils";
-import type { ProductFormErrors, ProductFormValues } from "../ProductEditor";
+import type {
+  ProductFormErrors,
+  ProductFormValues,
+} from "@/lib/validation/product";
 
 /** Listing status options — static UI labels, not taxonomy data. */
 const productStatusOptions = [

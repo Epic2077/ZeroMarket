@@ -3,7 +3,7 @@
 import { NotebookPen } from "lucide-react";
 import { Section } from "@/components/shared/Section";
 import { Controller, type Control } from "react-hook-form";
-import type { ProductFormValues } from "../ProductEditor";
+import type { ProductFormValues } from "@/lib/validation/product";
 
 interface SellerNotesSectionProps {
   control: Control<ProductFormValues>;
@@ -28,8 +28,8 @@ export function SellerNotesSection({ control }: SellerNotesSectionProps) {
         )}
       />
       <p className="text-2xs text-muted-foreground mt-1.5">
-        این یادداشت‌ها فقط برای شما قابل مشاهده است و در آگهی عمومی نمایش
-        داده نمی‌شود.
+        این یادداشت‌ها فقط برای شما قابل مشاهده است و در آگهی عمومی نمایش داده
+        نمی‌شود.
       </p>
     </Section>
   );

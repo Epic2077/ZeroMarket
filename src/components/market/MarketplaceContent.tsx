@@ -1,13 +1,14 @@
 "use client";
 
 import ListingTable from "@/components/home/Latest/ListingTable";
-import { listings } from "@/context/data";
 import { activeFilterCount, applyFilters } from "@/context/marketFilters";
 import { FilterState } from "@/types/marketplace";
-import { SlidersHorizontal, X } from "lucide-react";
+import { SlidersHorizontal, X, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import MarketplaceFilters from "./MarketPlaceFilters";
 import MarketplaceSidebar from "./MarketPlaceSidebar";
+import { useListings } from "@/hooks/useListings";
+import { listingRowToListing } from "@/lib/supabase/listings";
 
 const defaultFilters: FilterState = {
   search: "",
@@ -28,6 +29,14 @@ export default function MarketplaceContent() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
 
+  const { listings: rawListings, loading, error } = useListings();
+
+  // Convert Supabase rows → frontend Listing shape
+  const allListings = useMemo(
+    () => rawListings.map(listingRowToListing),
+    [rawListings],
+  );
+
   const updateFilter = <K extends keyof FilterState>(
     key: K,
     value: FilterState[K],
@@ -35,8 +44,46 @@ export default function MarketplaceContent() {
 
   const resetFilters = () => setFilters(defaultFilters);
 
-  const filtered = useMemo(() => applyFilters(listings, filters), [filters]);
+  const filtered = useMemo(
+    () => applyFilters(allListings, filters),
+    [allListings, filters],
+  );
   const activeCount = activeFilterCount(filters);
+
+  // ── Loading state ──────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <section
+        className="max-w-screen-2xl mx-auto px-4 lg:px-8 xl:px-10 py-16 vazir-matn flex items-center justify-center gap-3"
+        dir="rtl"
+      >
+        <Loader2 size={24} className="animate-spin text-primary" />
+        <span className="text-sm text-muted-foreground">
+          در حال بارگذاری آگهی‌ها…
+        </span>
+      </section>
+    );
+  }
+
+  // ── Error state ────────────────────────────────────────────────────
+  if (error) {
+    return (
+      <section
+        className="max-w-screen-2xl mx-auto px-4 lg:px-8 xl:px-10 py-16 vazir-matn"
+        dir="rtl"
+      >
+        <div className="rounded-xl border border-danger/30 bg-danger/5 p-8 text-center">
+          <p className="text-sm text-danger mb-3">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="btn-secondary text-xs"
+          >
+            تلاش مجدد
+          </button>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section

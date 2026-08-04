@@ -4,19 +4,30 @@ import { ArrowRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useForm, useWatch, type FieldErrors } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
 
-import { useListings } from "@/context/ListingsProvider";
-import { requiredText } from "@/lib/validation";
-import type { ProductInput } from "@/types/admin";
+import { supabase } from "@/lib/supabase/client";
+import { useUserInfo } from "@/context/UserInfoProvider";
 import type { Listing } from "@/types/dataTypes";
 import { fetchCarSpecsByBrandModel } from "@/lib/supabase/carSpecs";
+
+/** Maps frontend status → Supabase listings.status enum. */
+const STATUS_TO_DB: Record<string, string> = {
+  active: "AVAILABLE",
+  pending: "WAITING",
+  negotiable: "NEGOTIABLE",
+  sold: "SOLD",
+  reserved: "RESERVED",
+};
 import { toPersianYear } from "@/lib/utils";
 import { useTaxonomyOptions } from "@/hooks/useTaxonomyOptions";
 import { fetchModelsByBrand, type TaxonomyRow } from "@/lib/supabase/taxonomy";
 import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  productSchema,
+  type ProductFormValues,
+} from "@/lib/validation/product";
 
 import {
   IdentitySection,
@@ -27,41 +38,6 @@ import {
   SellerNotesSection,
   FormActions,
 } from "./product-editor";
-
-const productSchema = z.object({
-  brand: requiredText("برند را انتخاب کنید"),
-  model: requiredText("مدل الزامی است"),
-  trim: requiredText("تریم الزامی است"),
-  year: requiredText("سال را انتخاب کنید"),
-  color: requiredText("رنگ را انتخاب کنید"),
-  colorHex: z.string().regex(/^#([0-9a-fA-F]{6})$/, "کد رنگ نامعتبر است"),
-  engine: requiredText("موتور الزامی است"),
-  transmission: requiredText("گیربکس را انتخاب کنید"),
-  fuelType: requiredText("نوع سوخت را انتخاب کنید"),
-  bodyType: requiredText("نوع بدنه را انتخاب کنید"),
-  city: requiredText("شهر را انتخاب کنید"),
-  deliveryDays: z
-    .string()
-    .refine((v) => /^\d+$/.test(v), "تعداد روز نامعتبر است"),
-  price: z
-    .string()
-    .min(1, "قیمت الزامی است")
-    .refine((v) => Number(v.replace(/\D/g, "")) > 0, "قیمت نامعتبر است"),
-  status: z.enum(["active", "pending", "sold", "negotiable", "reserved"]),
-  sellerNotes: z.string().optional(),
-});
-
-export type ProductFormValues = z.infer<typeof productSchema>;
-export type ProductFormErrors = FieldErrors<ProductFormValues>;
-
-/** Listing status options — static UI labels, not taxonomy data. */
-const productStatusOptions = [
-  { value: "active", label: "موجود" },
-  { value: "pending", label: "در انتظار" },
-  { value: "negotiable", label: "قابل مذاکره" },
-  { value: "reserved", label: "رزرو شده" },
-  { value: "sold", label: "فروخته شد" },
-] as const;
 
 /** Build a color-name → hex lookup from taxonomy COLOR rows. */
 function buildColorHexMap(colors: TaxonomyRow[]): Record<string, string> {
@@ -91,7 +67,7 @@ interface Props {
 
 export default function ProductEditor({ listing, owner, backHref }: Props) {
   const router = useRouter();
-  const { createListing, updateListing } = useListings();
+  const { user } = useUserInfo();
   const [factoryOptions, setFactoryOptions] = useState<string[]>(
     listing?.factoryOptions ?? [],
   );
@@ -160,13 +136,9 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    const brand = selectedBrand;
-    if (!brand) {
-      setModelValues([]);
-      return;
-    }
+    if (!selectedBrand) return;
     setModelsLoading(true);
-    fetchModelsByBrand(brand)
+    fetchModelsByBrand(selectedBrand)
       .then((rows) => {
         if (cancelled) return;
         setModelValues(rows.map((r) => r.value));
@@ -183,6 +155,9 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
     };
   }, [selectedBrand]);
 
+  // Derive: clear model values when brand is empty
+  const displayModelValues = selectedBrand ? modelValues : [];
+
   // ── Async car specs fetch when brand/model/year change ──────────────
   const [carSpecs, setCarSpecs] = useState<{
     engine: string;
@@ -194,10 +169,7 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    if (!selectedBrand || !selectedModel) {
-      setCarSpecs(null);
-      return;
-    }
+    if (!selectedBrand || !selectedModel) return;
     setCarSpecsLoading(true);
     fetchCarSpecsByBrandModel(
       selectedBrand,
@@ -228,13 +200,18 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
     };
   }, [selectedBrand, selectedModel, selectedYear]);
 
+  // Derive: clear specs when brand or model is empty
+  const displayCarSpecs = selectedBrand && selectedModel ? carSpecs : null;
+
   useEffect(() => {
-    if (!carSpecs) return;
-    setValue("engine", carSpecs.engine, { shouldValidate: true });
-    setValue("transmission", carSpecs.transmission, { shouldValidate: true });
-    setValue("fuelType", carSpecs.fuelType, { shouldValidate: true });
-    setValue("bodyType", carSpecs.bodyType, { shouldValidate: true });
-  }, [carSpecs, setValue]);
+    if (!displayCarSpecs) return;
+    setValue("engine", displayCarSpecs.engine, { shouldValidate: true });
+    setValue("transmission", displayCarSpecs.transmission, {
+      shouldValidate: true,
+    });
+    setValue("fuelType", displayCarSpecs.fuelType, { shouldValidate: true });
+    setValue("bodyType", displayCarSpecs.bodyType, { shouldValidate: true });
+  }, [displayCarSpecs, setValue]);
 
   const addOption = () => {
     const value = optDraft.trim();
@@ -250,44 +227,100 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
     }
   };
 
-  const submit = handleSubmit((values) => {
-    const input: ProductInput = {
+  const submit = handleSubmit(async (values) => {
+    const userId = user?.id;
+    if (!userId) {
+      toast.error("ابتدا وارد حساب کاربری خود شوید");
+      return;
+    }
+
+    // Build a unique slug (for new listings only)
+    const shortId = crypto.randomUUID().slice(0, 8);
+    const slug =
+      `${values.brand}-${values.model}-${values.year}-${shortId}`.replace(
+        /\s+/g,
+        "-",
+      );
+
+    const basePayload = {
       brand: values.brand,
       model: values.model,
       trim: values.trim,
       year: Number(values.year),
-      color: values.color,
-      colorHex: values.colorHex,
-      engine: values.engine,
-      transmission: values.transmission,
-      fuelType: values.fuelType,
-      bodyType: values.bodyType,
-      city: values.city,
-      deliveryDays: Number(values.deliveryDays),
       price: Number(values.price.replace(/\D/g, "")),
-      status: values.status,
-      factoryOptions,
-      sellerNotes: values.sellerNotes || undefined,
+      price_unit: "تومان",
+      color: values.color,
+      color_hex: values.colorHex,
+      city: values.city,
+      shipment_days: Number(values.deliveryDays),
+      body_type: values.bodyType,
+      engine_power: values.engine,
+      gearbox: values.transmission,
+      fuel: values.fuelType,
+      other_options: factoryOptions,
     };
 
-    if (listing) {
-      updateListing(listing.id, input);
-      toast.success("محصول به‌روزرسانی شد");
-      router.push(`/market/listings/${listing.id}`);
-    } else {
-      const id = createListing(
-        owner.id,
-        {
-          sellerName: owner.full_name ?? owner.name ?? "ناشناس",
-          sellerAvatar: owner.avatar_path ?? owner.avatar ?? null,
-          sellerVerified: owner.verified === true,
-          sellerMemberSince: owner.created_at ?? "",
-        },
-        input,
-      );
-      toast.success("محصول جدید ثبت شد");
-      router.push(`/dashboard/manage/users/${owner.id}`);
-      void id;
+    try {
+      if (listing) {
+        // ── Update existing listing ──────────────────────────────────
+        const dbStatus = STATUS_TO_DB[values.status] ?? "WAITING";
+        const { error: updateError } = await supabase
+          .from("listings")
+          .update({ ...basePayload, status: dbStatus })
+          .eq("id", listing.id);
+
+        if (updateError) throw updateError;
+
+        // Upsert private note
+        if (values.sellerNotes?.trim()) {
+          await supabase.from("listing_private_notes").upsert(
+            {
+              listing_id: listing.id,
+              seller_id: userId,
+              note: values.sellerNotes.trim(),
+            },
+            { onConflict: "listing_id" },
+          );
+        }
+
+        toast.success("محصول به‌روزرسانی شد");
+        router.push(`/market/listings/${listing.id}`);
+      } else {
+        // ── Create new listing ───────────────────────────────────────
+        const dbStatus = STATUS_TO_DB[values.status] ?? "WAITING";
+        const { data: created, error: insertError } = await supabase
+          .from("listings")
+          .insert({
+            ...basePayload,
+            slug,
+            seller_id: userId,
+            status: dbStatus,
+          })
+          .select("id")
+          .single();
+
+        if (insertError) throw insertError;
+
+        // Insert private note
+        if (values.sellerNotes?.trim()) {
+          const { error: noteError } = await supabase
+            .from("listing_private_notes")
+            .insert({
+              listing_id: created.id,
+              seller_id: userId,
+              note: values.sellerNotes.trim(),
+            });
+
+          if (noteError) {
+            console.error("Error saving private note:", noteError);
+          }
+        }
+
+        toast.success("محصول جدید ثبت شد");
+        router.push(`/dashboard/manage/users/${userId}`);
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "خطا در ثبت محصول");
     }
   });
 
@@ -334,7 +367,7 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
             errors={errors}
             listing={listing}
             selectedBrand={selectedBrand}
-            modelValues={modelValues}
+            modelValues={displayModelValues}
             modelsLoading={modelsLoading}
             brandOptions={brandOptions}
             yearOptions={yearOptions}
@@ -342,9 +375,9 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
           />
 
           <TechnicalSpecsSection
-            engine={carSpecs?.engine}
-            transmission={carSpecs?.transmission}
-            fuelType={carSpecs?.fuelType}
+            engine={displayCarSpecs?.engine}
+            transmission={displayCarSpecs?.transmission}
+            fuelType={displayCarSpecs?.fuelType}
             loading={carSpecsLoading}
           />
 

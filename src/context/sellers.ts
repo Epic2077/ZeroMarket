@@ -7,6 +7,7 @@ import type { Listing } from "@/types/dataTypes";
 // stored separately — every listing carries the seller fields, so the directory
 // and seller profile are built by grouping listings on `sellerName`.
 export interface SellerSummary {
+  id: string; // seller UUID (from Supabase) or slug (mock data)
   slug: string;
   name: string; // Persian display name
   nameEn: string; // raw source name (used for matching / search)
@@ -44,6 +45,7 @@ function buildSellers(): SellerSummary[] {
           new Set(sellerListings.map((l) => brandFa[l.brand] ?? l.brand)),
         );
         return {
+          id: sellerSlug(nameEn), // mock: use slug as id since no real UUID
           slug: sellerSlug(nameEn),
           name: sellerLabel(nameEn),
           nameEn,
