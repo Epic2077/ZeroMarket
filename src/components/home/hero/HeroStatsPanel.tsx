@@ -1,9 +1,14 @@
+"use client";
+
 import { brandModelLabel, colorLabel, toFa } from "@/context/carLabels";
-import { formatPrice, listings } from "@/context/data";
+import { formatPrice } from "@/context/data";
+import { brandLogoStyle } from "@/context/latestTable";
+import { useListings } from "@/hooks/useListings";
 import { ArrowLeft, TrendingDown, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
 export default function HeroStatsPanel() {
+  const { listings } = useListings();
   const recent = listings.slice(0, 5);
 
   return (
@@ -32,10 +37,10 @@ export default function HeroStatsPanel() {
           >
             <div className="flex items-center gap-3 min-w-0">
               <span
-                className="w-9 h-9 rounded-lg flex items-center justify-center text-2xs font-700 text-white shrink-0"
-                style={{ backgroundColor: l.colorHex === "#F5F5F0" ? "#1b4fd8" : l.colorHex }}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xs font-bold"
+                style={brandLogoStyle(l.brand)}
               >
-                {brandModelLabel(l).slice(0, 2)}
+                {l.brand.slice(0, 3).toUpperCase()}
               </span>
               <div className="min-w-0">
                 <div className="text-sm font-700 text-foreground leading-tight truncate">
@@ -50,7 +55,7 @@ export default function HeroStatsPanel() {
               <div className="text-sm font-700 font-mono text-foreground">
                 {formatPrice(l.price)}
               </div>
-              <div
+              {/* <div
                 className={`flex items-center justify-end gap-0.5 text-2xs mt-0.5 font-600 ${
                   l.trend7d >= 0 ? "text-success" : "text-danger"
                 }`}
@@ -64,7 +69,7 @@ export default function HeroStatsPanel() {
                   {l.trend7d >= 0 ? "+" : ""}
                   {toFa(l.trend7d.toFixed(1))}٪
                 </span>
-              </div>
+              </div> */}
             </div>
           </Link>
         ))}

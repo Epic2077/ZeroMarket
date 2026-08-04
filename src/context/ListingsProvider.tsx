@@ -1,5 +1,7 @@
 "use client";
 
+//MOCK
+
 import { listings as seedListings } from "@/context/data";
 import { sellerSlug } from "@/context/sellers";
 import type { Listing } from "@/types/dataTypes";
@@ -20,7 +22,11 @@ interface ListingsContextValue {
   listingsByOwner: (ownerId: string) => Listing[];
   updateListing: (id: string, input: ProductInput) => void;
   // Returns the new listing id so callers can navigate to it.
-  createListing: (ownerId: string, base: Partial<Listing>, input: ProductInput) => string;
+  createListing: (
+    ownerId: string,
+    base: Partial<Listing>,
+    input: ProductInput,
+  ) => string;
   deleteListing: (id: string) => void;
 }
 
@@ -98,7 +104,14 @@ export function ListingsProvider({ children }: { children: ReactNode }) {
       createListing,
       deleteListing,
     }),
-    [listings, getListing, listingsByOwner, updateListing, createListing, deleteListing],
+    [
+      listings,
+      getListing,
+      listingsByOwner,
+      updateListing,
+      createListing,
+      deleteListing,
+    ],
   );
 
   return (

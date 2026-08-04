@@ -54,7 +54,12 @@ export const bodyTypeOptions = toOptions([
   "ون",
 ]);
 export const cityOptions = toOptions(Object.values(cityFa));
-export const fuelTypeOptions = toOptions(["بنزینی", "هیبریدی", "پلاگین هیبرید", "برقی"]);
+export const fuelTypeOptions = toOptions([
+  "بنزینی",
+  "هیبریدی",
+  "پلاگین هیبرید",
+  "برقی",
+]);
 export const statusOptions: SelectOption[] = [
   { value: "active", label: "موجود" },
   { value: "pending", label: "در انتظار" },
@@ -75,10 +80,10 @@ export function applyFilters(listings: Listing[], f: FilterState): Listing[] {
         `${l.brand} ${l.model} ${l.trim} ${l.sellerName}`.toLowerCase();
       if (!haystack.includes(search)) return false;
     }
-    if (f.brand && brandFa[l.brand] !== f.brand) return false;
-    if (f.bodyType && bodyTypeFa[l.bodyType] !== f.bodyType) return false;
-    if (f.city && cityFa[l.city] !== f.city) return false;
-    if (f.fuelType && fuelTypeFa[l.fuelType] !== f.fuelType) return false;
+    if (f.brand && l.brand !== f.brand) return false;
+    if (f.bodyType && l.bodyType !== f.bodyType) return false;
+    if (f.city && l.city !== f.city) return false;
+    if (f.fuelType && l.fuelType !== f.fuelType) return false;
     if (f.status && l.status !== f.status) return false;
     if (f.verifiedOnly && !l.sellerVerified) return false;
     if (!Number.isNaN(min) && l.price < min * BILLION) return false;

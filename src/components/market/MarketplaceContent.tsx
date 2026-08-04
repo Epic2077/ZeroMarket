@@ -1,13 +1,19 @@
 "use client";
 
 import ListingTable from "@/components/home/Latest/ListingTable";
-import { activeFilterCount, applyFilters } from "@/context/marketFilters";
+import {
+  activeFilterCount,
+  applyFilters,
+  type SelectOption,
+} from "@/context/marketFilters";
 import { FilterState } from "@/types/marketplace";
-import { SlidersHorizontal, X, Loader2 } from "lucide-react";
+import { SlidersHorizontal, X } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import MarketplaceFilters from "./MarketPlaceFilters";
 import MarketplaceSidebar from "./MarketPlaceSidebar";
 import { useListings } from "@/hooks/useListings";
+import { useTaxonomyOptions } from "@/hooks/useTaxonomyOptions";
 import { listingRowToListing } from "@/lib/supabase/listings";
 
 const defaultFilters: FilterState = {
@@ -25,11 +31,35 @@ const defaultFilters: FilterState = {
 };
 
 export default function MarketplaceContent() {
-  const [filters, setFilters] = useState<FilterState>(defaultFilters);
+  const searchParams = useSearchParams();
+  const [filters, setFilters] = useState<FilterState>(() => ({
+    ...defaultFilters,
+    brand: searchParams.get("brand") ?? "",
+    city: searchParams.get("city") ?? "",
+  }));
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
 
   const { listings: rawListings, loading, error } = useListings();
+  const { values: taxonomyValues, loading: taxLoading } = useTaxonomyOptions();
+
+  // Taxonomy-driven filter options
+  const brandOptions: SelectOption[] = useMemo(
+    () => taxonomyValues("BRAND").map((v) => ({ value: v, label: v })),
+    [taxonomyValues],
+  );
+  const bodyTypeOptions: SelectOption[] = useMemo(
+    () => taxonomyValues("BODY_TYPE").map((v) => ({ value: v, label: v })),
+    [taxonomyValues],
+  );
+  const cityOptions: SelectOption[] = useMemo(
+    () => taxonomyValues("CITY").map((v) => ({ value: v, label: v })),
+    [taxonomyValues],
+  );
+  const fuelTypeOptions: SelectOption[] = useMemo(
+    () => taxonomyValues("FUEL_TYPE").map((v) => ({ value: v, label: v })),
+    [taxonomyValues],
+  );
 
   // Convert Supabase rows → frontend Listing shape
   const allListings = useMemo(
@@ -50,17 +80,46 @@ export default function MarketplaceContent() {
   );
   const activeCount = activeFilterCount(filters);
 
-  // ── Loading state ──────────────────────────────────────────────────
-  if (loading) {
+  const isReady = !loading && !taxLoading;
+
+  // ── Loading skeleton ────────────────────────────────────────────────
+  if (!isReady) {
     return (
       <section
-        className="max-w-screen-2xl mx-auto px-4 lg:px-8 xl:px-10 py-16 vazir-matn flex items-center justify-center gap-3"
+        className="max-w-screen-2xl mx-auto px-4 lg:px-8 xl:px-10 py-6 vazir-matn"
         dir="rtl"
       >
-        <Loader2 size={24} className="animate-spin text-primary" />
-        <span className="text-sm text-muted-foreground">
-          در حال بارگذاری آگهی‌ها…
-        </span>
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between mb-4 animate-pulse">
+          <div className="space-y-2">
+            <div className="h-7 w-48 bg-muted rounded-lg" />
+            <div className="h-4 w-32 bg-muted rounded-lg" />
+          </div>
+          <div className="h-9 w-28 bg-muted rounded-lg" />
+        </div>
+
+        {/* Filter bar skeleton */}
+        <div className="sticky-filters -mx-4 lg:-mx-8 xl:-mx-10 px-4 lg:px-8 xl:px-10 py-3 mb-6">
+          <div className="flex flex-wrap items-center gap-2 animate-pulse">
+            <div className="h-8 w-52 bg-muted rounded-lg" />
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-8 w-28 bg-muted rounded-lg" />
+            ))}
+            <div className="h-8 w-36 bg-muted rounded-lg" />
+          </div>
+        </div>
+
+        {/* Table skeleton */}
+        <div className="flex items-start gap-5">
+          <div className="min-w-0 flex-1 animate-pulse space-y-2">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="h-14 bg-muted rounded-xl" />
+            ))}
+          </div>
+          <aside className="hidden xl:block w-72 shrink-0 animate-pulse">
+            <div className="h-80 bg-muted rounded-xl" />
+          </aside>
+        </div>
       </section>
     );
   }
@@ -132,6 +191,10 @@ export default function MarketplaceContent() {
           onReset={resetFilters}
           activeCount={activeCount}
           totalResults={filtered.length}
+          brandOptions={brandOptions}
+          bodyTypeOptions={bodyTypeOptions}
+          cityOptions={cityOptions}
+          fuelTypeOptions={fuelTypeOptions}
         />
       </div>
 

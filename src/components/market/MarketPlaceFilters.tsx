@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  bodyTypeOptions,
-  brandOptions,
-  cityOptions,
-  fuelTypeOptions,
-  statusOptions,
-  type SelectOption,
-} from "@/context/marketFilters";
+import { type SelectOption } from "@/context/marketFilters";
 import { FilterState } from "@/types/marketplace";
 import { ChevronDown, Search, Shield, X } from "lucide-react";
 
@@ -20,10 +13,21 @@ interface Props {
   onReset: () => void;
   activeCount: number;
   totalResults: number;
+  brandOptions: SelectOption[];
+  bodyTypeOptions: SelectOption[];
+  cityOptions: SelectOption[];
+  fuelTypeOptions: SelectOption[];
 }
 
 const fieldClass =
   "h-8 rounded-lg border border-border bg-card text-xs focus:outline-none focus:ring-2 focus:ring-primary/30";
+
+const statusOptions: SelectOption[] = [
+  { value: "active", label: "موجود" },
+  { value: "pending", label: "در انتظار" },
+  { value: "negotiable", label: "قابل مذاکره" },
+  { value: "reserved", label: "رزرو شده" },
+];
 
 const SelectField = ({
   value,
@@ -62,6 +66,10 @@ export default function MarketplaceFilters({
   onReset,
   activeCount,
   totalResults,
+  brandOptions,
+  bodyTypeOptions,
+  cityOptions,
+  fuelTypeOptions,
 }: Props) {
   return (
     <div className="flex flex-wrap items-center gap-2">
