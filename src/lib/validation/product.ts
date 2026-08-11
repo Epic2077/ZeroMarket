@@ -23,6 +23,7 @@ export const productSchema = z.object({
     .refine((v) => Number(v.replace(/\D/g, "")) > 0, "قیمت نامعتبر است"),
   status: z.enum(["active", "pending", "sold", "negotiable", "reserved"]),
   sellerNotes: z.string().optional(),
+  listingType: z.enum(["SELL", "BUY"]).default("SELL"),
 });
 
 export type ProductFormValues = z.infer<typeof productSchema>;

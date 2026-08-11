@@ -15,6 +15,7 @@ import {
   Star,
 } from "lucide-react";
 import Link from "next/link";
+import Avatar from "../shared/Avatar";
 
 interface Props {
   seller: SellerSummary;
@@ -48,6 +49,8 @@ export default function SellerProfileHero({ seller }: Props) {
     },
   ];
 
+  console.log(seller);
+
   return (
     <div className="card-elevated overflow-hidden mb-8">
       {/* Banner */}
@@ -66,12 +69,11 @@ export default function SellerProfileHero({ seller }: Props) {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-10 ">
           <div className="flex items-end gap-4">
             <div className="w-20 h-20 rounded-2xl bg-card ring-4 ring-card shrink-0 z-10">
-              <div
-                className="w-full h-full rounded-2xl flex items-center justify-center text-white font-800 text-2xl"
-                style={{ background: avatarGradient }}
-              >
-                {seller.avatar}
-              </div>
+              <Avatar
+                src={seller.avatar_path ?? seller.avatar}
+                name={seller.name}
+                size="w-20 h-20"
+              />
             </div>
             <div className="pb-1 z-10 bg-white px-2 rounded-lg">
               <div className="flex items-center gap-2 flex-wrap">

@@ -3,15 +3,14 @@
 import { useCallback, useEffect, useState } from "react";
 import type { SellerSummary } from "@/context/sellers";
 import {
+  fetchSellerBrandsAndMinPrice,
   fetchSellers,
   fetchSellerById,
-  fetchSellerListingAggregates,
   sellerRowToSummary,
   type SellerRow,
-  type SellerListingAggregate,
 } from "@/lib/supabase/sellers";
 
-// ── useSellers (all sellers with listing aggregates) ─────────────────
+// ── useSellers (all sellers) ─────────────────────────────────────────
 
 export interface UseSellersResult {
   sellers: SellerSummary[];
@@ -29,14 +28,13 @@ export function useSellers(): UseSellersResult {
     setLoading(true);
     setError(null);
     try {
-      const [rows, aggMap] = await Promise.all([
+      const [rows, listingMap] = await Promise.all([
         fetchSellers(),
-        fetchSellerListingAggregates(),
+        fetchSellerBrandsAndMinPrice(),
       ]);
-      const summaries = rows.map((row) =>
-        sellerRowToSummary(row, aggMap.get(row.id)),
+      setSellers(
+        rows.map((row) => sellerRowToSummary(row, listingMap.get(row.id))),
       );
-      setSellers(summaries);
     } catch (err) {
       setError(err instanceof Error ? err.message : "خطا در دریافت فروشندگان");
       setSellers([]);
@@ -83,10 +81,11 @@ export function useSeller(id: string): UseSellerResult {
         setLoading(false);
         return;
       }
-      const aggMap = await fetchSellerListingAggregates();
-      const agg = aggMap.get(row.id);
-      const summary = sellerRowToSummary(row, agg);
-      setSeller({ ...row, summary });
+      const listingMap = await fetchSellerBrandsAndMinPrice();
+      setSeller({
+        ...row,
+        summary: sellerRowToSummary(row, listingMap.get(row.id)),
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "خطا در دریافت فروشنده");
       setSeller(null);

@@ -1,6 +1,6 @@
 "use client";
 
-import { Tag } from "lucide-react";
+import { Tag, Sparkles } from "lucide-react";
 import { Section } from "@/components/shared/Section";
 import { SelectField } from "@/components/shared/SelectField";
 import { Input } from "@/components/ui/input";
@@ -22,7 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { withCurrent } from "@/lib/utils";
+import { withCurrent, fromPersianYear } from "@/lib/utils";
+import { useMarketInsight } from "@/hooks/useMarketInsight";
 import type {
   ProductFormErrors,
   ProductFormValues,
@@ -43,6 +44,10 @@ interface AvailabilityPriceSectionProps {
   listing?: { city?: string };
   setValue: UseFormSetValue<ProductFormValues>;
   cityOptions: string[];
+  /** Current form values needed for market insight lookup. */
+  brand: string;
+  model: string;
+  year: string; // Persian year string (e.g. "۱۴۰۲")
 }
 
 const groupThousands = (raw: string) => {
@@ -56,7 +61,28 @@ export function AvailabilityPriceSection({
   listing,
   setValue,
   cityOptions,
+  brand,
+  model,
+  year,
 }: AvailabilityPriceSectionProps) {
+  // Convert Persian year to Gregorian for the market insight lookup
+  const gYear = fromPersianYear(year || "۱۴۰۴");
+
+  const { market, loading: marketLoading } = useMarketInsight(
+    brand,
+    model,
+    gYear,
+    0, // price not needed — we only read marketAvgBuy
+  );
+
+  const hasAverage = market !== null;
+
+  const suggestPrice = () => {
+    if (!market) return;
+    setValue("price", market.marketAvgBuy.toLocaleString("en-US"), {
+      shouldValidate: true,
+    });
+  };
   return (
     <Section
       icon={<Tag size={16} className="text-success" />}
@@ -116,20 +142,34 @@ export function AvailabilityPriceSection({
         </Field>
         <Field data-invalid={!!errors.price}>
           <FieldLabel htmlFor="p-price">قیمت (تومان)</FieldLabel>
-          <Input
-            id="p-price"
-            inputMode="numeric"
-            dir="ltr"
-            className="text-right font-mono"
-            placeholder="۹۰۰٬۰۰۰٬۰۰۰"
-            aria-invalid={!!errors.price}
-            {...control.register("price", {
-              onChange: (e) =>
-                setValue("price", groupThousands(e.target.value), {
-                  shouldValidate: true,
-                }),
-            })}
-          />
+          <div className="flex gap-2">
+            <Input
+              id="p-price"
+              inputMode="numeric"
+              dir="ltr"
+              className="text-right font-mono flex-1"
+              placeholder="۹۰۰٬۰۰۰٬۰۰۰"
+              aria-invalid={!!errors.price}
+              {...control.register("price", {
+                onChange: (e) =>
+                  setValue("price", groupThousands(e.target.value), {
+                    shouldValidate: true,
+                  }),
+              })}
+            />
+            {hasAverage && (
+              <button
+                type="button"
+                onClick={suggestPrice}
+                disabled={marketLoading}
+                className="shrink-0 inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-600 bg-negotiable/10 border border-negotiable/25 text-negotiable hover:bg-negotiable/20 transition-colors duration-150"
+                title={`میانگین بازار: ${market?.marketAvgBuy.toLocaleString("en-US")} تومان`}
+              >
+                <Sparkles size={13} />
+                پیشنهاد قیمت
+              </button>
+            )}
+          </div>
           <FieldError>{errors.price?.message}</FieldError>
         </Field>
       </FieldGroup>

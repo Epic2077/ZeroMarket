@@ -290,7 +290,9 @@ export default function OwnerNotifications({
                       ) : null
                     }
                     className={`card-elevated ${
-                      !n.is_resolved ? "ring-1 ring-primary/10" : ""
+                      !n.is_resolved
+                        ? "ring-1 ring-primary/10"
+                        : "opacity-50 grayscale-[0.3]"
                     }`}
                   />
                 );

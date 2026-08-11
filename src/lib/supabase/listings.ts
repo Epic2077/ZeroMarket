@@ -1,5 +1,7 @@
 import { supabase } from "./client";
 import type { Listing } from "@/types/dataTypes";
+import { formatPersianDateTime } from "@/lib/utils";
+import type { SellerDisplayFields } from "./sellers";
 
 // ── Row shape matching the Supabase `listings` table ──────────────────
 
@@ -26,6 +28,7 @@ export interface ListingRow {
   other_options: string[];
   created_at: string;
   updated_at: string;
+  listing_type: string;
 }
 
 export type ListingStatus =
@@ -102,6 +105,68 @@ export async function fetchListingsBySeller(
   return fetchListings({ sellerId: sellerId });
 }
 
+// ── Duplicate check ─────────────────────────────────────────────────
+
+/** Check whether the seller already has an active listing with the same
+ *  brand / model / year / trim / color / city. Returns the duplicate's id if found. */
+export async function checkDuplicateListing(
+  client: SupabaseClient,
+  sellerId: string,
+  brand: string,
+  model: string,
+  year: number,
+  trim: string,
+  color: string,
+  city: string,
+  excludeId?: string,
+): Promise<string | null> {
+  let query = client
+    .from("listings")
+    .select("id")
+    .match({ seller_id: sellerId, brand, model, year, trim, color, city })
+    .in("status", ["WAITING", "AVAILABLE", "NEGOTIABLE", "RESERVED"]);
+
+  if (excludeId) query = query.neq("id", excludeId);
+
+  const { data } = await query.maybeSingle();
+  return (data as { id: string } | null)?.id ?? null;
+}
+
+// ── Market insights ──────────────────────────────────────────────────
+
+import type { MarketDisplayFields } from "@/types/dataTypes";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+/** Fetch market analytics from `car_market_insights` and compute display
+ *  fields (price-vs-market %, trend %). Returns null when no data exists.
+ *  Works with both server and client supabase clients. */
+export async function getMarketInsight(
+  client: SupabaseClient,
+  brand: string,
+  model: string,
+  year: number,
+  listingPrice: number,
+): Promise<MarketDisplayFields | null> {
+  const { data, error } = await client
+    .from("car_market_insights")
+    .select("avg_listed_price, avg_price_7d_ago")
+    .eq("brand", brand)
+    .eq("model", model)
+    .eq("year", String(year)) // year is text in car_market_insights
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  const avg = Number(data.avg_listed_price);
+  if (!avg || avg <= 0) return null;
+
+  const priceVsMarket = Math.round(((listingPrice - avg) / avg) * 100);
+  const ago7d = Number(data.avg_price_7d_ago || 0);
+  const trend7d = ago7d > 0 ? Math.round(((avg - ago7d) / ago7d) * 100) : 0;
+
+  return { marketAvgBuy: avg, marketAvgSell: avg, priceVsMarket, trend7d };
+}
+
 // ── Converter: Supabase ListingRow → frontend Listing ────────────────
 
 const STATUS_MAP: Record<string, Listing["status"]> = {
@@ -113,8 +178,12 @@ const STATUS_MAP: Record<string, Listing["status"]> = {
 };
 
 /** Convert a raw Supabase listing row into the frontend `Listing` shape.
- *  Seller fields use sensible defaults until we join with the sellers table. */
-export function listingRowToListing(row: ListingRow): Listing {
+ *  Accepts optional seller display fields and market insight data. */
+export function listingRowToListing(
+  row: ListingRow,
+  seller?: SellerDisplayFields,
+  market?: MarketDisplayFields,
+): Listing {
   return {
     id: row.id,
     seller_id: row.seller_id,
@@ -131,20 +200,23 @@ export function listingRowToListing(row: ListingRow): Listing {
     bodyType: row.body_type,
     city: row.city,
     deliveryDays: row.shipment_days,
-    sellerName: "فروشنده",
-    sellerVerified: false,
-    sellerResponseRate: 90,
-    sellerMemberSince: "۱۴۰۲",
-    sellerActiveListings: 1,
-    sellerAvatar: null,
+    sellerName: seller?.sellerName ?? "فروشنده",
+    sellerVerified: seller?.sellerVerified ?? false,
+    sellerResponseRate: seller?.sellerResponseRate ?? 90,
+    sellerMemberSince: seller?.sellerMemberSince ?? "۱۴۰۲",
+    sellerActiveListings: seller?.sellerActiveListings ?? 1,
+    sellerAvatar: seller?.sellerAvatar ?? null,
     price: row.price,
     priceUnit: row.price_unit ?? "تومان",
     status: STATUS_MAP[row.status] ?? "active",
-    listedDate: row.created_at,
+    listedDate: formatPersianDateTime(row.created_at),
     factoryOptions: row.other_options ?? [],
-    marketAvgBuy: row.price,
-    marketAvgSell: row.price,
-    priceVsMarket: 0,
-    trend7d: 0,
+    marketAvgBuy: market?.marketAvgBuy ?? row.price,
+    marketAvgSell: market?.marketAvgSell ?? row.price,
+    priceVsMarket: market?.priceVsMarket ?? 0,
+    trend7d: market?.trend7d ?? 0,
+    listingType: (row.listing_type === "BUY"
+      ? "BUY"
+      : "SELL") as Listing["listingType"],
   };
 }

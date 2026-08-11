@@ -1,20 +1,81 @@
 "use client";
 
 import RequestStatusBadge from "@/components/seller-dashboard/RequestStatusBadge";
-import { myRequests } from "@/context/userProfile";
-import { Store, X } from "lucide-react";
-import { useState } from "react";
+import { useUserInfo } from "@/context/UserInfoProvider";
+import {
+  cancelBuyRequest,
+  fetchBuyerRequests,
+  type BuyerRequestRow,
+} from "@/lib/supabase/buyRequests";
+import type { RequestStatus } from "@/context/sellerDashboard";
+import {
+  HandCoins,
+  Loader2,
+  Phone,
+  ShoppingCart,
+  Store,
+  X,
+} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 const faNum = (n: number) => n.toLocaleString("fa-IR");
 
-export default function MyRequestsTab() {
-  const [requests, setRequests] = useState(myRequests);
+const STATUS_FROM_DB: Record<string, RequestStatus> = {
+  WAITING: "pending",
+  ACCEPTED: "approved",
+  NEGOTIABLE: "negotiable",
+  REJECTED: "declined",
+};
 
-  const cancel = (id: string, title: string) => {
-    setRequests((prev) => prev.filter((req) => req.id !== id));
-    toast.success(`درخواست «${title}» لغو شد`);
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins} دقیقه پیش`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} ساعت پیش`;
+  return `${Math.floor(hrs / 24)} روز پیش`;
+}
+
+export default function MyRequestsTab() {
+  const { user } = useUserInfo();
+  const [requests, setRequests] = useState<BuyerRequestRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    if (!user?.id) return;
+    setLoading(true);
+    try {
+      setRequests(await fetchBuyerRequests(user.id));
+    } catch {
+      // silently ignore
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const cancel = async (id: string, title: string) => {
+    try {
+      await cancelBuyRequest(id);
+      setRequests((prev) => prev.filter((r) => r.id !== id));
+      toast.success(`درخواست «${title}» لغو شد`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "خطا در لغو درخواست");
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-16">
+        <Loader2 size={18} className="animate-spin text-primary" />
+        <span className="text-sm text-muted-foreground">در حال بارگذاری…</span>
+      </div>
+    );
+  }
 
   return (
     <div className="card-elevated overflow-hidden">
@@ -31,52 +92,87 @@ export default function MyRequestsTab() {
       ) : (
         <div className="divide-y divide-border">
           {requests.map((req) => {
-            // Only still-open requests can be withdrawn by the buyer.
+            const frontendStatus = STATUS_FROM_DB[req.status] ?? "pending";
             const cancellable =
-              req.status === "pending" || req.status === "negotiable";
+              req.status === "WAITING" || req.status === "NEGOTIABLE";
+            const showPhone =
+              (req.status === "ACCEPTED" || req.status === "NEGOTIABLE") &&
+              req.seller_phone;
+            const isBuyListing = req.listing_type === "BUY";
             return (
               <div
                 key={req.id}
-                className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-5 py-4 hover:bg-muted/30 transition-colors duration-150"
+                className="flex flex-col gap-4 px-5 py-4 hover:bg-muted/30 transition-colors duration-150"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-muted-foreground flex-shrink-0">
-                    <Store size={18} />
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-muted-foreground shrink-0">
+                      <Store size={18} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-700 text-foreground">
+                          {req.listing_title}
+                        </span>
+                        <span
+                          className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-2xs font-600 ${
+                            isBuyListing
+                              ? "bg-accent/10 text-accent"
+                              : "bg-primary/10 text-primary"
+                          }`}
+                        >
+                          {isBuyListing ? (
+                            <HandCoins size={10} />
+                          ) : (
+                            <ShoppingCart size={10} />
+                          )}
+                          {isBuyListing ? "خرید" : "فروش"}
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {req.seller_name}
+                      </div>
+                      <div className="text-2xs text-muted-foreground mt-0.5">
+                        {timeAgo(req.created_at)}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-sm font-700 text-foreground">
-                      {req.title}
+
+                  <div className="text-center">
+                    <div className="text-sm font-mono font-700 text-foreground">
+                      {req.offered_price.toLocaleString("fa-IR")} تومان
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {req.seller}
+                    <div className="text-2xs text-muted-foreground">
+                      پیشنهاد شما
                     </div>
-                    <div className="text-2xs text-muted-foreground mt-0.5">
-                      {req.time}
-                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <RequestStatusBadge status={frontendStatus} />
+                    {cancellable && (
+                      <button
+                        onClick={() => cancel(req.id, req.listing_title)}
+                        className="flex items-center gap-1 px-3 py-1.5 border border-danger/25 bg-danger/10 text-danger text-xs font-700 rounded-lg hover:bg-danger/20 transition-colors duration-150"
+                      >
+                        <X size={12} />
+                        لغو درخواست
+                      </button>
+                    )}
                   </div>
                 </div>
 
-                <div className="text-center">
-                  <div className="text-sm font-mono font-700 text-foreground">
-                    {req.offer.toLocaleString("fa-IR")} تومان
+                {/* Phone number reveal for accepted/negotiable */}
+                {showPhone && (
+                  <div className="flex items-center gap-2 bg-success/5 border border-success/20 rounded-xl px-3 py-2">
+                    <Phone size={13} className="text-success shrink-0" />
+                    <span className="text-xs text-foreground">
+                      شماره تماس {isBuyListing ? "خریدار" : "فروشنده"}:{" "}
+                      <span className="font-mono font-700" dir="ltr">
+                        {req.seller_phone}
+                      </span>
+                    </span>
                   </div>
-                  <div className="text-2xs text-muted-foreground">
-                    پیشنهاد شما
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <RequestStatusBadge status={req.status} />
-                  {cancellable && (
-                    <button
-                      onClick={() => cancel(req.id, req.title)}
-                      className="flex items-center gap-1 px-3 py-1.5 border border-danger/25 bg-danger/10 text-danger text-xs font-700 rounded-lg hover:bg-danger/20 transition-colors duration-150"
-                    >
-                      <X size={12} />
-                      لغو درخواست
-                    </button>
-                  )}
-                </div>
+                )}
               </div>
             );
           })}

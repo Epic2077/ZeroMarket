@@ -5,13 +5,16 @@ import { PlusCircle, Settings, Upload } from "lucide-react";
 import Link from "next/link";
 import Avatar from "../shared/Avatar";
 import { useUserInfo } from "@/context/UserInfoProvider";
+import { useSeller } from "@/hooks/useSellers";
+import { Spinner } from "../ui/spinner";
 
 interface Props {
   onBulkImport: () => void;
 }
 
 export default function DashboardHeader({ onBulkImport }: Props) {
-  const { profile } = useUserInfo();
+  const { profile, loading: userLoading } = useUserInfo();
+  const { seller, loading: sellerLoading } = useSeller(profile?.id ?? "");
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
       <div className="flex items-center gap-4">
@@ -23,20 +26,25 @@ export default function DashboardHeader({ onBulkImport }: Props) {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-800 text-foreground">
-              {profile?.full_name}
+              {userLoading ? <Spinner /> : profile?.full_name}
             </h1>
             {profile?.verified && <VerifiedBadge size="md" />}
           </div>
           <p className="text-sm text-muted-foreground mt-0.5">
-            داشبورد فروشنده · <span>{profile?.city}</span> · عضو از{" "}
+            داشبورد فروشنده ·{" "}
+            <span>{sellerLoading ? <Spinner /> : seller?.city}</span> · عضو از{" "}
             <span>
-              {profile?.created_at
-                ? new Date(profile.created_at).toLocaleDateString("fa-IR", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })
-                : ""}
+              {userLoading ? (
+                <Spinner />
+              ) : profile?.created_at ? (
+                new Date(profile.created_at).toLocaleDateString("fa-IR", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })
+              ) : (
+                ""
+              )}
             </span>
           </p>
         </div>

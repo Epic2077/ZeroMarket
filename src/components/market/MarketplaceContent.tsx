@@ -63,7 +63,7 @@ export default function MarketplaceContent() {
 
   // Convert Supabase rows → frontend Listing shape
   const allListings = useMemo(
-    () => rawListings.map(listingRowToListing),
+    () => rawListings.map((row) => listingRowToListing(row)),
     [rawListings],
   );
 

@@ -94,14 +94,12 @@ const getColors = async () => {
 
 // ADMIN: Request a new category option
 const requestNewCity = async (adminId: string, cityName: string) => {
-  return await supabase
-    .from("taxonomy_change_requests")
-    .insert({
-      category: "CITY",
-      action: "ADD",
-      value: cityName,
-      requested_by: adminId,
-    });
+  return await supabase.from("taxonomy_change_requests").insert({
+    category: "CITY",
+    action: "ADD",
+    value: cityName,
+    requested_by: adminId,
+  });
 };
 
 // OWNER: Approve a taxonomy request (Database triggers handle the rest instantly!)
@@ -139,4 +137,159 @@ const getStaffInbox = async () => {
     .select("*")
     .eq("is_resolved", false);
 };
+```
+
+<!-- How to use the analytics table from supabase -->
+
+```typescript
+import { supabase } from "./client";
+
+export async function getListingWithAnalytics(listingId: string) {
+  // 1. Get the specific car listing
+  const { data: listing } = await supabase
+    .from("listings")
+    .select("*")
+    .eq("id", listingId)
+    .single();
+
+  // 2. Get the market averages for this specific Brand + Model + Year
+  const { data: marketData } = await supabase
+    .from("car_market_insights")
+    .select("*")
+    .eq("brand", listing.brand)
+    .eq("model", listing.model)
+    .eq("year", listing.year)
+    .single();
+
+  // 3. Calculate the Deal Rating!
+  let dealRating = "FAIR PRICE";
+  let priceDifference = 0;
+
+  if (marketData && marketData.avg_listed_price > 0) {
+    priceDifference = listing.price - marketData.avg_listed_price;
+
+    // If it is 5% cheaper than the average, it's a GREAT deal
+    if (listing.price <= marketData.avg_listed_price * 0.95) {
+      dealRating = "GREAT DEAL";
+    }
+    // If it is 5% more expensive, it's PRICEY
+    else if (listing.price >= marketData.avg_listed_price * 1.05) {
+      dealRating = "PRICEY";
+    }
+  }
+
+  return {
+    ...listing,
+    analytics: {
+      dealRating,
+      priceDifference, // Positive means overpriced, negative means underpriced
+      marketAverage: marketData?.avg_listed_price || 0,
+      activeCompetitors: marketData?.total_active_listings || 1,
+      priceTrend30d: marketData
+        ? marketData.avg_listed_price - marketData.avg_price_30d_ago
+        : 0,
+    },
+  };
+}
+```
+
+<!-- Seller table update -->
+
+Name Format Type Description
+id
+
+uuid
+string
+full_name
+
+text
+string
+verified
+
+boolean
+boolean
+answer_rate
+
+double precision
+number
+city
+
+text
+string
+banner_path
+
+text
+string
+avatar_path
+
+text
+string
+created_at
+
+timestamp with time zone
+string
+updated_at
+
+timestamp with time zone
+string
+active_listings_count
+
+integer
+number
+total_sold_count
+
+integer
+number
+seller_score
+
+integer
+number
+
+```typescript
+import { supabase } from "./client";
+
+export async function getTopShowcaseSellers() {
+  const { data: topSellers, error } = await supabase
+    .from("sellers")
+    .select(
+      "id, full_name, avatar_path, city, verified, answer_rate, active_listings_count",
+    )
+    .order("seller_score", { ascending: false }) // Sort by highest score first
+    .limit(4); // Only grab the top 4!
+
+  if (error) throw error;
+  return topSellers;
+}
+```
+
+to get for each seller
+
+```typescript
+import { supabase } from "./client";
+
+// Fetch analytics for a specific seller
+export async function getMySellerInsights(sellerId: string) {
+  const { data: seller, error } = await supabase
+    .from("sellers")
+    .select(
+      `
+      id,
+      full_name,
+      verified,
+      answer_rate,
+      active_listings_count,
+      total_sold_count,
+      seller_score
+    `,
+    )
+    .eq("id", sellerId) // Target the specific user
+    .single(); // Return an object, not an array
+
+  if (error) {
+    console.error("Error fetching seller insights:", error);
+    throw error;
+  }
+
+  return seller;
+}
 ```

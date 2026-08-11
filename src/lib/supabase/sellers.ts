@@ -11,18 +11,11 @@ export interface SellerRow {
   city: string;
   banner_path: string | null;
   avatar_path: string | null;
+  active_listings_count: number;
+  total_sold_count: number;
+  seller_score: number;
   created_at: string;
   updated_at: string;
-}
-
-// ── Aggregated listing info per seller ───────────────────────────────
-
-export interface SellerListingAggregate {
-  sellerId: string;
-  totalListings: number;
-  activeListings: number;
-  brands: string[];
-  minPrice: number;
 }
 
 // ── Fetchers ──────────────────────────────────────────────────────────
@@ -53,53 +46,75 @@ export async function fetchSellerById(id: string): Promise<SellerRow | null> {
   return data as SellerRow;
 }
 
-/** Fetch listing aggregates per seller (counts, brands, min price).
- *  Returns a map of seller_id → aggregate. */
-export async function fetchSellerListingAggregates(): Promise<
-  Map<string, SellerListingAggregate>
-> {
-  const { data, error } = await supabase
-    .from("listings")
-    .select("seller_id, brand, status, price");
+// ── Lightweight listing aggregates per seller ────────────────────────
 
-  if (error) throw error;
+export interface SellerListingSummary {
+  brands: string[];
+  minPrice: number;
+  totalListings: number;
+  activeListings: number;
+}
 
-  const map = new Map<string, SellerListingAggregate>();
+interface SellerListingRowLike {
+  seller_id: string;
+  brand: string;
+  price: number;
+  status: string;
+}
 
-  for (const row of data ?? []) {
-    const sellerId = row.seller_id as string;
+const ACTIVE_STATUSES = new Set(["AVAILABLE", "NEGOTIABLE"]);
+
+export function aggregateSellerListingStats(
+  rows: SellerListingRowLike[],
+): Map<string, SellerListingSummary> {
+  const map = new Map<string, SellerListingSummary>();
+
+  for (const row of rows) {
+    const sellerId = row.seller_id;
     let agg = map.get(sellerId);
     if (!agg) {
       agg = {
-        sellerId,
-        totalListings: 0,
-        activeListings: 0,
         brands: [],
         minPrice: Infinity,
+        totalListings: 0,
+        activeListings: 0,
       };
       map.set(sellerId, agg);
     }
 
-    agg.totalListings++;
-    if (row.status === "AVAILABLE" || row.status === "NEGOTIABLE") {
-      agg.activeListings++;
+    agg.totalListings += 1;
+    if (ACTIVE_STATUSES.has(row.status)) {
+      agg.activeListings += 1;
     }
-    const brand = row.brand as string;
-    if (!agg.brands.includes(brand)) {
-      agg.brands.push(brand);
+
+    if (!agg.brands.includes(row.brand)) {
+      agg.brands.push(row.brand);
     }
-    const price = row.price as number;
-    if (price < agg.minPrice) {
-      agg.minPrice = price;
+
+    if (row.price < agg.minPrice) {
+      agg.minPrice = row.price;
     }
   }
 
-  // Normalise minPrice for sellers with no listings
   for (const agg of map.values()) {
     if (agg.minPrice === Infinity) agg.minPrice = 0;
   }
 
   return map;
+}
+
+/** Fetch distinct brands, minimum price, and listing counts per seller from
+ *  the listings table. */
+export async function fetchSellerBrandsAndMinPrice(): Promise<
+  Map<string, SellerListingSummary>
+> {
+  const { data, error } = await supabase
+    .from("listings")
+    .select("seller_id, brand, price, status");
+
+  if (error) throw error;
+
+  return aggregateSellerListingStats((data ?? []) as SellerListingRowLike[]);
 }
 
 // ── Converter: Supabase SellerRow → frontend SellerSummary ───────────
@@ -131,25 +146,57 @@ function sellerSlugFromName(name: string, id: string): string {
   return cleaned || `seller-${id.slice(0, 8)}`;
 }
 
+/** Extract seller display fields for a `Listing` from a `SellerRow`.
+ *  Used when joining seller data into listing queries. */
+export interface SellerDisplayFields {
+  sellerName: string;
+  sellerVerified: boolean;
+  sellerResponseRate: number;
+  sellerMemberSince: string;
+  sellerActiveListings: number;
+  sellerAvatar: string | null;
+}
+
+export function sellerRowToDisplayFields(
+  row: SellerRow,
+  listing?: SellerListingSummary,
+): SellerDisplayFields {
+  const memberYear = new Date(row.created_at).getFullYear();
+  return {
+    sellerName: row.full_name,
+    sellerVerified: row.verified,
+    sellerResponseRate: Math.round(row.answer_rate),
+    sellerMemberSince: toPersianDigits(memberYear),
+    sellerActiveListings: listing?.activeListings ?? row.active_listings_count,
+    sellerAvatar: row.avatar_path ?? nameInitials(row.full_name),
+  };
+}
+
 export function sellerRowToSummary(
   row: SellerRow,
-  agg?: SellerListingAggregate,
-): SellerSummary {
+  listing?: SellerListingSummary,
+): any {
   const memberYear = new Date(row.created_at).getFullYear();
+  const activeListings = listing?.activeListings ?? row.active_listings_count;
+  const totalListings = listing?.totalListings ?? row.active_listings_count;
 
-  return {
+  const summary: any = {
     id: row.id,
     slug: sellerSlugFromName(row.full_name, row.id),
     name: row.full_name,
-    nameEn: row.full_name, // Supabase stores Persian names; used for search
-    avatar: nameInitials(row.full_name),
+    nameEn: row.full_name,
+    avatar_path: nameInitials(row.full_name),
     city: row.city,
     verified: row.verified,
     responseRate: Math.round(row.answer_rate),
     memberSince: toPersianDigits(memberYear),
-    activeListings: agg?.activeListings ?? 0,
-    totalListings: agg?.totalListings ?? 0,
-    brands: agg?.brands ?? [],
-    listings: [], // individual listings fetched separately on detail page
+    activeListings,
+    totalListings,
+    totalSoldCount: row.total_sold_count,
+    sellerScore: row.seller_score,
+    brands: listing?.brands ?? [],
+    listings: [],
+    minPrice: listing?.minPrice ?? 0,
   };
+  return summary;
 }

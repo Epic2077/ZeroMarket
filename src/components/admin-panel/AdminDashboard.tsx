@@ -9,6 +9,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import TaxonomyManager from "../management/TaxonomyManager";
 import UserManagementTable from "../management/UserManagementTable";
 import AdminNotifications from "./AdminNotifications";
+import MarketRequestsFeed from "./MarketRequestsFeed";
 import { useAdminUsers } from "@/hooks/useAdminUsers";
 import { getUnreadCount } from "@/lib/supabase/userNotifications";
 import Avatar from "../shared/Avatar";
@@ -19,6 +20,7 @@ const tabs = [
   { id: "users", label: "کاربران من" },
   { id: "options", label: "گزینه‌های ثبت آگهی" },
   { id: "notifications", label: "اعلان‌ها" },
+  { id: "market", label: "تراکنش‌های بازار" },
 ] as const;
 
 type TabId = (typeof tabs)[number]["id"];
@@ -169,6 +171,7 @@ export default function AdminDashboard() {
       )}
       {active === "options" && <TaxonomyManager />}
       {active === "notifications" && <AdminNotifications />}
+      {active === "market" && <MarketRequestsFeed />}
     </div>
   );
 }

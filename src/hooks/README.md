@@ -89,6 +89,48 @@ const { seller, loading, error, refresh } = useSeller("seller-uuid");
 
 ---
 
+## `useMarketInsight`
+
+Market analytics for a specific brand+model+year from `car_market_insights`. Used to show price-vs-market comparison on listing detail pages.
+
+```ts
+import { useMarketInsight } from "@/hooks/useMarketInsight";
+```
+
+### `useMarketInsight(brand, model, year, listingPrice)`
+
+```ts
+const { market, loading, error, refresh } = useMarketInsight(
+  listing.brand,
+  listing.model,
+  listing.year,
+  listing.price,
+);
+
+// market: MarketDisplayFields | null
+// market?.marketAvgBuy   — average market price (number)
+// market?.priceVsMarket  — % above/below market (number, e.g. 5 or -3)
+// market?.trend7d        — 7-day price trend % (number)
+```
+
+### Server-side usage
+
+For server components, import `getMarketInsight` directly:
+
+```ts
+import { getMarketInsight } from "@/lib/supabase/listings";
+
+const market = await getMarketInsight(
+  supabaseClient,
+  brand,
+  model,
+  year,
+  price,
+);
+```
+
+---
+
 ## `useTaxonomyOptions`
 
 Taxonomy options (brands, colors, cities, body types, years) from Supabase `taxonomy` table. **Base hook** — used by `useTaxonomyManager` and `useCarSpecsManager`.

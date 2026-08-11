@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { withCurrent } from "@/lib/utils";
+import { toPersianYear, withCurrent } from "@/lib/utils";
 import type {
   ProductFormErrors,
   ProductFormValues,
@@ -132,7 +132,7 @@ export function IdentitySection({
             placeholder="انتخاب سال"
             error={errors.year?.message}
             withCurrent={withCurrent}
-            currentValue={listing ? String(listing.year) : undefined}
+            currentValue={listing ? toPersianYear(listing.year) : undefined}
           />
           <Field data-invalid={!!errors.bodyType}>
             <FieldLabel htmlFor="p-body">نوع بدنه</FieldLabel>

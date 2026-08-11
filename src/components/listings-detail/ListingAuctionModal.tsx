@@ -1,35 +1,26 @@
 "use client";
 import React, { useState } from "react";
 
-import {
-  X,
-  Send,
-  CheckCircle,
-  XCircle,
-  MessageSquare,
-  Loader2,
-  Info,
-  Phone,
-} from "lucide-react";
+import { X, Send, CheckCircle, Loader2, Info, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { Listing } from "@/types/dataTypes";
 import { formatPrice } from "@/context/data";
-import { requiredText } from "@/lib/validation";
 import BrandIcon from "../shared/BrandIcon";
 import VerifiedBadge from "../shared/VerifiedBadeg";
+import { useUserInfo } from "@/context/UserInfoProvider";
+import { sendBuyRequest } from "@/lib/supabase/buyRequests";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-type RequestOutcome = "pending" | "approved" | "declined" | "negotiable";
-
 interface Props {
   listing: Listing;
   onClose: () => void;
-  onStatusChange: (s: RequestOutcome) => void;
+  onStatusChange: (
+    s: "pending" | "approved" | "declined" | "negotiable",
+  ) => void;
 }
 
-// The amount carries comma separators; validate against the digit-only value.
 const auctionSchema = z.object({
   offerPrice: z
     .string()
@@ -39,7 +30,6 @@ const auctionSchema = z.object({
       "حداقل پیشنهاد: ۱۰۰٬۰۰۰٬۰۰۰ تومان",
     ),
   message: z.string().optional(),
-  contactPhone: requiredText("شماره تماس الزامی است"),
 });
 
 type FormValues = z.infer<typeof auctionSchema>;
@@ -49,8 +39,8 @@ export default function ListingAuctionModal({
   onClose,
   onStatusChange,
 }: Props) {
-  const [step, setStep] = useState<"form" | "sent" | "outcome">("form");
-  const [outcome, setOutcome] = useState<RequestOutcome | null>(null);
+  const { user, profile } = useUserInfo();
+  const [step, setStep] = useState<"form" | "sent">("form");
   const [loading, setLoading] = useState(false);
 
   const {
@@ -63,67 +53,37 @@ export default function ListingAuctionModal({
     defaultValues: {
       offerPrice: listing.price.toLocaleString("en-US"),
       message: "",
-      contactPhone: "",
     },
   });
 
-  // Keep only digits and group them in threes → "900000" becomes "900,000".
   const groupThousands = (raw: string): string => {
     const digits = raw.replace(/\D/g, "");
     return digits ? Number(digits).toLocaleString("en-US") : "";
   };
 
-  const onSubmit = async () => {
-    setLoading(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    setLoading(false);
-    setStep("sent");
-    toast.success("درخواست خرید به " + listing.sellerName + " ارسال شد");
-  };
+  const onSubmit = async (values: FormValues) => {
+    if (!user?.id) {
+      toast.error("ابتدا وارد حساب کاربری خود شوید");
+      return;
+    }
 
-  // Simulate seller response for demo
-  const simulateResponse = async (response: RequestOutcome) => {
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-    setLoading(false);
-    setOutcome(response);
-    setStep("outcome");
-    onStatusChange(response);
-    if (response === "approved")
-      toast.success("فروشنده درخواست شما را تأیید کرد!");
-    else if (response === "negotiable")
-      toast.info(
-        "فروشنده می‌خواهد مذاکره کند — اطلاعات تماس به اشتراک گذاشته شد",
-      );
-    else toast.error("فروشنده این درخواست را رد کرد");
-  };
-
-  const outcomeConfig = {
-    approved: {
-      icon: <CheckCircle size={36} className="text-success" />,
-      bg: "bg-success/8 border-success/20",
-      title: "درخواست تأیید شد!",
-      desc: `${listing.sellerName} درخواست خرید شما را تأیید کرد. می‌توانید برای تراکنش اقدام کنید.`,
-    },
-    declined: {
-      icon: <XCircle size={36} className="text-danger" />,
-      bg: "bg-danger/8 border-danger/20",
-      title: "درخواست رد شد",
-      desc: "فروشنده درخواست شما را رد کرد. این آگهی برای سایر خریداران در دسترس است.",
-    },
-    negotiable: {
-      icon: <MessageSquare size={36} className="text-negotiable" />,
-      bg: "bg-negotiable/8 border-negotiable/20",
-      title: "قابل مذاکره",
-      desc: "فروشنده می‌خواهد شرایط را بررسی کند. مستقیماً با آن‌ها تماس بگیرید:",
-      phone: "۰۹۱۲ ۳۴۵ ۶۷۸۹",
-    },
-    pending: {
-      icon: <Send size={36} className="text-warning" />,
-      bg: "bg-warning/8 border-warning/20",
-      title: "درخواست در انتظار",
-      desc: "",
-    },
+    try {
+      await sendBuyRequest({
+        listingId: listing.id,
+        sellerId: listing.seller_id ?? "",
+        buyerId: user.id,
+        offeredPrice: Number(values.offerPrice.replace(/\D/g, "")),
+        message: values.message?.trim() || undefined,
+      });
+      setStep("sent");
+      onStatusChange("pending");
+      toast.success(`درخواست خرید به ${listing.sellerName} ارسال شد`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "خطا در ارسال درخواست");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -197,12 +157,23 @@ export default function ListingAuctionModal({
 
             {/* Info */}
             <div className="flex items-start gap-2 bg-primary/5 border border-primary/15 rounded-xl px-3 py-2.5">
-              <Info size={13} className="text-primary mt-0.5 flex-shrink-0" />
+              <Info size={13} className="text-primary mt-0.5 shrink-0" />
               <p className="text-xs text-primary/80 leading-relaxed">
-                فروشنده درخواست شما را دریافت می‌کند و با <strong>تأیید</strong>
-                ، <strong>رد</strong> یا <strong>قابل مذاکره</strong> پاسخ
-                می‌دهد. در صورت قابل مذاکره، اطلاعات تماس به اشتراک گذاشته
-                می‌شود.
+                {listing.listingType === "BUY" ? (
+                  <span>
+                    خریدار درخواست شما را دریافت می‌کند و با{" "}
+                    <strong>تأیید</strong>، <strong>رد</strong> یا{" "}
+                    <strong>قابل مذاکره</strong> پاسخ می‌دهد. در صورت قابل
+                    مذاکره، اطلاعات تماس به اشتراک گذاشته می‌شود.
+                  </span>
+                ) : (
+                  <span>
+                    فروشنده درخواست شما را دریافت می‌کند و با{" "}
+                    <strong>تأیید</strong>، <strong>رد</strong> یا{" "}
+                    <strong>قابل مذاکره</strong> پاسخ می‌دهد. در صورت قابل
+                    مذاکره، اطلاعات تماس به اشتراک گذاشته می‌شود.
+                  </span>
+                )}
               </p>
             </div>
 
@@ -240,21 +211,54 @@ export default function ListingAuctionModal({
               )}
             </div>
 
-            {/* Contact phone */}
-            <div>
-              <div className="flex items-start gap-2 bg-amber-200 border border-primary/15 rounded-xl px-3 py-2.5">
-                <Phone size={13} className="text-primary mt-0.5 shrink-0" />
-                <p className="text-xs text-primary/80 leading-relaxed">
-                  در صورت <strong>تایید</strong> فروشنده شماره تماس شما با
-                  فروشنده به اشتراک گذاشته میشود
-                </p>
-              </div>
+            {/* Contact phone — from profile */}
+            <div className="flex items-start gap-2 bg-warning/10 border border-warning/20 rounded-xl px-3 py-2.5">
+              <Phone size={13} className="text-warning mt-0.5 shrink-0" />
+              <p className="text-xs text-warning/90 leading-relaxed">
+                {listing.listingType === "BUY" ? (
+                  <span>
+                    در صورت <strong>تایید</strong> خریدار، شماره تماس شما
+                  </span>
+                ) : (
+                  <span>
+                    در صورت <strong>تایید</strong> فروشنده، شماره تماس شما
+                  </span>
+                )}
+                {profile?.phone ? (
+                  <>
+                    {" "}
+                    (
+                    <span className="font-mono" dir="ltr">
+                      {profile.phone}
+                    </span>
+                    )
+                  </>
+                ) : null}{" "}
+                {listing.listingType === "BUY" ? (
+                  <span>با خریدار به اشتراک گذاشته می‌شود.</span>
+                ) : (
+                  <span>با فروشنده به اشتراک گذاشته می‌شود.</span>
+                )}
+                {!profile?.phone && (
+                  <span className="block mt-1">
+                    شماره تماس در پروفایل شما ثبت نشده است.{" "}
+                    <a
+                      href="/user-profile"
+                      className="underline hover:text-warning"
+                    >
+                      ویرایش پروفایل
+                    </a>
+                  </span>
+                )}
+              </p>
             </div>
 
             {/* Message */}
             <div>
               <label className="block text-xs font-600 text-foreground mb-1">
-                پیام به فروشنده
+                {listing.listingType === "BUY"
+                  ? "پیام به خریدار"
+                  : "پیام به فروشنده"}
               </label>
               <textarea
                 {...register("message")}
@@ -292,99 +296,27 @@ export default function ListingAuctionModal({
           </form>
         )}
 
-        {/* Step: Sent — demo seller response buttons */}
+        {/* Step: Sent */}
         {step === "sent" && (
-          <div className="px-5 py-6 flex flex-col gap-4">
-            <div className="flex flex-col items-center text-center gap-2 mb-2">
-              <div className="w-14 h-14 rounded-full bg-success/10 flex items-center justify-center">
-                <Send size={28} className="text-success" />
-              </div>
-              <h3 className="text-base font-700 text-foreground">
-                درخواست ارسال شد!
-              </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
-                درخواست شما به <strong>{listing.sellerName}</strong> تحویل داده
-                شد. یک پاسخ فروشنده را شبیه‌سازی کنید (فقط دمو):
-              </p>
-            </div>
-
-            {/* Demo response buttons */}
-            <div className="bg-muted/50 rounded-xl p-4">
-              <p className="text-xs font-700 text-muted-foreground uppercase tracking-wider mb-3">
-                دمو: فروشنده پاسخ می‌دهد با…
-              </p>
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => simulateResponse("approved")}
-                  disabled={loading}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-success/10 border border-success/25 text-success text-sm font-700 rounded-xl hover:bg-success/20 transition-colors duration-150 disabled:opacity-50"
-                >
-                  <CheckCircle size={15} />
-                  تأیید — قبول درخواست خرید
-                </button>
-                <button
-                  onClick={() => simulateResponse("negotiable")}
-                  disabled={loading}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-negotiable/10 border border-negotiable/25 text-negotiable text-sm font-700 rounded-xl hover:bg-negotiable/20 transition-colors duration-150 disabled:opacity-50"
-                >
-                  <MessageSquare size={15} />
-                  قابل مذاکره — اشتراک‌گذاری تماس برای مذاکره
-                </button>
-                <button
-                  onClick={() => simulateResponse("declined")}
-                  disabled={loading}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-danger/10 border border-danger/25 text-danger text-sm font-700 rounded-xl hover:bg-danger/20 transition-colors duration-150 disabled:opacity-50"
-                >
-                  <XCircle size={15} />
-                  رد — رد کردن درخواست
-                </button>
-              </div>
-              {loading && (
-                <div className="flex items-center justify-center gap-2 mt-3 text-xs text-muted-foreground">
-                  <Loader2 size={13} className="animate-spin" />
-                  در حال پردازش پاسخ فروشنده…
-                </div>
-              )}
-            </div>
-
-            <button
-              onClick={onClose}
-              className="btn-secondary w-full justify-center text-sm"
-            >
-              Close — Check notifications later
-            </button>
-          </div>
-        )}
-
-        {/* Step: Outcome */}
-        {step === "outcome" && outcome && outcome !== "pending" && (
           <div className="px-5 py-6 flex flex-col items-center text-center gap-4">
-            <div
-              className={`w-20 h-20 rounded-full border-2 flex items-center justify-center ${outcomeConfig[outcome].bg}`}
-            >
-              {outcomeConfig[outcome].icon}
+            <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center">
+              <CheckCircle size={32} className="text-success" />
             </div>
             <div>
-              <h3 className="text-lg font-700 text-foreground">
-                {outcomeConfig[outcome].title}
+              <h3 className="text-base font-700 text-foreground">
+                درخواست با موفقیت ارسال شد
               </h3>
-              <p className="text-sm text-muted-foreground mt-2 leading-relaxed max-w-xs">
-                {outcomeConfig[outcome].desc}
+              <p className="text-sm text-muted-foreground mt-1 leading-relaxed max-w-xs">
+                درخواست شما به <strong>{listing.sellerName}</strong> ارسال شد.
+                فروشنده از طریق اعلان‌ها مطلع خواهد شد و پاسخ را در پنل خود
+                مشاهده می‌کنید.
               </p>
-              {outcome === "negotiable" && (
-                <div className="mt-3 flex items-center justify-center gap-2 px-4 py-2.5 bg-negotiable/10 border border-negotiable/25 rounded-xl">
-                  <Phone size={15} className="text-negotiable" />
-                  <span className="font-mono font-700 text-negotiable text-sm">
-                    {outcomeConfig.negotiable.phone}
-                  </span>
-                </div>
-              )}
             </div>
             <button
               onClick={onClose}
               className="btn-primary w-full justify-center"
             >
-              Done
+              متوجه شدم
             </button>
           </div>
         )}

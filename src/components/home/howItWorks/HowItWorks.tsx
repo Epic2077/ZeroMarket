@@ -1,5 +1,7 @@
+"use client";
+
 import Reveal from "@/components/shared/Reveal";
-import { steps } from "@/context/Info";
+import { Steps } from "@/context/Info";
 
 export default function HowItWorks() {
   return (
@@ -24,7 +26,7 @@ export default function HowItWorks() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
           <div className="hidden md:block absolute top-8 left-1/6 right-1/6 h-px bg-border z-0" />
 
-          {steps?.map((step, i) => (
+          {Steps().map((step, i) => (
             <Reveal key={step?.id} delay={i * 0.1} className="relative z-10">
               <div className="bg-slate-200 rounded-2xl card-hover p-6 h-full">
                 <div className="flex items-start gap-4">

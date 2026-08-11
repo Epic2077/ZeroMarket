@@ -43,6 +43,8 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  HandCoins,
+  ShoppingCart,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -55,8 +57,12 @@ const dateFormatter = new Intl.DateTimeFormat("fa-IR", {
   month: "numeric",
   day: "numeric",
 });
-const formatUploadDate = (iso: string): string =>
-  dateFormatter.format(new Date(iso));
+// listedDate may already be a Persian display string (Supabase rows) — only
+// re-format values that actually parse as dates.
+const formatUploadDate = (iso: string): string => {
+  const date = new Date(iso);
+  return isNaN(date.getTime()) ? iso : dateFormatter.format(date);
+};
 
 const statusFa: Record<
   Listing["status"],
@@ -132,6 +138,7 @@ export default function ListingTable({ data }: ListingTableProps) {
     onRowSelectionChange: setRowSelection,
     getPaginationRowModel: getPaginationRowModel(),
     enableRowSelection: true,
+    initialState: { pagination: { pageSize: 50 } },
     state: { sorting, rowSelection },
   });
 
@@ -150,10 +157,15 @@ export default function ListingTable({ data }: ListingTableProps) {
             const listing = row.original;
             const status = statusFa[listing.status];
             const seller = sellersMap.get(listing.seller_id ?? "");
+            const isBuy = listing.listingType === "BUY";
             return (
               <div
                 key={row.id}
-                className="group cursor-pointer rounded-2xl border border-border/70 bg-gradient-to-br from-background via-background to-muted/30 p-4 shadow-sm transition hover:border-primary/30 hover:shadow-md"
+                className={`group cursor-pointer rounded-2xl border p-4 shadow-sm transition hover:border-primary/30 hover:shadow-md ${
+                  isBuy
+                    ? "bg-accent/5 border-accent/20"
+                    : "bg-linear-to-br from-background via-background to-muted/30 border-border/70"
+                }`}
                 onClick={() => navigate.push(`/market/listings/${listing.id}`)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
@@ -205,6 +217,21 @@ export default function ListingTable({ data }: ListingTableProps) {
                 </div>
 
                 <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Badge
+                    variant="outline"
+                    className={`text-xs font-medium inline-flex items-center gap-1 ${
+                      isBuy
+                        ? "bg-accent/10 text-accent border-accent/25"
+                        : "bg-primary/10 text-primary border-primary/25"
+                    }`}
+                  >
+                    {isBuy ? (
+                      <HandCoins size={11} />
+                    ) : (
+                      <ShoppingCart size={11} />
+                    )}
+                    {isBuy ? "آگهی خرید" : "آگهی فروش"}
+                  </Badge>
                   {status && (
                     <Badge
                       variant="outline"
@@ -222,7 +249,7 @@ export default function ListingTable({ data }: ListingTableProps) {
                   <div className="flex flex-col gap-0.5">
                     <span className="text-muted-foreground">سال ساخت</span>
                     <span className="font-medium tabular-nums">
-                      {toFa(listing.year)}
+                      {toFa(listing.year)} / {toFa(listing.year - 621)}
                     </span>
                   </div>
                   <div className="flex flex-col gap-0.5">
@@ -252,12 +279,12 @@ export default function ListingTable({ data }: ListingTableProps) {
                       )}
                     </span>
                   </div>
-                  <div className="flex flex-col gap-0.5">
+                  {/* <div className="flex flex-col gap-0.5">
                     <span className="text-muted-foreground">شناسه آگهی</span>
                     <span className="font-medium tabular-nums">
                       {toFa(listing.id)}
                     </span>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             );
@@ -299,7 +326,9 @@ export default function ListingTable({ data }: ListingTableProps) {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() ? "selected" : undefined}
-                  className="cursor-pointer border-b border-border/50 transition-colors hover:bg-accent/10 data-[state=selected]:bg-accent/15"
+                  className={`cursor-pointer border-b border-border/50 transition-colors hover:bg-accent/10 data-[state=selected]:bg-accent/15 ${
+                    row.original.listingType === "BUY" ? "bg-accent/5" : ""
+                  }`}
                   onClick={() =>
                     navigate.push(`/market/listings/${row.original.id}`)
                   }

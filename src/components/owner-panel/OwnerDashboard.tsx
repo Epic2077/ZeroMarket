@@ -10,6 +10,7 @@ import AdminAssignments from "./AdminAssignments";
 import OwnerOverview from "./OwnerOverview";
 import OwnerNotifications from "./OwnerNotifications";
 import ProductsCatalog from "./ProductsCatalog";
+import MarketRequestsFeed from "../admin-panel/MarketRequestsFeed";
 import { useUserInfo } from "@/context/UserInfoProvider";
 import { useAdminUsers } from "@/hooks/useAdminUsers";
 import {
@@ -25,6 +26,7 @@ const tabs = [
   { id: "admins", label: "مدیران و دسترسی‌ها" },
   { id: "options", label: "گزینه‌های ثبت آگهی" },
   { id: "notifications", label: "اعلان‌ها" },
+  { id: "market", label: "تراکنش‌های بازار" },
 ] as const;
 
 type TabId = (typeof tabs)[number]["id"];
@@ -147,6 +149,7 @@ export default function OwnerDashboard() {
           onNotificationsChange={setNotifications}
         />
       )}
+      {active === "market" && <MarketRequestsFeed />}
     </div>
   );
 }

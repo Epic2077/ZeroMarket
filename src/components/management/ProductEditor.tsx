@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2, ShoppingCart, HandCoins } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -8,6 +8,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { supabase } from "@/lib/supabase/client";
+import { checkDuplicateListing } from "@/lib/supabase/listings";
 import { useUserInfo } from "@/context/UserInfoProvider";
 import type { Listing } from "@/types/dataTypes";
 import { fetchCarSpecsByBrandModel } from "@/lib/supabase/carSpecs";
@@ -20,7 +21,7 @@ const STATUS_TO_DB: Record<string, string> = {
   sold: "SOLD",
   reserved: "RESERVED",
 };
-import { toPersianYear } from "@/lib/utils";
+import { fromPersianYear, toPersianYear } from "@/lib/utils";
 import { useTaxonomyOptions } from "@/hooks/useTaxonomyOptions";
 import { fetchModelsByBrand, type TaxonomyRow } from "@/lib/supabase/taxonomy";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,6 +39,7 @@ import {
   SellerNotesSection,
   FormActions,
 } from "./product-editor";
+import { Controller } from "react-hook-form";
 
 /** Build a color-name → hex lookup from taxonomy COLOR rows. */
 function buildColorHexMap(colors: TaxonomyRow[]): Record<string, string> {
@@ -123,12 +125,34 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
       price: listing ? listing.price.toLocaleString("en-US") : "",
       status: listing?.status ?? "active",
       sellerNotes: listing?.sellerNotes ?? "",
+      listingType: listing?.listingType ?? "SELL",
     },
   });
 
   const selectedBrand = useWatch({ control, name: "brand" });
   const selectedModel = useWatch({ control, name: "model" });
   const selectedYear = useWatch({ control, name: "year" });
+
+  // ── Fetch existing private note when editing ────────────────────────
+  useEffect(() => {
+    if (!listing?.id) return;
+    let cancelled = false;
+    supabase
+      .from("listing_private_notes")
+      .select("note")
+      .eq("listing_id", listing.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled || !data) return;
+        setValue("sellerNotes", (data as { note: string }).note ?? "", {
+          shouldValidate: false,
+        });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [listing?.id, setValue]);
 
   // ── Async model fetch when brand changes ────────────────────────────
   const [modelValues, setModelValues] = useState<string[]>([]);
@@ -246,7 +270,7 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
       brand: values.brand,
       model: values.model,
       trim: values.trim,
-      year: Number(values.year),
+      year: fromPersianYear(values.year),
       price: Number(values.price.replace(/\D/g, "")),
       price_unit: "تومان",
       color: values.color,
@@ -258,9 +282,32 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
       gearbox: values.transmission,
       fuel: values.fuelType,
       other_options: factoryOptions,
+      listing_type: values.listingType,
     };
 
     try {
+      // ── Duplicate check ──────────────────────────────────────────
+      const gYear = fromPersianYear(values.year);
+      const duplicateId = await checkDuplicateListing(
+        supabase,
+        userId,
+        values.brand,
+        values.model,
+        gYear,
+        values.trim,
+        values.color,
+        values.city,
+        listing?.id, // exclude self when editing
+      );
+
+      if (duplicateId) {
+        toast.error(
+          "شما قبلاً یک آگهی فعال با این مشخصات و رنگ ثبت کرده‌اید. لطفاً آن را ویرایش یا حذف کنید.",
+          { duration: 6000 },
+        );
+        return;
+      }
+
       if (listing) {
         // ── Update existing listing ──────────────────────────────────
         const dbStatus = STATUS_TO_DB[values.status] ?? "WAITING";
@@ -341,6 +388,57 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
         <p className="text-sm text-muted-foreground mt-0.5">
           فروشنده: {owner.full_name ?? owner.name ?? "ناشناس"}
         </p>
+
+        {/* Listing type toggle */}
+        <div className="mt-4">
+          <Controller
+            control={control}
+            name="listingType"
+            render={({ field }) => (
+              <div
+                className="inline-flex gap-1 p-1 bg-muted rounded-xl"
+                role="radiogroup"
+                aria-label="نوع آگهی"
+              >
+                {[
+                  {
+                    value: "SELL" as const,
+                    label: "آگهی فروش",
+                    icon: ShoppingCart,
+                  },
+                  {
+                    value: "BUY" as const,
+                    label: "آگهی خرید",
+                    icon: HandCoins,
+                  },
+                ].map((opt) => {
+                  const active = field.value === opt.value;
+                  const Icon = opt.icon;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => field.onChange(opt.value)}
+                      className={`flex items-center justify-center gap-2 py-2.5 px-5 rounded-lg text-sm font-600 transition-all duration-200 ${
+                        active
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Icon
+                        size={16}
+                        className={active ? "text-primary" : ""}
+                      />
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          />
+        </div>
       </div>
 
       {taxonomyLoading ? (
@@ -396,6 +494,9 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
             listing={listing}
             setValue={setValue}
             cityOptions={cityOptions}
+            brand={selectedBrand}
+            model={selectedModel}
+            year={selectedYear}
           />
 
           <FactoryOptionsSection

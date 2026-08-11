@@ -29,7 +29,7 @@ const sellerUsers: PlatformUser[] = sellers.map((seller) => {
     email: `${seller.slug}@zeromarket.ir`,
     phone: "۰۹۱۲ ۰۰۰ ۰۰۰۰",
     city: seller.city,
-    avatar: seller.avatar,
+    avatar: seller.avatar_path ?? seller.avatar,
     avatarPath: null,
     role: seller.verified ? "OWNER" : "USER",
     verified: seller.verified,

@@ -28,10 +28,7 @@ export default function ProductCreateEntry() {
 
   return (
     <ProductEditorGuard ownerId={owner.id}>
-      <ProductEditor
-        owner={owner}
-        backHref={`/dashboard/manage/users/${owner.id}`}
-      />
+      <ProductEditor owner={owner} backHref={`/sellers/${owner.id}`} />
     </ProductEditorGuard>
   );
 }

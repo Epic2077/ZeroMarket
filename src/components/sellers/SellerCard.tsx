@@ -16,13 +16,12 @@ export default function SellerCard({ seller }: Props) {
   const { getBackground, getAvatarGradient } = useBanners();
   const cover = getBackground(seller.slug);
   const avatarGradient = getAvatarGradient(seller.slug);
-  const startingPrice = Math.min(...seller.listings.map((l) => l.price));
   const visibleBrands = seller.brands.slice(0, 3);
   const extraBrands = seller.brands.length - visibleBrands.length;
 
   return (
     <Link
-      href={`/sellers/${seller.slug}`}
+      href={`/sellers/${seller.id}`}
       className="group card-elevated card-hover overflow-hidden flex flex-col h-full"
     >
       {/* Cover */}
@@ -45,7 +44,7 @@ export default function SellerCard({ seller }: Props) {
               className="w-full h-full rounded-xl flex items-center justify-center text-white font-800 text-base"
               style={{ background: avatarGradient }}
             >
-              {seller.avatar}
+              {seller.avatar_path ?? seller.avatar}
             </div>
           </div>
         </div>
@@ -83,7 +82,7 @@ export default function SellerCard({ seller }: Props) {
           <div>
             <div className="text-2xs text-muted-foreground">شروع قیمت از</div>
             <div className="text-sm font-700 font-mono text-foreground">
-              {formatPrice(startingPrice)}
+              {formatPrice(seller.minPrice)}
             </div>
           </div>
           <div className="flex items-center gap-4">

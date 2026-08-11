@@ -33,4 +33,31 @@ export interface Listing {
   trend7d: number;
   /** Admin / seller-only internal note, not shown on the public listing. */
   sellerNotes?: string;
+  /** Whether this is a sell listing or a buy request. */
+  listingType: "SELL" | "BUY";
+}
+
+// ── Market insights (car_market_insights table) ─────────────────────
+
+/** Raw row from the `car_market_insights` table. */
+export interface CarMarketInsight {
+  id: string;
+  brand: string;
+  model: string;
+  year: string; // text in DB
+  totalActiveListings: number;
+  avgListedPrice: number;
+  avgPrice7dAgo: number;
+  avgPrice30dAgo: number;
+  avgSoldPrice: number;
+  avgDaysToSell: number;
+  lastUpdated: string;
+}
+
+/** Computed display fields derived from a CarMarketInsight + listing price. */
+export interface MarketDisplayFields {
+  marketAvgBuy: number;
+  marketAvgSell: number;
+  priceVsMarket: number; // positive = above market, negative = below
+  trend7d: number; // recent trend percentage
 }

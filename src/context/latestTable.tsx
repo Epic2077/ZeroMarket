@@ -21,6 +21,7 @@ export type LatestRow = {
   verified: boolean;
   cost: number;
   status: string;
+  listingType: "SELL" | "BUY";
 };
 
 export const statusMap: Record<string, { label: string; className: string }> = {
@@ -56,6 +57,7 @@ export const latestTableData: LatestRow[] = listings.slice(0, 8).map((l) => ({
   verified: l.sellerVerified,
   cost: l.price,
   status: l.status,
+  listingType: l.listingType,
 }));
 
 export function formatCost(cost: number): string {

@@ -11,7 +11,9 @@ export default function Home() {
   return (
     <div>
       <main>
-        <Hero />
+        <Reveal>
+          <Hero />
+        </Reveal>
         <Reveal>
           <InfoSection />
         </Reveal>

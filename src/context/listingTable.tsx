@@ -12,7 +12,7 @@ import {
 import { Listing } from "@/types/dataTypes";
 import type { SellerSummary } from "@/context/sellers";
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, HandCoins, ShoppingCart } from "lucide-react";
 
 // Re-exported for existing consumers importing the digit helper from here.
 export { toFa };
@@ -25,8 +25,12 @@ const dateFormatter = new Intl.DateTimeFormat("fa-IR", {
   month: "numeric",
   day: "numeric",
 });
-const formatUploadDate = (iso: string): string =>
-  dateFormatter.format(new Date(iso));
+// listedDate may already be a Persian display string (Supabase rows) — only
+// re-format values that actually parse as dates.
+const formatUploadDate = (iso: string): string => {
+  const date = new Date(iso);
+  return isNaN(date.getTime()) ? iso : dateFormatter.format(date);
+};
 
 function formatPriceFa(price: number): string {
   if (price >= 1_000_000_000) {
@@ -164,9 +168,23 @@ export function listingColumns(
       ),
       cell: ({ row }) => {
         const key = `${row.original.brand} ${row.original.model}`;
+        const isBuy = row.original.listingType === "BUY";
         return (
           <div dir="rtl" className="flex flex-col gap-0.5">
-            <span className="font-medium">{brandModelFa[key] ?? key}</span>
+            <span className="font-medium">
+              {brandModelFa[key] ?? key}
+              <Badge
+                variant="outline"
+                className={`mr-1.5 inline-flex items-center gap-0.5 text-2xs align-middle ${
+                  isBuy
+                    ? "bg-accent/10 text-accent border-accent/25"
+                    : "bg-primary/10 text-primary border-primary/25"
+                }`}
+              >
+                {isBuy ? <HandCoins size={9} /> : <ShoppingCart size={9} />}
+                {isBuy ? "خرید" : "فروش"}
+              </Badge>
+            </span>
             <span className="text-xs text-muted-foreground">
               {row.original.trim}
             </span>
@@ -177,11 +195,14 @@ export function listingColumns(
     {
       accessorKey: "year",
       header: ({ column }) => <SortHeader label="سال" column={column} />,
-      cell: ({ getValue }) => (
-        <div>
-          <span className="tabular-nums">{toFa(getValue() as number)}</span>
-        </div>
-      ),
+      cell: ({ getValue }) => {
+        const gYear = getValue() as number;
+        return (
+          <span className="tabular-nums">
+            {toFa(gYear)} / {toFa(gYear - 621)}
+          </span>
+        );
+      },
     },
     {
       accessorKey: "color",

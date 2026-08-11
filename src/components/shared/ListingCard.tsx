@@ -11,6 +11,7 @@ import { Calendar, MapPin, TrendingDown, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import StatusBadge from "./StatusBadge";
 import VerifiedBadge from "./VerifiedBadeg";
+import { useSellers } from "@/hooks/useSellers";
 
 interface Props {
   listing: Listing;
@@ -29,7 +30,11 @@ function brandTileStyle(brand: string) {
 // Compact car card used in the marketplace grids (related listings, seller
 // profile). Links through to the listing detail page.
 export default function ListingCard({ listing }: Props) {
+  const { sellers } = useSellers();
+  const sellersMap = new Map(sellers.map((s) => [s.id, s]));
+
   const trendUp = listing.trend7d >= 0;
+  const seller = sellersMap.get(listing.seller_id ?? "");
 
   return (
     <Link
@@ -90,7 +95,9 @@ export default function ListingCard({ listing }: Props) {
 
       {/* Seller footer */}
       <div className="flex items-center gap-1.5 pt-2 border-t border-border text-xs text-muted-foreground">
-        <span className="truncate">{sellerLabel(listing.sellerName)}</span>
+        <span className="truncate">
+          {sellerLabel(seller?.name ?? listing.sellerName)}
+        </span>
         {listing.sellerVerified && <VerifiedBadge size="sm" />}
       </div>
     </Link>

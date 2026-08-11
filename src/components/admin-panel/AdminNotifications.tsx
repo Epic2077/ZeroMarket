@@ -208,6 +208,9 @@ export default function AdminNotifications() {
                 key={notification.id}
                 notification={notification}
                 isUnread={notification.is_unread}
+                className={
+                  notification.is_unread ? "" : "opacity-50 grayscale-[0.3]"
+                }
                 renderContent={(n) => (
                   <div className="flex items-start gap-3 min-w-0">
                     <div

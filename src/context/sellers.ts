@@ -11,13 +11,17 @@ export interface SellerSummary {
   slug: string;
   name: string; // Persian display name
   nameEn: string; // raw source name (used for matching / search)
-  avatar: string; // initials shown in the avatar tile
+  avatar_path: string; // initials shown in the avatar tile
+  avatar?: string; // compatibility alias for older call sites
   city: string; // Persian city of the seller's first listing
   verified: boolean;
   responseRate: number;
   memberSince: string; // gregorian year as stored in the data
   activeListings: number;
   totalListings: number;
+  totalSoldCount: number;
+  sellerScore: number;
+  minPrice: number; // cheapest listing price (0 = none)
   brands: string[]; // distinct Persian brand names (specialty)
   listings: Listing[];
 }
@@ -49,7 +53,7 @@ function buildSellers(): SellerSummary[] {
           slug: sellerSlug(nameEn),
           name: sellerLabel(nameEn),
           nameEn,
-          avatar: first.sellerAvatar ?? "S",
+          avatar_path: first.sellerAvatar ?? "S",
           city: cityLabel(first.city),
           verified: first.sellerVerified,
           responseRate: first.sellerResponseRate,
@@ -57,6 +61,9 @@ function buildSellers(): SellerSummary[] {
           activeListings: sellerListings.filter((l) => l.status === "active")
             .length,
           totalListings: sellerListings.length,
+          totalSoldCount: 0,
+          sellerScore: 0,
+          minPrice: Math.min(...sellerListings.map((l) => l.price)),
           brands,
           listings: sellerListings,
         };
