@@ -40,3 +40,11 @@ export function formatPersianDateTime(iso: string): string {
     hour12: false,
   }).format(date);
 }
+
+/** URL-safe slug from a latin seller name, e.g. "Aria Motors" → "aria-motors". */
+export function sellerSlug(sellerName: string): string {
+  return sellerName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}

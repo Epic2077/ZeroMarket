@@ -1,12 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  brandModelLabel,
-  colorLabel,
-  sellerFa,
-  toFa,
-} from "@/context/carLabels";
-import { listings } from "@/context/data";
+import { toFa } from "@/context/carLabels";
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, BadgeCheck, ExternalLink } from "lucide-react";
 import Link from "next/link";
@@ -46,19 +40,6 @@ export const statusMap: Record<string, { label: string; className: string }> = {
     className: "bg-slate-100 text-slate-600 border-slate-200",
   },
 };
-
-export const latestTableData: LatestRow[] = listings.slice(0, 8).map((l) => ({
-  id: l.id,
-  brand: brandModelLabel(l),
-  trim: l.trim,
-  year: l.year,
-  color: colorLabel(l.color),
-  seller: sellerFa[l.sellerName] ?? l.sellerName,
-  verified: l.sellerVerified,
-  cost: l.price,
-  status: l.status,
-  listingType: l.listingType,
-}));
 
 export function formatCost(cost: number): string {
   if (cost >= 1_000_000_000) {

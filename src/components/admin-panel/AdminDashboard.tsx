@@ -4,12 +4,13 @@ import { useAdmin } from "@/context/AdminProvider";
 import { CURRENT_ADMIN_ID } from "@/context/adminData";
 import { useSession } from "@/context/SessionProvider";
 import { useUserInfo } from "@/context/UserInfoProvider";
-import { FileText, ShieldHalf, Users } from "lucide-react";
+import { FileText, ShieldHalf, Users, MessageSquare } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import TaxonomyManager from "../management/TaxonomyManager";
 import UserManagementTable from "../management/UserManagementTable";
 import AdminNotifications from "./AdminNotifications";
 import MarketRequestsFeed from "./MarketRequestsFeed";
+import TicketsTab from "../shared/TicketsTab";
 import { useAdminUsers } from "@/hooks/useAdminUsers";
 import { getUnreadCount } from "@/lib/supabase/userNotifications";
 import Avatar from "../shared/Avatar";
@@ -20,6 +21,7 @@ const tabs = [
   { id: "users", label: "کاربران من" },
   { id: "options", label: "گزینه‌های ثبت آگهی" },
   { id: "notifications", label: "اعلان‌ها" },
+  { id: "tickets", label: "تیکت‌ها" },
   { id: "market", label: "تراکنش‌های بازار" },
 ] as const;
 
@@ -171,6 +173,7 @@ export default function AdminDashboard() {
       )}
       {active === "options" && <TaxonomyManager />}
       {active === "notifications" && <AdminNotifications />}
+      {active === "tickets" && <TicketsTab />}
       {active === "market" && <MarketRequestsFeed />}
     </div>
   );

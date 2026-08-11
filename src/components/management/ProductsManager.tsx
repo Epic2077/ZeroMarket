@@ -3,7 +3,9 @@
 import StatusBadge from "@/components/shared/StatusBadge";
 import { brandModelLabel, cityLabel } from "@/context/carLabels";
 import { formatPrice } from "@/context/data";
-import { useListings } from "@/context/ListingsProvider";
+import { useListings } from "@/hooks/useListings";
+import { listingRowToListing } from "@/lib/supabase/listings";
+import { supabase } from "@/lib/supabase/client";
 import type { PlatformUser, ProductInput } from "@/types/admin";
 import type { Listing } from "@/types/dataTypes";
 import { Eye, Pencil, Plus, ShoppingBag, Trash2, Upload } from "lucide-react";
@@ -18,23 +20,43 @@ interface Props {
 }
 
 export default function ProductsManager({ user }: Props) {
-  const { listingsByOwner, createListing, deleteListing } = useListings();
+  const { listings: rawListings } = useListings();
+  const products = rawListings
+    .filter((r) => r.seller_id === user.id)
+    .map((r) => listingRowToListing(r));
   const [pendingDelete, setPendingDelete] = useState<Listing | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
 
-  // Buyers don't list cars — only sellers can have products.
   const canHaveProducts = user.role !== "USER";
-  const products = listingsByOwner(user.id);
 
-  const sellerBase: Partial<Listing> = {
-    sellerName: user.name,
-    sellerAvatar: user.avatar,
-    sellerVerified: user.role === "OWNER" || user.role === "ADMIN",
-    sellerMemberSince: user.joinedAt,
-  };
-
-  const handleBulk = (rows: ProductInput[]) => {
-    rows.forEach((row) => createListing(user.id, sellerBase, row));
+  const handleBulk = async (rows: ProductInput[]) => {
+    for (const row of rows) {
+      await supabase.from("listings").insert({
+        seller_id: user.id,
+        brand: row.brand,
+        model: row.model,
+        trim: row.trim,
+        year: row.year,
+        price: row.price,
+        price_unit: "تومان",
+        color: row.color,
+        color_hex: row.colorHex ?? "#1b4fd8",
+        city: row.city,
+        shipment_days: row.deliveryDays,
+        body_type: row.bodyType,
+        engine_power: row.engine,
+        gearbox: row.transmission,
+        fuel: row.fuelType,
+        other_options: row.factoryOptions ?? [],
+        status: "WAITING",
+        slug: `${row.brand}-${row.model}-${row.year}-${crypto.randomUUID().slice(0, 8)}`.replace(
+          /\s+/g,
+          "-",
+        ),
+      });
+    }
+    toast.success(`${rows.length.toLocaleString("fa-IR")} محصول افزوده شد`);
+    setBulkOpen(false);
   };
 
   return (
@@ -132,8 +154,9 @@ export default function ProductsManager({ user }: Props) {
           title="حذف محصول"
           description={`«${brandModelLabel(pendingDelete)} ${pendingDelete.trim}» برای همیشه حذف می‌شود.`}
           confirmLabel="حذف"
-          onConfirm={() => {
-            deleteListing(pendingDelete.id);
+          onConfirm={async () => {
+            await supabase.from("listings").delete().eq("id", pendingDelete.id);
+            setPendingDelete(null);
             toast.success("محصول حذف شد");
           }}
           onClose={() => setPendingDelete(null)}

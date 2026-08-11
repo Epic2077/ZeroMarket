@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { colorOptions } from "@/context/newPostForm";
+import { useTaxonomyOptions } from "@/hooks/useTaxonomyOptions";
 import { brandFa, cityOptions } from "@/context/marketFilters";
 import { requiredText } from "@/lib/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -149,6 +149,8 @@ function SearchablePicker({
 }
 
 export default function NewPriceAlertModal({ onClose, onCreate }: Props) {
+  const { values: taxonomyValues } = useTaxonomyOptions();
+  const colorOptions = taxonomyValues("COLOR");
   const {
     handleSubmit,
     control,
@@ -295,8 +297,8 @@ export default function NewPriceAlertModal({ onClose, onCreate }: Props) {
                     <SelectContent>
                       <SelectItem value="__none__">بدون محدودیت</SelectItem>
                       {colorOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.label}>
-                          {option.label}
+                        <SelectItem key={option} value={option}>
+                          {option}
                         </SelectItem>
                       ))}
                     </SelectContent>

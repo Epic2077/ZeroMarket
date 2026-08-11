@@ -1,13 +1,6 @@
-import {
-  MessageSquare,
-  Star,
-  ListChecks,
-  Clock,
-  ExternalLink,
-} from "lucide-react";
+import { Star, ListChecks, Clock, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import VerifiedBadge from "../shared/VerifiedBadeg";
-import { sellerSlug } from "@/context/sellers";
 import { Listing } from "@/types/dataTypes";
 import Avatar from "../shared/Avatar";
 
@@ -106,7 +99,7 @@ export default function ListingDetailSeller({ listing }: Props) {
           پیام
         </button> */}
         <Link
-          href={`/sellers/${sellerSlug(listing.sellerName)}`}
+          href={`/sellers/${listing.seller_id ?? listing.ownerId ?? ""}`}
           className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-600 text-primary bg-primary/8 border border-primary/20 rounded-lg hover:bg-primary/15 transition-colors duration-150"
         >
           <ExternalLink size={13} />

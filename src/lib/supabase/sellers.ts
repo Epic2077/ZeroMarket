@@ -1,5 +1,5 @@
 import { supabase } from "./client";
-import type { SellerSummary } from "@/context/sellers";
+import type { SellerSummary } from "@/types/dataTypes";
 
 // ── Row shape matching the Supabase `sellers` table ──────────────────
 

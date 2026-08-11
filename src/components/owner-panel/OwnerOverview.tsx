@@ -1,6 +1,7 @@
 "use client";
 
-import { useListings } from "@/context/ListingsProvider";
+import { useListings } from "@/hooks/useListings";
+import { listingRowToListing } from "@/lib/supabase/listings";
 import { formatPrice } from "@/context/data";
 import {
   BadgeCheck,
@@ -17,7 +18,8 @@ import { Spinner } from "../ui/spinner";
 const faNum = (n: number) => n.toLocaleString("fa-IR");
 
 export default function OwnerOverview() {
-  const { listings } = useListings();
+  const { listings: rawListings } = useListings();
+  const listings = rawListings.map((row) => listingRowToListing(row));
 
   // ── Live admin API demo ──────────────────────────────────────────────
   const {

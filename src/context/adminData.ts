@@ -1,5 +1,3 @@
-import { toFa } from "@/context/carLabels";
-import { sellers } from "@/context/sellers";
 import type {
   AdminAccount,
   PlatformRole,
@@ -19,31 +17,8 @@ export const ROLE_ORDER: ProfileRole[] = ["USER", "ADMIN", "OWNER"];
 
 /* --------------------------- Derived seller users ------------------------ */
 
-// Every seller (aggregated from listings) becomes a managed platform user, so
-// the panels operate on the same underlying catalog the marketplace shows.
-const sellerUsers: PlatformUser[] = sellers.map((seller) => {
-  const salesVolume = seller.listings.reduce((sum, l) => sum + l.price, 0);
-  return {
-    id: `usr-${seller.slug}`,
-    name: seller.name,
-    email: `${seller.slug}@zeromarket.ir`,
-    phone: "۰۹۱۲ ۰۰۰ ۰۰۰۰",
-    city: seller.city,
-    avatar: seller.avatar_path ?? seller.avatar,
-    avatarPath: null,
-    role: seller.verified ? "OWNER" : "USER",
-    verified: seller.verified,
-    status: "ACTIVE",
-    joinedAt: toFa(seller.memberSince),
-    analytics: {
-      requests: 6 + (seller.totalListings % 9),
-      views: 120 + seller.totalListings * 37,
-      salesVolume,
-      responseRate: seller.responseRate,
-      conversion: 30 + (seller.responseRate % 25),
-    },
-  };
-});
+// TODO: Migrate to Supabase sellers via useSellers() hook.
+const sellerUsers: PlatformUser[] = [];
 
 /* ------------------------------- Buyer users ----------------------------- */
 

@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { Listing } from "@/types/dataTypes";
 import AdminManageButton from "../management/AdminManageButton";
 import EditProductButton from "../management/EditProductButton";
-import { sellerSlug } from "@/context/sellers";
+import { sellerSlug } from "@/lib/utils";
 import BrandIcon from "../shared/BrandIcon";
 import StatusBadge from "../shared/StatusBadge";
 import VerifiedBadge from "../shared/VerifiedBadeg";
@@ -267,6 +267,7 @@ export default function ListingDetailContent({ listing }: Props) {
           <div className="xl:col-span-2 flex flex-col gap-6">
             <ListingDetailSpecs listing={listing} />
             <ListingDetailSimilar
+              listings={listing}
               currentSeller={listing.sellerName}
               currentId={listing.id}
             />

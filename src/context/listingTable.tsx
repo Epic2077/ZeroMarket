@@ -9,8 +9,7 @@ import {
   colorFa,
   toFa,
 } from "@/context/carLabels";
-import { Listing } from "@/types/dataTypes";
-import type { SellerSummary } from "@/context/sellers";
+import type { Listing, SellerSummary } from "@/types/dataTypes";
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, HandCoins, ShoppingCart } from "lucide-react";
 

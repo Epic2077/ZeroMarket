@@ -4,7 +4,7 @@ import AdminManageButton from "@/components/management/AdminManageButton";
 import VerifiedBadge from "@/components/shared/VerifiedBadeg";
 import { useBanners } from "@/context/BannerProvider";
 import { toFa } from "@/context/carLabels";
-import type { SellerSummary } from "@/context/sellers";
+import type { SellerSummary } from "@/types/dataTypes";
 import {
   ArrowLeft,
   CalendarClock,

@@ -1,10 +1,15 @@
+"use client";
+
 import Link from "next/link";
 
 import { ArrowRight, TrendingUp, TrendingDown } from "lucide-react";
-import { formatPrice, listings } from "@/context/data";
+import { formatPrice } from "@/context/data";
+import { useListings } from "@/hooks/useListings";
+import { listingRowToListing } from "@/lib/supabase/listings";
 import BrandIcon from "../shared/BrandIcon";
 import VerifiedBadge from "../shared/VerifiedBadeg";
 import StatusBadge from "../shared/StatusBadge";
+import { useMemo } from "react";
 
 interface Props {
   currentSeller: string;
@@ -15,9 +20,16 @@ export default function ListingDetailSimilar({
   currentSeller,
   currentId,
 }: Props) {
-  const similar = listings
-    .filter((l) => l.sellerName === currentSeller && l.id !== currentId)
-    .slice(0, 4);
+  const { listings: rawListings } = useListings();
+
+  const similar = useMemo(
+    () =>
+      rawListings
+        .map((row) => listingRowToListing(row))
+        .filter((l) => l.sellerName === currentSeller && l.id !== currentId)
+        .slice(0, 4),
+    [rawListings, currentSeller, currentId],
+  );
 
   if (similar.length === 0) return null;
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useAdmin } from "@/context/AdminProvider";
-import { sellerSlug } from "@/context/sellers";
+import { sellerSlug } from "@/lib/utils";
 import { useSession } from "@/context/SessionProvider";
 import { useUserInfo } from "@/context/UserInfoProvider";
 import type { Listing } from "@/types/dataTypes";

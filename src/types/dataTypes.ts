@@ -37,6 +37,29 @@ export interface Listing {
   listingType: "SELL" | "BUY";
 }
 
+// ── Seller summary ──────────────────────────────────────────────────
+
+/** Aggregated public view of a seller, built from their listings and profile. */
+export interface SellerSummary {
+  id: string;
+  slug: string;
+  name: string;
+  nameEn: string;
+  avatar_path: string;
+  avatar?: string;
+  city: string;
+  verified: boolean;
+  responseRate: number;
+  memberSince: string;
+  activeListings: number;
+  totalListings: number;
+  totalSoldCount: number;
+  sellerScore: number;
+  minPrice: number;
+  brands: string[];
+  listings: Listing[];
+}
+
 // ── Market insights (car_market_insights table) ─────────────────────
 
 /** Raw row from the `car_market_insights` table. */

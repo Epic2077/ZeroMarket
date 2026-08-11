@@ -11,6 +11,7 @@ import OwnerOverview from "./OwnerOverview";
 import OwnerNotifications from "./OwnerNotifications";
 import ProductsCatalog from "./ProductsCatalog";
 import MarketRequestsFeed from "../admin-panel/MarketRequestsFeed";
+import TicketsTab from "../shared/TicketsTab";
 import { useUserInfo } from "@/context/UserInfoProvider";
 import { useAdminUsers } from "@/hooks/useAdminUsers";
 import {
@@ -26,6 +27,7 @@ const tabs = [
   { id: "admins", label: "مدیران و دسترسی‌ها" },
   { id: "options", label: "گزینه‌های ثبت آگهی" },
   { id: "notifications", label: "اعلان‌ها" },
+  { id: "tickets", label: "تیکت‌ها" },
   { id: "market", label: "تراکنش‌های بازار" },
 ] as const;
 
@@ -149,6 +151,7 @@ export default function OwnerDashboard() {
           onNotificationsChange={setNotifications}
         />
       )}
+      {active === "tickets" && <TicketsTab />}
       {active === "market" && <MarketRequestsFeed />}
     </div>
   );

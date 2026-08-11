@@ -1,7 +1,7 @@
 "use client";
 
 import { toFa } from "@/context/carLabels";
-import { useTaxonomy } from "@/context/TaxonomyProvider";
+import { useTaxonomyOptions } from "@/hooks/useTaxonomyOptions";
 import type { ProductInput } from "@/types/admin";
 import { Download, FileSpreadsheet, Upload, X } from "lucide-react";
 import { useRef, useState } from "react";
@@ -48,7 +48,14 @@ export default function BulkImportProductsModal({
   onImport,
   onClose,
 }: Props) {
-  const { taxonomy } = useTaxonomy();
+  const { values } = useTaxonomyOptions();
+
+  const brands = values("BRAND");
+  const colors = values("COLOR");
+  const transmissions = values("TRANSMISSION");
+  const fuelTypes = values("FUEL_TYPE");
+  const bodyTypes = values("BODY_TYPE");
+  const cities = values("CITY");
   const [file, setFile] = useState<File | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -71,17 +78,17 @@ export default function BulkImportProductsModal({
     }
     const base = file.name.replace(/\.[^.]+$/, "");
     const rows: ProductInput[] = Array.from({ length: 4 }).map((_, i) => ({
-      brand: taxonomy.brands[i % taxonomy.brands.length] ?? "خودرو",
+      brand: brands[i % brands.length] ?? "خودرو",
       model: `${base}-${toFa(i + 1)}`,
       trim: "استاندارد",
       year: 2026,
-      color: taxonomy.colors[i % taxonomy.colors.length] ?? "سفید",
+      color: colors[i % colors.length] ?? "سفید",
       colorHex: "#1b4fd8",
       engine: "۲.۰ لیتر",
-      transmission: taxonomy.transmissions[0] ?? "اتوماتیک",
-      fuelType: taxonomy.fuelTypes[0] ?? "بنزینی",
-      bodyType: taxonomy.bodyTypes[i % taxonomy.bodyTypes.length] ?? "سدان",
-      city: taxonomy.cities[i % taxonomy.cities.length] ?? "تهران",
+      transmission: transmissions[0] ?? "اتوماتیک",
+      fuelType: fuelTypes[0] ?? "بنزینی",
+      bodyType: bodyTypes[i % bodyTypes.length] ?? "سدان",
+      city: cities[i % cities.length] ?? "تهران",
       deliveryDays: 7,
       price: 1_500_000_000 + i * 100_000_000,
       status: "active",

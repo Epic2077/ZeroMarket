@@ -13,7 +13,9 @@ import {
 import { useAdmin } from "@/context/AdminProvider";
 import { brandModelLabel, cityLabel } from "@/context/carLabels";
 import { formatPrice } from "@/context/data";
-import { useListings } from "@/context/ListingsProvider";
+import { useListings } from "@/hooks/useListings";
+import { listingRowToListing } from "@/lib/supabase/listings";
+import { supabase } from "@/lib/supabase/client";
 import type { Listing } from "@/types/dataTypes";
 import { Eye, Pencil, Search, Trash2 } from "lucide-react";
 import Link from "next/link";
@@ -32,11 +34,13 @@ const statusFilters: { value: StatusFilter; label: string }[] = [
 ];
 
 export default function ProductsCatalog() {
-  const { listings, deleteListing } = useListings();
+  const { listings: rawListings, loading } = useListings();
   const { users } = useAdmin();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [pendingDelete, setPendingDelete] = useState<Listing | null>(null);
+
+  const listings = rawListings.map((row) => listingRowToListing(row));
 
   const ownerName = (l: Listing) =>
     users.find((u) => u.id === l.ownerId)?.name ?? l.sellerName;
@@ -196,8 +200,9 @@ export default function ProductsCatalog() {
           title="حذف محصول"
           description={`«${brandModelLabel(pendingDelete)} ${pendingDelete.trim}» حذف می‌شود.`}
           confirmLabel="حذف"
-          onConfirm={() => {
-            deleteListing(pendingDelete.id);
+          onConfirm={async () => {
+            await supabase.from("listings").delete().eq("id", pendingDelete.id);
+            setPendingDelete(null);
             toast.success("محصول حذف شد");
           }}
           onClose={() => setPendingDelete(null)}

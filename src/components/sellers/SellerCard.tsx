@@ -4,7 +4,7 @@ import VerifiedBadge from "@/components/shared/VerifiedBadeg";
 import { useBanners } from "@/context/BannerProvider";
 import { toFa } from "@/context/carLabels";
 import { formatPrice } from "@/context/data";
-import type { SellerSummary } from "@/context/sellers";
+import type { SellerSummary } from "@/types/dataTypes";
 import { ArrowLeft, MapPin, Star } from "lucide-react";
 import Link from "next/link";
 

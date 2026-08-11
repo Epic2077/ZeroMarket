@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { SellerSummary } from "@/context/sellers";
+import type { SellerSummary } from "@/types/dataTypes";
 import {
   fetchSellerBrandsAndMinPrice,
   fetchSellers,

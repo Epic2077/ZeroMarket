@@ -7,8 +7,9 @@ import {
   type SelectOption,
 } from "@/context/marketFilters";
 import { FilterState } from "@/types/marketplace";
-import { SlidersHorizontal, X } from "lucide-react";
+import { SlidersHorizontal, X, BarChart3 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import MarketplaceFilters from "./MarketPlaceFilters";
 import MarketplaceSidebar from "./MarketPlaceSidebar";
@@ -161,6 +162,15 @@ export default function MarketplaceContent() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Analytics page link */}
+          <Link
+            href="/market/analytics"
+            className="hidden sm:flex items-center gap-2 px-3 py-2 text-sm font-600 text-primary bg-primary/8 border border-primary/20 rounded-lg hover:bg-primary/15 transition-colors duration-150"
+          >
+            <BarChart3 size={15} />
+            تحلیل بازار
+          </Link>
+
           {/* Desktop toggle */}
           <button
             onClick={() => setSidebarOpen((open) => !open)}
