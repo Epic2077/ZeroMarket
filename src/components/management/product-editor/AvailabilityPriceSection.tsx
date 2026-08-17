@@ -10,6 +10,7 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
+import { useState } from "react";
 import {
   Controller,
   type Control,
@@ -55,6 +56,9 @@ const groupThousands = (raw: string) => {
   return digits ? Number(digits).toLocaleString("en-US") : "";
 };
 
+const formatFa = (n: number) =>
+  n ? new Intl.NumberFormat("fa-IR").format(n) : "";
+
 export function AvailabilityPriceSection({
   control,
   errors,
@@ -74,12 +78,15 @@ export function AvailabilityPriceSection({
     gYear,
     0, // price not needed — we only read marketAvgBuy
   );
+  const [showModal, setShowModal] = useState(false);
 
-  const hasAverage = market !== null;
+  const hasAverage =
+    !!market && (market.marketAvgBuy > 0 || market.marketAvgSell > 0);
 
-  const suggestPrice = () => {
-    if (!market) return;
-    setValue("price", market.marketAvgBuy.toLocaleString("en-US"), {
+  const suggestPrice = (value?: number) => {
+    if (!market && !value) return;
+    const v = value ?? market!.marketAvgBuy;
+    setValue("price", v.toLocaleString("en-US"), {
       shouldValidate: true,
     });
   };
@@ -158,16 +165,130 @@ export function AvailabilityPriceSection({
               })}
             />
             {hasAverage && (
-              <button
-                type="button"
-                onClick={suggestPrice}
-                disabled={marketLoading}
-                className="shrink-0 inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-600 bg-negotiable/10 border border-negotiable/25 text-negotiable hover:bg-negotiable/20 transition-colors duration-150"
-                title={`میانگین بازار: ${market?.marketAvgBuy.toLocaleString("en-US")} تومان`}
-              >
-                <Sparkles size={13} />
-                پیشنهاد قیمت
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => setShowModal(true)}
+                  disabled={marketLoading}
+                  className="shrink-0 inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-600 bg-negotiable/10 border border-negotiable/25 text-negotiable hover:bg-negotiable/20 transition-colors duration-150"
+                  title={
+                    market?.marketAvgBuy
+                      ? `میانگین بازار: ${market.marketAvgBuy.toLocaleString("en-US")} تومان`
+                      : undefined
+                  }
+                >
+                  <Sparkles size={13} />
+                  پیشنهاد قیمت
+                </button>
+
+                {showModal && (
+                  <div
+                    className="fixed inset-0 z-70 flex items-center justify-center p-4 vazir-matn"
+                    dir="rtl"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="پیشنهاد قیمت"
+                  >
+                    <div
+                      className="absolute inset-0 bg-foreground/50 backdrop-blur-sm"
+                      onClick={() => setShowModal(false)}
+                    />
+                    <div className="relative bg-card rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+                      <div className="px-6 pt-6 pb-3">
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 text-primary flex items-center justify-center shadow-sm">
+                            <Sparkles size={20} />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-base font-800 text-foreground">
+                              پیشنهاد قیمت هوشمند
+                            </h3>
+                            <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                              این اعداد بر اساس داده‌های واقعی بازار و رفتار
+                              کاربران محاسبه شده‌اند تا به شما کمک کنند در خرید
+                              و فروش تصمیمی دقیق‌تر بگیرید.
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => setShowModal(false)}
+                            aria-label="بستن"
+                            className="p-2 rounded-lg text-muted-foreground hover:bg-muted transition-colors duration-150"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="px-6 pb-6 pt-3">
+                        <div className="flex flex-col gap-4">
+                          {market?.marketAvgBuy > 0 && (
+                            <button
+                              onClick={() => {
+                                suggestPrice(market.marketAvgBuy);
+                                setShowModal(false);
+                              }}
+                              className="w-full flex items-center justify-between gap-4 px-5 py-4 rounded-xl bg-white/50 border border-border shadow hover:shadow-md transition-shadow duration-200"
+                            >
+                              <div className="text-right">
+                                <div className="text-sm font-800">
+                                  میانگین بازار
+                                </div>
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  میانگینی از آگهی‌های فعال
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="text-sm font-800 text-primary">
+                                  {formatFa(market.marketAvgBuy)} تومان
+                                </div>
+                                <div className="text-2xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                                  پیشنهاد
+                                </div>
+                              </div>
+                            </button>
+                          )}
+
+                          {market?.marketAvgSell > 0 && (
+                            <button
+                              onClick={() => {
+                                suggestPrice(market.marketAvgSell);
+                                setShowModal(false);
+                              }}
+                              className="w-full flex items-center justify-between gap-4 px-5 py-4 rounded-xl bg-gradient-to-r from-success/10 to-success/5 border border-success/20 shadow hover:shadow-md transition-shadow duration-200"
+                            >
+                              <div className="text-right">
+                                <div className="text-sm font-800">
+                                  میانگین قیمت‌های فروش
+                                </div>
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  قیمت‌هایی که بیشترین منجر به فروش شده‌اند
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="text-sm font-800 text-foreground">
+                                  {formatFa(market.marketAvgSell)} تومان
+                                </div>
+                                <div className="text-2xs bg-success/10 text-success px-2 py-0.5 rounded-full">
+                                  پرفروش
+                                </div>
+                              </div>
+                            </button>
+                          )}
+
+                          <div className="pt-2">
+                            <button
+                              onClick={() => setShowModal(false)}
+                              className="w-full flex items-center justify-center text-center px-4 py-3 rounded-lg btn-secondary"
+                            >
+                              انصراف
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
           <FieldError>{errors.price?.message}</FieldError>

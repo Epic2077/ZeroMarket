@@ -1,6 +1,5 @@
 "use client";
 
-import { formatPrice } from "@/context/data";
 import { toFa } from "@/context/carLabels";
 import { useUserInfo } from "@/context/UserInfoProvider";
 import { useSeller } from "@/hooks/useSellers";
@@ -50,12 +49,12 @@ export default function AnalyticsTab() {
   const sellerId = profile?.id ?? "";
   const { seller } = useSeller(sellerId);
 
+  const [sales, setSales] = useState<CompletedSaleRow[]>([]);
+  const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState<SellerStats>({
     total_cars_sold: 0,
     total_volume: 0,
   });
-  const [sales, setSales] = useState<CompletedSaleRow[]>([]);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!sellerId) return;
@@ -93,7 +92,7 @@ export default function AnalyticsTab() {
     },
     {
       title: "حجم معاملات",
-      value: toFa(stats.total_volume),
+      value: `${stats.total_volume.toLocaleString()} تومان`,
       sub: "مجموع ارزش معاملات",
       icon: <TrendingUp size={20} className="text-success" />,
     },

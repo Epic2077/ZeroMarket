@@ -21,6 +21,7 @@ import {
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import RejectRequestDialog from "@/components/shared/RejectRequestDialog";
 import RequestStatusBadge from "./RequestStatusBadge";
 import type { RequestStatus } from "@/context/sellerDashboard";
 
@@ -32,6 +33,7 @@ const STATUS_FROM_DB: Record<string, RequestStatus> = {
   NEGOTIABLE: "negotiable",
   REJECTED: "declined",
   COMPLETED: "completed",
+  CLOSED: "closed",
 };
 
 const STATUS_TO_DB: Record<string, BuyRequestStatus> = {
@@ -84,6 +86,7 @@ export default function RequestsTab() {
   const [loading, setLoading] = useState(true);
   const [actingId, setActingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<BuyRequestRow | null>(null);
 
   const load = useCallback(async () => {
     if (!profile?.id) return;
@@ -126,6 +129,26 @@ export default function RequestsTab() {
     }
   };
 
+  const handleRejectDecision = async (close: boolean) => {
+    if (!rejectTarget) return;
+    const dbStatus: BuyRequestStatus = close ? "CLOSED" : "REJECTED";
+    setActingId(rejectTarget.id);
+    try {
+      await updateRequestStatus(rejectTarget.id, dbStatus);
+      setRequests((prev) =>
+        prev.map((r) =>
+          r.id === rejectTarget.id ? { ...r, status: dbStatus } : r,
+        ),
+      );
+      toast.success(close ? "درخواست بسته شد" : "درخواست رد شد");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "خطا در به‌روزرسانی");
+    } finally {
+      setActingId(null);
+      setRejectTarget(null);
+    }
+  };
+
   // ── Loading ──────────────────────────────────────────────────────
   if (loading) {
     return (
@@ -157,7 +180,8 @@ export default function RequestsTab() {
       <div className="divide-y divide-border">
         {requests.map((req) => {
           const frontendStatus = STATUS_FROM_DB[req.status] ?? "pending";
-          const completed = req.status === "COMPLETED";
+          const completed =
+            req.status === "COMPLETED" || req.status === "CLOSED";
           const listingTitle = req.listing_brand
             ? `${req.listing_brand} ${req.listing_model ?? ""}`
             : "آگهی";
@@ -256,7 +280,11 @@ export default function RequestsTab() {
                       return (
                         <button
                           key={action.status}
-                          onClick={() => handleStatus(req.id, action.status)}
+                          onClick={() =>
+                            action.status === "declined"
+                              ? setRejectTarget(req)
+                              : handleStatus(req.id, action.status)
+                          }
                           disabled={isBusy}
                           title={action.title}
                           aria-label={action.title}
@@ -273,6 +301,15 @@ export default function RequestsTab() {
           );
         })}
       </div>
+
+      {rejectTarget && (
+        <RejectRequestDialog
+          title="رد درخواست"
+          description={`آیا می‌خواهید درخواست «${rejectTarget.buyer_name}» بسته شود؟`}
+          onConfirm={(close) => handleRejectDecision(close)}
+          onClose={() => setRejectTarget(null)}
+        />
+      )}
     </div>
   );
 }

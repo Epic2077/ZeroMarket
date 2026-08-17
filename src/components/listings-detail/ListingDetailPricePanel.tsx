@@ -26,6 +26,7 @@ interface Props {
   listing: Listing;
   onRequestAuction: () => void;
   requestStatus: "none" | "pending" | "approved" | "declined" | "negotiable";
+  isOwner?: boolean;
 }
 
 const requestStatusConfig = {
@@ -56,6 +57,7 @@ export default function ListingDetailPricePanel({
   listing,
   onRequestAuction,
   requestStatus,
+  isOwner,
 }: Props) {
   const [insightExpanded, setInsightExpanded] = useState(false);
 
@@ -197,34 +199,43 @@ export default function ListingDetailPricePanel({
       )}
 
       {/* CTA */}
-      {requestStatus === "none" && listing.status === "active" && (
-        <button
-          onClick={onRequestAuction}
-          className="btn-primary w-full justify-center py-3 text-sm"
-        >
-          <Send size={15} />
-          {isBuy ? "ارسال پیشنهاد فروش" : "ارسال درخواست خرید"}
-        </button>
-      )}
-
-      {listing.status !== "active" && requestStatus === "none" && (
+      {isOwner ? (
         <div className="flex items-center gap-2 p-3 bg-muted rounded-xl text-xs text-muted-foreground">
           <Info size={13} className="shrink-0" />
-          این آگهی در حال حاضر <StatusBadge status={listing.status} /> است —
-          درخواست‌ها متوقف شده‌اند.
+          این آگهی متعلق به شماست — نمی‌توانید برای آگهی خود درخواست ارسال کنید.
         </div>
-      )}
+      ) : (
+        <>
+          {requestStatus === "none" && listing.status === "active" && (
+            <button
+              onClick={onRequestAuction}
+              className="btn-primary w-full justify-center py-3 text-sm"
+            >
+              <Send size={15} />
+              {isBuy ? "ارسال پیشنهاد فروش" : "ارسال درخواست خرید"}
+            </button>
+          )}
 
-      {requestStatus !== "none" &&
-        requestStatus !== "approved" &&
-        requestStatus !== "negotiable" && (
-          <button
-            onClick={onRequestAuction}
-            className="btn-secondary w-full justify-center text-sm"
-          >
-            ارسال درخواست جدید
-          </button>
-        )}
+          {listing.status !== "active" && requestStatus === "none" && (
+            <div className="flex items-center gap-2 p-3 bg-muted rounded-xl text-xs text-muted-foreground">
+              <Info size={13} className="shrink-0" />
+              این آگهی در حال حاضر <StatusBadge status={listing.status} /> است —
+              درخواست‌ها متوقف شده‌اند.
+            </div>
+          )}
+
+          {requestStatus !== "none" &&
+            requestStatus !== "approved" &&
+            requestStatus !== "negotiable" && (
+              <button
+                onClick={onRequestAuction}
+                className="btn-secondary w-full justify-center text-sm"
+              >
+                ارسال درخواست جدید
+              </button>
+            )}
+        </>
+      )}
 
       {/* Delivery note */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground border-t border-border pt-3">

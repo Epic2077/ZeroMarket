@@ -3,7 +3,8 @@ export type RequestStatus =
   | "approved"
   | "declined"
   | "negotiable"
-  | "completed";
+  | "completed"
+  | "closed";
 
 export const requestStatusMap: Record<
   RequestStatus,
@@ -14,6 +15,7 @@ export const requestStatusMap: Record<
   declined: { label: "رد شده", className: "status-sold" },
   negotiable: { label: "قابل مذاکره", className: "status-negotiable" },
   completed: { label: "تکمیل شده", className: "status-completed" },
+  closed: { label: "بسته شد", className: "status-completed" },
 };
 
 export const dashboardTabs = [

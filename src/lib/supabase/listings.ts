@@ -150,7 +150,7 @@ export async function getMarketInsight(
 ): Promise<MarketDisplayFields | null> {
   const { data, error } = await client
     .from("car_market_insights")
-    .select("avg_listed_price, avg_price_7d_ago")
+    .select("avg_listed_price, avg_price_7d_ago, avg_sold_price")
     .eq("brand", brand)
     .eq("model", model)
     .eq("year", String(year)) // year is text in car_market_insights
@@ -159,13 +159,19 @@ export async function getMarketInsight(
   if (error || !data) return null;
 
   const avg = Number(data.avg_listed_price);
+  const avgSold = Number(data.avg_sold_price || 0);
   if (!avg || avg <= 0) return null;
 
   const priceVsMarket = Math.round(((listingPrice - avg) / avg) * 100);
   const ago7d = Number(data.avg_price_7d_ago || 0);
   const trend7d = ago7d > 0 ? Math.round(((avg - ago7d) / ago7d) * 100) : 0;
 
-  return { marketAvgBuy: avg, marketAvgSell: avg, priceVsMarket, trend7d };
+  return {
+    marketAvgBuy: avg,
+    marketAvgSell: avgSold > 0 ? avgSold : avg,
+    priceVsMarket,
+    trend7d,
+  };
 }
 
 // ── Converter: Supabase ListingRow → frontend Listing ────────────────

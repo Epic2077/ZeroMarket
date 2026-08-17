@@ -40,7 +40,7 @@ export default function Profile() {
             <Link href="/dashboard/admin">پنل مدیریت</Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href="/dashboard/seller">پنل فروش</Link>
+            <Link href="/dashboard/seller">پنل معامله</Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link href="/dashboard/user">پروفایل کاربری</Link>
@@ -52,7 +52,7 @@ export default function Profile() {
     dashboardLink = (
       <Link href="/dashboard/seller" className={linkClass}>
         <LayoutDashboardIcon size={15} />
-        پنل فروش
+        پنل معامله
       </Link>
     );
   }

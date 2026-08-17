@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
 import type { Listing } from "@/types/dataTypes";
+import { useUserInfo } from "@/context/UserInfoProvider";
 import AdminManageButton from "../management/AdminManageButton";
 import EditProductButton from "../management/EditProductButton";
 import { sellerSlug } from "@/lib/utils";
@@ -46,6 +47,8 @@ type RequestStatus =
   | "negotiable";
 
 export default function ListingDetailContent({ listing }: Props) {
+  const { user } = useUserInfo();
+  const isOwner = Boolean(user?.id && user.id === listing.seller_id);
   const [auctionOpen, setAuctionOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [requestStatus, setRequestStatus] = useState<RequestStatus>("none");
@@ -274,6 +277,7 @@ export default function ListingDetailContent({ listing }: Props) {
               listing={listing}
               onRequestAuction={() => setAuctionOpen(true)}
               requestStatus={requestStatus}
+              isOwner={isOwner}
             />
             <ListingDetailSeller listing={listing} />
           </div>

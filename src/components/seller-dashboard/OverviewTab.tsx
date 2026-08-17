@@ -24,6 +24,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { ReactNode } from "react";
+import RejectRequestDialog from "@/components/shared/RejectRequestDialog";
 import RequestStatusBadge from "./RequestStatusBadge";
 import type { RequestStatus } from "@/context/sellerDashboard";
 
@@ -39,6 +40,7 @@ const STATUS_MAP: Record<string, RequestStatus> = {
   NEGOTIABLE: "negotiable",
   REJECTED: "declined",
   COMPLETED: "completed",
+  CLOSED: "closed",
 };
 
 /** Relative-time label from an ISO date string (Persian). */
@@ -167,6 +169,7 @@ export default function OverviewTab({
   const [requests, setRequests] = useState<BuyRequestRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [actingId, setActingId] = useState<string | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<BuyRequestRow | null>(null);
 
   const load = useCallback(async () => {
     if (!profile?.id) return;
@@ -200,6 +203,24 @@ export default function OverviewTab({
       toast.error(err instanceof Error ? err.message : "خطا در به‌روزرسانی");
     } finally {
       setActingId(null);
+    }
+  };
+
+  const handleRejectDecision = async (close: boolean) => {
+    if (!rejectTarget) return;
+    const status = close ? "CLOSED" : "REJECTED";
+    setActingId(rejectTarget.id);
+    try {
+      await updateRequestStatus(rejectTarget.id, status);
+      setRequests((prev) =>
+        prev.map((r) => (r.id === rejectTarget.id ? { ...r, status } : r)),
+      );
+      toast.success(close ? "درخواست بسته شد" : "درخواست رد شد");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "خطا در به‌روزرسانی");
+    } finally {
+      setActingId(null);
+      setRejectTarget(null);
     }
   };
 
@@ -297,7 +318,11 @@ export default function OverviewTab({
                         </div>
                       )}
                       <RequestActions
-                        onAction={(s) => handleAction(req.id, s)}
+                        onAction={(s) =>
+                          s === "REJECTED"
+                            ? setRejectTarget(req)
+                            : handleAction(req.id, s)
+                        }
                         loading={actingId === req.id}
                       />
                     </CollapsibleContent>
@@ -361,6 +386,15 @@ export default function OverviewTab({
           </div>
         </div>
       </div>
+
+      {rejectTarget && (
+        <RejectRequestDialog
+          title="رد درخواست"
+          description={`آیا می‌خواهید درخواست «${rejectTarget.buyer_name}» بسته شود؟`}
+          onConfirm={(close) => handleRejectDecision(close)}
+          onClose={() => setRejectTarget(null)}
+        />
+      )}
     </div>
   );
 }

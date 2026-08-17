@@ -28,13 +28,20 @@ interface MarketRequest {
 
 const STATUS_MAP: Record<
   string,
-  "active" | "pending" | "sold" | "negotiable" | "reserved" | "completed"
+  | "active"
+  | "pending"
+  | "sold"
+  | "negotiable"
+  | "reserved"
+  | "completed"
+  | "closed"
 > = {
   WAITING: "pending",
   ACCEPTED: "approved" as "active",
   NEGOTIABLE: "negotiable",
   REJECTED: "declined" as "sold",
   COMPLETED: "completed",
+  CLOSED: "closed",
 };
 
 function persianDate(iso: string) {

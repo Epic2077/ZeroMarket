@@ -8,8 +8,10 @@ import { useUserInfo } from "@/context/UserInfoProvider";
 import {
   fetchUserNotifications,
   translateNotification,
+  markAllNotificationsRead,
   type NotificationRow,
 } from "@/lib/supabase/buyRequests";
+import { supabase } from "@/lib/supabase/client";
 
 /** Determine the user's dashboard path based on their role. */
 function dashboardPath(role: string | undefined): string {
@@ -58,6 +60,85 @@ export default function Notification() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Realtime subscription to keep notifications live
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase.channel(`user-notifications-${user.id}`);
+
+    channel
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "user_notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload: any) => {
+          const raw = payload.new as NotificationRow;
+          setNotifications((prev) => [translateNotification(raw), ...prev]);
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "user_notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload: any) => {
+          const raw = payload.new as NotificationRow;
+          setNotifications((prev) =>
+            prev.map((n) => (n.id === raw.id ? translateNotification(raw) : n)),
+          );
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "user_notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload: any) => {
+          const raw = payload.old as NotificationRow;
+          setNotifications((prev) => prev.filter((n) => n.id !== raw.id));
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void channel.unsubscribe();
+    };
+  }, [user?.id]);
+
+  // When the dropdown is opened, mark notifications as read for the user
+  useEffect(() => {
+    if (!open || !user?.id) return;
+    const hasUnread = notifications.some((n) => n.is_unread);
+    if (!hasUnread) return;
+
+    let canceled = false;
+    (async () => {
+      try {
+        await markAllNotificationsRead(user.id);
+        if (canceled) return;
+        setNotifications((prev) =>
+          prev.map((n) => ({ ...n, is_unread: false })),
+        );
+      } catch {
+        // ignore errors silently
+      }
+    })();
+
+    return () => {
+      canceled = true;
+    };
+  }, [open, user?.id, notifications]);
 
   return (
     <div

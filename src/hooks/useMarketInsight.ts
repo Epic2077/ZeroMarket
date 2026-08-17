@@ -37,7 +37,7 @@ export function useMarketInsight(
     try {
       const { data, error: qError } = await supabase
         .from("car_market_insights")
-        .select("avg_listed_price, avg_price_7d_ago")
+        .select("avg_listed_price, avg_price_7d_ago, avg_sold_price")
         .eq("brand", brand)
         .eq("model", model)
         .eq("year", String(year))
@@ -51,6 +51,7 @@ export function useMarketInsight(
       }
 
       const avg = Number(data.avg_listed_price);
+      const avgSold = Number(data.avg_sold_price || 0);
       if (!avg || avg <= 0) {
         setMarket(null);
         setLoading(false);
@@ -63,7 +64,7 @@ export function useMarketInsight(
 
       setMarket({
         marketAvgBuy: avg,
-        marketAvgSell: avg,
+        marketAvgSell: avgSold > 0 ? avgSold : avg,
         priceVsMarket,
         trend7d,
       });

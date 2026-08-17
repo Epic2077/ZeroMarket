@@ -1,5 +1,6 @@
 "use client";
 
+import RejectRequestDialog from "@/components/shared/RejectRequestDialog";
 import RequestStatusBadge from "@/components/seller-dashboard/RequestStatusBadge";
 import { useUserInfo } from "@/context/UserInfoProvider";
 import {
@@ -32,6 +33,7 @@ const STATUS_FROM_DB: Record<string, RequestStatus> = {
   NEGOTIABLE: "negotiable",
   REJECTED: "declined",
   COMPLETED: "completed",
+  CLOSED: "closed",
 };
 
 function timeAgo(iso: string): string {
@@ -48,6 +50,9 @@ export default function MyRequestsTab() {
   const [requests, setRequests] = useState<BuyerRequestRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<BuyerRequestRow | null>(
+    null,
+  );
 
   const load = useCallback(async () => {
     if (!user?.id) return;
@@ -86,30 +91,27 @@ export default function MyRequestsTab() {
       );
       toast.success(`معامله «${title}» تکمیل شد.`);
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "خطا در تکمیل معامله",
-      );
+      toast.error(err instanceof Error ? err.message : "خطا در تکمیل معامله");
     } finally {
       setBusyId(null);
     }
   };
 
-  const reject = async (req: BuyerRequestRow) => {
-    setBusyId(req.id);
+  const handleRejectDecision = async (close: boolean) => {
+    if (!rejectTarget) return;
+    const status = close ? "CLOSED" : "REJECTED";
+    setBusyId(rejectTarget.id);
     try {
-      await updateRequestStatus(req.id, "REJECTED");
+      await updateRequestStatus(rejectTarget.id, status);
       setRequests((prev) =>
-        prev.map((r) =>
-          r.id === req.id ? { ...r, status: "REJECTED" as const } : r,
-        ),
+        prev.map((r) => (r.id === rejectTarget.id ? { ...r, status } : r)),
       );
-      toast.success("درخواست رد شد.");
+      toast.success(close ? "درخواست بسته شد" : "درخواست رد شد.");
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "خطا در رد معامله",
-      );
+      toast.error(err instanceof Error ? err.message : "خطا در رد معامله");
     } finally {
       setBusyId(null);
+      setRejectTarget(null);
     }
   };
 
@@ -129,9 +131,7 @@ export default function MyRequestsTab() {
       );
       toast.success("درخواست لغو شد و آگهی گزارش گردید.");
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "خطا در گزارش آگهی",
-      );
+      toast.error(err instanceof Error ? err.message : "خطا در گزارش آگهی");
     } finally {
       setBusyId(null);
     }
@@ -165,7 +165,8 @@ export default function MyRequestsTab() {
             const cancellable =
               req.status === "WAITING" || req.status === "NEGOTIABLE";
             const canComplete = req.status === "ACCEPTED";
-            const completed = req.status === "COMPLETED";
+            const completed =
+              req.status === "COMPLETED" || req.status === "CLOSED";
             const rejected = req.status === "REJECTED";
             const showPhone =
               (req.status === "ACCEPTED" || req.status === "NEGOTIABLE") &&
@@ -241,7 +242,7 @@ export default function MyRequestsTab() {
                     )}
                     {canComplete && (
                       <button
-                        onClick={() => reject(req)}
+                        onClick={() => setRejectTarget(req)}
                         disabled={busyId === req.id}
                         className="flex items-center gap-1 px-3 py-1.5 border border-danger/25 bg-danger/10 text-danger text-xs font-700 rounded-lg hover:bg-danger/20 transition-colors duration-150 disabled:opacity-50"
                       >
@@ -287,6 +288,15 @@ export default function MyRequestsTab() {
             );
           })}
         </div>
+      )}
+
+      {rejectTarget && (
+        <RejectRequestDialog
+          title="رد معامله"
+          description={`آیا می‌خواهید معامله «${rejectTarget.listing_title}» بسته شود؟`}
+          onConfirm={(close) => handleRejectDecision(close)}
+          onClose={() => setRejectTarget(null)}
+        />
       )}
     </div>
   );

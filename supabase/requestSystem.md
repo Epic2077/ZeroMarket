@@ -90,7 +90,9 @@ join public.profiles p on p.id = br.buyer_id;
 ### 1b. Migration — if `buy_requests` already exists
 
 If the table was created before the `COMPLETED` status was added, the old check
-constraint still rejects it. Run this to update the existing constraint:
+constraint still rejects it. Run this to update the existing constraint. The
+`CLOSED` status is added the same way — it's used when a party **closes** the
+request instead of just rejecting it:
 
 ```sql
 alter table public.buy_requests
@@ -98,7 +100,7 @@ alter table public.buy_requests
 
 alter table public.buy_requests
   add constraint buy_requests_status_check
-  check (status in ('WAITING', 'ACCEPTED', 'NEGOTIABLE', 'REJECTED', 'COMPLETED'));
+  check (status in ('WAITING', 'ACCEPTED', 'NEGOTIABLE', 'REJECTED', 'COMPLETED', 'CLOSED'));
 ```
 
 ---
@@ -233,8 +235,8 @@ language plpgsql
 security definer set search_path = public
 as $$
 begin
-  if old.status = 'COMPLETED' and new.status is distinct from 'COMPLETED' then
-    raise exception 'Completed requests cannot be changed';
+  if old.status in ('COMPLETED', 'CLOSED') and new.status is distinct from old.status then
+    raise exception 'Completed or closed requests cannot be changed';
   end if;
   return new;
 end;

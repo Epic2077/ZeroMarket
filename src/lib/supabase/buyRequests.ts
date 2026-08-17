@@ -7,7 +7,8 @@ export type BuyRequestStatus =
   | "ACCEPTED"
   | "NEGOTIABLE"
   | "REJECTED"
-  | "COMPLETED";
+  | "COMPLETED"
+  | "CLOSED";
 
 /** Row shape for display. */
 export interface BuyRequestRow {

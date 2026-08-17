@@ -66,6 +66,10 @@ export default function ListingAuctionModal({
       toast.error("ابتدا وارد حساب کاربری خود شوید");
       return;
     }
+    if (user.id === (listing.seller_id ?? listing.ownerId)) {
+      toast.error("نمی‌توانید برای آگهی خودتان درخواست ارسال کنید");
+      return;
+    }
 
     setLoading(true);
     try {
