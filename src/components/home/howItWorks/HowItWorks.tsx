@@ -1,9 +1,9 @@
-"use client";
-
 import Reveal from "@/components/shared/Reveal";
-import { Steps } from "@/context/Info";
+import { getSteps } from "./steps";
 
-export default function HowItWorks() {
+export default async function HowItWorks() {
+  const steps = await getSteps();
+
   return (
     <section
       id="how-it-works"
@@ -26,24 +26,24 @@ export default function HowItWorks() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
           <div className="hidden md:block absolute top-8 left-1/6 right-1/6 h-px bg-border z-0" />
 
-          {Steps().map((step, i) => (
-            <Reveal key={step?.id} delay={i * 0.1} className="relative z-10">
+          {steps.map((step, i) => (
+            <Reveal key={step.id} delay={i * 0.1} className="relative z-10">
               <div className="bg-slate-200 rounded-2xl card-hover p-6 h-full">
                 <div className="flex items-start gap-4">
                   <div className="shrink-0">
                     <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mb-3">
-                      {step?.icon}
+                      {step.icon}
                     </div>
                     <span className="font-mono text-3xl font-800 text-border">
-                      {step?.number}
+                      {step.number}
                     </span>
                   </div>
                 </div>
                 <h3 className="text-base font-700 text-foreground mb-2 mt-2">
-                  {step?.title}
+                  {step.title}
                 </h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  {step?.description}
+                  {step.description}
                 </p>
               </div>
             </Reveal>

@@ -31,6 +31,17 @@ export async function fetchSellers(): Promise<SellerRow[]> {
   return (data ?? []) as SellerRow[];
 }
 
+/** Fetch count of verified sellers. */
+export async function fetchVerifiedSellersCount(): Promise<number> {
+  const { count, error } = await supabase
+    .from("sellers")
+    .select("*", { count: "exact", head: true })
+    .eq("verified", true);
+
+  if (error) throw error;
+  return count ?? 0;
+}
+
 /** Fetch a single seller by id. */
 export async function fetchSellerById(id: string): Promise<SellerRow | null> {
   const { data, error } = await supabase

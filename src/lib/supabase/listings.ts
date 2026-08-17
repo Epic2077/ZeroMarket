@@ -84,6 +84,17 @@ export async function fetchListings(
   return (data ?? []) as ListingRow[];
 }
 
+/** Fetch count of active listings (AVAILABLE + NEGOTIABLE). */
+export async function fetchActiveListingsCount(): Promise<number> {
+  const { count, error } = await supabase
+    .from("listings")
+    .select("*", { count: "exact", head: true })
+    .in("status", ["AVAILABLE", "NEGOTIABLE"]);
+
+  if (error) throw error;
+  return count ?? 0;
+}
+
 /** Fetch a single listing by id. */
 export async function fetchListingById(id: string): Promise<ListingRow | null> {
   const { data, error } = await supabase
