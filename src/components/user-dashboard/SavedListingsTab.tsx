@@ -1,20 +1,47 @@
 "use client";
 
-import StatusBadge from "@/components/shared/StatusBadge";
-import { formatPrice } from "@/context/data";
-import { savedListings } from "@/context/userProfile";
-import { BookmarkX, MapPin } from "lucide-react";
+import ListingCard from "@/components/shared/ListingCard";
+import { useUserInfo } from "@/context/UserInfoProvider";
+import { fetchWishlistListings } from "@/lib/supabase/wishlist";
+import { listingRowToListing } from "@/lib/supabase/listings";
+import type { Listing } from "@/types/dataTypes";
+import { BookmarkX, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
-import { toast } from "sonner";
+import { useCallback, useEffect, useState } from "react";
 
 export default function SavedListingsTab() {
-  const [items, setItems] = useState(savedListings);
+  const { user } = useUserInfo();
+  const [items, setItems] = useState<Listing[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const remove = (id: string, title: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
-    toast.success(`«${title}» از فهرست ذخیره‌شده حذف شد`);
-  };
+  const load = useCallback(async () => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const rows = await fetchWishlistListings(user.id);
+      setItems(rows.map((row) => listingRowToListing(row)));
+    } catch {
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-16">
+        <Loader2 size={18} className="animate-spin text-primary" />
+        <span className="text-sm text-muted-foreground">در حال بارگذاری…</span>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (
@@ -25,6 +52,9 @@ export default function SavedListingsTab() {
         <p className="text-sm font-600 text-foreground">
           هنوز آگهی‌ای ذخیره نکرده‌اید
         </p>
+        <p className="text-xs text-muted-foreground">
+          خودروهای موردعلاقه‌تان را با قلب ذخیره کنید تا اینجا ببینید.
+        </p>
         <Link href="/market" className="btn-primary text-sm">
           مشاهده بازار
         </Link>
@@ -34,52 +64,8 @@ export default function SavedListingsTab() {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-      {items.map((item) => (
-        <div key={item.id} className="card-elevated card-hover p-5 flex flex-col">
-          <div className="flex items-start justify-between gap-3 mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-foreground flex items-center justify-center text-white text-xs font-800">
-                {item.avatar}
-              </div>
-              <div>
-                <div className="text-sm font-700 text-foreground">
-                  {item.title}
-                </div>
-                <div className="text-xs text-muted-foreground">{item.trim}</div>
-              </div>
-            </div>
-            <StatusBadge status={item.status} />
-          </div>
-
-          <div className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
-            <MapPin size={13} />
-            {item.city}
-            <span className="mx-1">·</span>
-            ذخیره {item.savedAt}
-          </div>
-
-          <div className="text-price text-lg font-700 text-foreground mb-4">
-            {formatPrice(item.price)}{" "}
-            <span className="text-xs font-500 text-muted-foreground">تومان</span>
-          </div>
-
-          <div className="mt-auto flex items-center gap-2">
-            <Link
-              href={`/market/listings/${item.listingId}`}
-              className="btn-primary text-sm flex-1 justify-center"
-            >
-              مشاهده آگهی
-            </Link>
-            <button
-              onClick={() => remove(item.id, item.title)}
-              aria-label="حذف از ذخیره‌شده‌ها"
-              title="حذف از ذخیره‌شده‌ها"
-              className="flex items-center justify-center w-9 h-9 rounded-lg border border-border text-muted-foreground hover:text-danger hover:border-danger/40 hover:bg-danger/5 transition-colors duration-150"
-            >
-              <BookmarkX size={16} />
-            </button>
-          </div>
-        </div>
+      {items.map((listing) => (
+        <ListingCard key={listing.id} listing={listing} />
       ))}
     </div>
   );

@@ -7,15 +7,18 @@ import {
   type SelectOption,
 } from "@/context/marketFilters";
 import { FilterState } from "@/types/marketplace";
-import { SlidersHorizontal, X, BarChart3 } from "lucide-react";
+import { SlidersHorizontal, X } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import MarketplaceFilters from "./MarketPlaceFilters";
 import MarketplaceSidebar from "./MarketPlaceSidebar";
 import { useListings } from "@/hooks/useListings";
 import { useTaxonomyOptions } from "@/hooks/useTaxonomyOptions";
 import { listingRowToListing } from "@/lib/supabase/listings";
+import {
+  fetchMarketPriceMap,
+  computePriceVsMarket,
+} from "@/lib/supabase/marketInsights";
 
 const defaultFilters: FilterState = {
   search: "",
@@ -27,6 +30,7 @@ const defaultFilters: FilterState = {
   priceMax: "",
   verifiedOnly: false,
   status: "",
+  listingType: "",
   sortBy: "listedDate",
   sortDir: "desc",
 };
@@ -43,6 +47,14 @@ export default function MarketplaceContent() {
 
   const { listings: rawListings, loading, error } = useListings();
   const { values: taxonomyValues, loading: taxLoading } = useTaxonomyOptions();
+  const [marketMap, setMarketMap] = useState<Map<string, number>>(new Map());
+
+  useEffect(() => {
+    if (!rawListings.length) return;
+    fetchMarketPriceMap(rawListings)
+      .then(setMarketMap)
+      .catch(() => {});
+  }, [rawListings]);
 
   // Taxonomy-driven filter options
   const brandOptions: SelectOption[] = useMemo(
@@ -62,10 +74,23 @@ export default function MarketplaceContent() {
     [taxonomyValues],
   );
 
-  // Convert Supabase rows → frontend Listing shape
+  // Convert Supabase rows → frontend Listing shape with market data
   const allListings = useMemo(
-    () => rawListings.map((row) => listingRowToListing(row)),
-    [rawListings],
+    () =>
+      rawListings.map((row) => {
+        const l = listingRowToListing(row);
+        const key = `${l.brand}|${l.model}|${l.year}`;
+        const marketAvg = marketMap.get(key);
+        return {
+          ...l,
+          priceVsMarket: marketAvg
+            ? computePriceVsMarket(l.price, marketAvg)
+            : 0,
+          marketAvgBuy: marketAvg ?? l.price,
+          marketAvgSell: marketAvg ?? l.price,
+        };
+      }),
+    [rawListings, marketMap],
   );
 
   const updateFilter = <K extends keyof FilterState>(
@@ -163,13 +188,13 @@ export default function MarketplaceContent() {
 
         <div className="flex items-center gap-2">
           {/* Analytics page link */}
-          <Link
+          {/* <Link
             href="/market/analytics"
             className="hidden sm:flex items-center gap-2 px-3 py-2 text-sm font-600 text-primary bg-primary/8 border border-primary/20 rounded-lg hover:bg-primary/15 transition-colors duration-150"
           >
             <BarChart3 size={15} />
             تحلیل بازار
-          </Link>
+          </Link> */}
 
           {/* Desktop toggle */}
           <button

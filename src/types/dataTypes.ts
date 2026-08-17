@@ -35,6 +35,8 @@ export interface Listing {
   sellerNotes?: string;
   /** Whether this is a sell listing or a buy request. */
   listingType: "SELL" | "BUY";
+  /** Timestamp when the listing was soft-deleted (null if active). */
+  deletedAt?: string | null;
 }
 
 // ── Seller summary ──────────────────────────────────────────────────

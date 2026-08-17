@@ -29,6 +29,11 @@ const statusOptions: SelectOption[] = [
   { value: "reserved", label: "رزرو شده" },
 ];
 
+const listingTypeOptions: SelectOption[] = [
+  { value: "SELL", label: "فروش" },
+  { value: "BUY", label: "خرید" },
+];
+
 const SelectField = ({
   value,
   onChange,
@@ -129,6 +134,12 @@ export default function MarketplaceFilters({
         onChange={(v) => onUpdate("status", v)}
         options={statusOptions}
         placeholder="وضعیت"
+      />
+      <SelectField
+        value={filters.listingType}
+        onChange={(v) => onUpdate("listingType", v)}
+        options={listingTypeOptions}
+        placeholder="نوع آگهی"
       />
 
       {/* Price range (in billions of Toman) */}

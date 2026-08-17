@@ -22,6 +22,7 @@ const STATUS_FROM_DB: Record<string, OfferStatus> = {
   ACCEPTED: "accepted",
   NEGOTIABLE: "negotiable",
   REJECTED: "rejected",
+  COMPLETED: "completed",
 };
 
 interface Props {

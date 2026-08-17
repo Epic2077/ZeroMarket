@@ -8,12 +8,21 @@ import { listingRowToListing } from "@/lib/supabase/listings";
 import { supabase } from "@/lib/supabase/client";
 import type { PlatformUser, ProductInput } from "@/types/admin";
 import type { Listing } from "@/types/dataTypes";
-import { Eye, Pencil, Plus, ShoppingBag, Trash2, Upload } from "lucide-react";
+import {
+  Eye,
+  Pencil,
+  Plus,
+  ShoppingBag,
+  ShoppingCart,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import BulkImportProductsModal from "./BulkImportProductsModal";
 import ConfirmDialog from "./ConfirmDialog";
+import RecordSaleModal from "./RecordSaleModal";
 
 interface Props {
   user: PlatformUser;
@@ -25,6 +34,7 @@ export default function ProductsManager({ user }: Props) {
     .filter((r) => r.seller_id === user.id)
     .map((r) => listingRowToListing(r));
   const [pendingDelete, setPendingDelete] = useState<Listing | null>(null);
+  const [pendingSale, setPendingSale] = useState<Listing | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
 
   const canHaveProducts = user.role !== "USER";
@@ -118,7 +128,13 @@ export default function ProductsManager({ user }: Props) {
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <StatusBadge status={p.status} />
+                {p.deletedAt ? (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-muted text-muted-foreground text-2xs font-700">
+                    حذف شده
+                  </span>
+                ) : (
+                  <StatusBadge status={p.status} />
+                )}
                 <Link
                   href={`/market/listings/${p.id}`}
                   aria-label="مشاهده محصول"
@@ -136,6 +152,14 @@ export default function ProductsManager({ user }: Props) {
                   <Pencil size={14} />
                 </Link>
                 <button
+                  onClick={() => setPendingSale(p)}
+                  aria-label="ثبت معامله"
+                  title="ثبت معامله"
+                  className="flex items-center justify-center w-8 h-8 rounded-lg border border-border text-muted-foreground hover:text-success hover:border-success/40 transition-colors duration-150"
+                >
+                  <ShoppingCart size={14} />
+                </button>
+                <button
                   onClick={() => setPendingDelete(p)}
                   aria-label="حذف محصول"
                   title="حذف"
@@ -149,10 +173,19 @@ export default function ProductsManager({ user }: Props) {
         </div>
       )}
 
+      {pendingSale && (
+        <RecordSaleModal
+          listing={pendingSale}
+          sellerId={user.id}
+          onRecorded={() => {}}
+          onClose={() => setPendingSale(null)}
+        />
+      )}
+
       {pendingDelete && (
         <ConfirmDialog
           title="حذف محصول"
-          description={`«${brandModelLabel(pendingDelete)} ${pendingDelete.trim}» برای همیشه حذف می‌شود.`}
+          description={`«${brandModelLabel(pendingDelete)} ${pendingDelete.trim}» از دید عموم حذف می‌شود و فقط برای مدیران قابل مشاهده می‌ماند.`}
           confirmLabel="حذف"
           onConfirm={async () => {
             await supabase.from("listings").delete().eq("id", pendingDelete.id);

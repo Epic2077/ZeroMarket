@@ -2,6 +2,7 @@
 
 import StatusBadge from "@/components/shared/StatusBadge";
 import ConfirmDialog from "@/components/management/ConfirmDialog";
+import RecordSaleModal from "@/components/management/RecordSaleModal";
 import {
   Table,
   TableBody,
@@ -17,7 +18,7 @@ import { useListings } from "@/hooks/useListings";
 import { listingRowToListing } from "@/lib/supabase/listings";
 import { supabase } from "@/lib/supabase/client";
 import type { Listing } from "@/types/dataTypes";
-import { Eye, Pencil, Search, Trash2 } from "lucide-react";
+import { Eye, Pencil, Search, ShoppingCart, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -39,6 +40,7 @@ export default function ProductsCatalog() {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [pendingDelete, setPendingDelete] = useState<Listing | null>(null);
+  const [pendingSale, setPendingSale] = useState<Listing | null>(null);
 
   const listings = rawListings.map((row) => listingRowToListing(row));
 
@@ -158,7 +160,13 @@ export default function ProductsCatalog() {
                     {cityLabel(p.city)}
                   </TableCell>
                   <TableCell>
-                    <StatusBadge status={p.status} />
+                    {p.deletedAt ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-muted text-muted-foreground text-2xs font-700">
+                        حذف شده
+                      </span>
+                    ) : (
+                      <StatusBadge status={p.status} />
+                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-end gap-2">
@@ -179,6 +187,14 @@ export default function ProductsCatalog() {
                         <Pencil size={14} />
                       </Link>
                       <button
+                        onClick={() => setPendingSale(p)}
+                        aria-label="ثبت معامله"
+                        title="ثبت معامله"
+                        className="flex items-center justify-center w-8 h-8 rounded-lg border border-border text-muted-foreground hover:text-success hover:border-success/40 transition-colors duration-150"
+                      >
+                        <ShoppingCart size={14} />
+                      </button>
+                      <button
                         onClick={() => setPendingDelete(p)}
                         aria-label="حذف محصول"
                         title="حذف"
@@ -195,10 +211,19 @@ export default function ProductsCatalog() {
         )}
       </div>
 
+      {pendingSale && (
+        <RecordSaleModal
+          listing={pendingSale}
+          sellerId={pendingSale.ownerId ?? pendingSale.seller_id ?? ""}
+          onRecorded={() => {}}
+          onClose={() => setPendingSale(null)}
+        />
+      )}
+
       {pendingDelete && (
         <ConfirmDialog
           title="حذف محصول"
-          description={`«${brandModelLabel(pendingDelete)} ${pendingDelete.trim}» حذف می‌شود.`}
+          description={`«${brandModelLabel(pendingDelete)} ${pendingDelete.trim}» از دید عموم حذف می‌شود و فقط برای مدیران قابل مشاهده می‌ماند.`}
           confirmLabel="حذف"
           onConfirm={async () => {
             await supabase.from("listings").delete().eq("id", pendingDelete.id);

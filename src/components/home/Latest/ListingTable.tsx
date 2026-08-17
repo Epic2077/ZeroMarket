@@ -212,6 +212,14 @@ export default function ListingTable({ data }: ListingTableProps) {
                       <div className="text-sm font-semibold tabular-nums">
                         {formatPriceFa(listing.price)}
                       </div>
+                      <div
+                        className={`text-2xs font-600 ${listing.priceVsMarket >= 0 ? "text-danger" : "text-success"}`}
+                      >
+                        {listing.priceVsMarket > 0 ? "+" : ""}
+                        {listing.priceVsMarket}٪{" "}
+                        {listing.priceVsMarket >= 0 ? "بالاتر" : "پایین‌تر"} از
+                        میانگین
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -240,16 +248,13 @@ export default function ListingTable({ data }: ListingTableProps) {
                       {status.label}
                     </Badge>
                   )}
-                  <span className="text-xs text-muted-foreground">
-                    تاریخ ثبت {formatUploadDate(listing.listedDate)}
-                  </span>
                 </div>
 
                 <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
                   <div className="flex flex-col gap-0.5">
                     <span className="text-muted-foreground">سال ساخت</span>
-                    <span className="font-medium tabular-nums">
-                      {toFa(listing.year)} / {toFa(listing.year - 621)}
+                    <span className="font-medium font-mono">
+                      {listing.year} / {toFa(listing.year - 621)}
                     </span>
                   </div>
                   <div className="flex flex-col gap-0.5">
@@ -279,6 +284,9 @@ export default function ListingTable({ data }: ListingTableProps) {
                       )}
                     </span>
                   </div>
+                  <span className="text-xs text-muted-foreground">
+                    تاریخ ثبت {formatUploadDate(listing.listedDate)}
+                  </span>
                   {/* <div className="flex flex-col gap-0.5">
                     <span className="text-muted-foreground">شناسه آگهی</span>
                     <span className="font-medium tabular-nums">

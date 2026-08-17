@@ -20,7 +20,8 @@ export interface UseListingsResult {
 
 export function useListings(filter?: ListingsFilter): UseListingsResult {
   const [listings, setListings] = useState<ListingRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Start false so SSR and the client's first hydration render match.
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Serialise filter so we can use it as a dependency key

@@ -4,11 +4,16 @@ import RequestStatusBadge from "@/components/seller-dashboard/RequestStatusBadge
 import { useUserInfo } from "@/context/UserInfoProvider";
 import {
   cancelBuyRequest,
+  completeBuyRequest,
   fetchBuyerRequests,
+  updateRequestStatus,
   type BuyerRequestRow,
 } from "@/lib/supabase/buyRequests";
+import { reportListing } from "@/lib/supabase/taxonomy";
 import type { RequestStatus } from "@/context/sellerDashboard";
 import {
+  Check,
+  Flag,
   HandCoins,
   Loader2,
   Phone,
@@ -26,6 +31,7 @@ const STATUS_FROM_DB: Record<string, RequestStatus> = {
   ACCEPTED: "approved",
   NEGOTIABLE: "negotiable",
   REJECTED: "declined",
+  COMPLETED: "completed",
 };
 
 function timeAgo(iso: string): string {
@@ -41,6 +47,7 @@ export default function MyRequestsTab() {
   const { user } = useUserInfo();
   const [requests, setRequests] = useState<BuyerRequestRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!user?.id) return;
@@ -65,6 +72,68 @@ export default function MyRequestsTab() {
       toast.success(`درخواست «${title}» لغو شد`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "خطا در لغو درخواست");
+    }
+  };
+
+  const finish = async (id: string, title: string) => {
+    setBusyId(id);
+    try {
+      await completeBuyRequest(id);
+      setRequests((prev) =>
+        prev.map((r) =>
+          r.id === id ? { ...r, status: "COMPLETED" as const } : r,
+        ),
+      );
+      toast.success(`معامله «${title}» تکمیل شد.`);
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "خطا در تکمیل معامله",
+      );
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const reject = async (req: BuyerRequestRow) => {
+    setBusyId(req.id);
+    try {
+      await updateRequestStatus(req.id, "REJECTED");
+      setRequests((prev) =>
+        prev.map((r) =>
+          r.id === req.id ? { ...r, status: "REJECTED" as const } : r,
+        ),
+      );
+      toast.success("درخواست رد شد.");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "خطا در رد معامله",
+      );
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const reportCancel = async (req: BuyerRequestRow) => {
+    setBusyId(req.id);
+    try {
+      await updateRequestStatus(req.id, "REJECTED");
+      await reportListing({
+        listingId: req.listing_id,
+        listingLabel: req.listing_title,
+        reason: "خریدار درخواست را لغو و آگهی را گزارش کرد",
+      });
+      setRequests((prev) =>
+        prev.map((r) =>
+          r.id === req.id ? { ...r, status: "REJECTED" as const } : r,
+        ),
+      );
+      toast.success("درخواست لغو شد و آگهی گزارش گردید.");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "خطا در گزارش آگهی",
+      );
+    } finally {
+      setBusyId(null);
     }
   };
 
@@ -95,6 +164,9 @@ export default function MyRequestsTab() {
             const frontendStatus = STATUS_FROM_DB[req.status] ?? "pending";
             const cancellable =
               req.status === "WAITING" || req.status === "NEGOTIABLE";
+            const canComplete = req.status === "ACCEPTED";
+            const completed = req.status === "COMPLETED";
+            const rejected = req.status === "REJECTED";
             const showPhone =
               (req.status === "ACCEPTED" || req.status === "NEGOTIABLE") &&
               req.seller_phone;
@@ -102,7 +174,11 @@ export default function MyRequestsTab() {
             return (
               <div
                 key={req.id}
-                className="flex flex-col gap-4 px-5 py-4 hover:bg-muted/30 transition-colors duration-150"
+                className={`flex flex-col gap-4 px-5 py-4 transition-colors duration-150 ${
+                  completed || rejected
+                    ? "opacity-50 bg-muted/20"
+                    : "hover:bg-muted/30"
+                }`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
@@ -149,6 +225,30 @@ export default function MyRequestsTab() {
 
                   <div className="flex items-center gap-3">
                     <RequestStatusBadge status={frontendStatus} />
+                    {canComplete && (
+                      <button
+                        onClick={() => finish(req.id, req.listing_title)}
+                        disabled={busyId === req.id}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-success text-white text-xs font-700 rounded-lg hover:bg-success/90 transition-colors duration-150 disabled:opacity-50"
+                      >
+                        {busyId === req.id ? (
+                          <Loader2 size={12} className="animate-spin" />
+                        ) : (
+                          <Check size={12} />
+                        )}
+                        تأیید و تکمیل معامله
+                      </button>
+                    )}
+                    {canComplete && (
+                      <button
+                        onClick={() => reject(req)}
+                        disabled={busyId === req.id}
+                        className="flex items-center gap-1 px-3 py-1.5 border border-danger/25 bg-danger/10 text-danger text-xs font-700 rounded-lg hover:bg-danger/20 transition-colors duration-150 disabled:opacity-50"
+                      >
+                        <X size={12} />
+                        رد معامله
+                      </button>
+                    )}
                     {cancellable && (
                       <button
                         onClick={() => cancel(req.id, req.listing_title)}
@@ -156,6 +256,16 @@ export default function MyRequestsTab() {
                       >
                         <X size={12} />
                         لغو درخواست
+                      </button>
+                    )}
+                    {cancellable && (
+                      <button
+                        onClick={() => reportCancel(req)}
+                        disabled={busyId === req.id}
+                        className="flex items-center gap-1 px-3 py-1.5 border border-warning/25 bg-warning/10 text-warning text-xs font-700 rounded-lg hover:bg-warning/20 transition-colors duration-150 disabled:opacity-50"
+                      >
+                        <Flag size={12} />
+                        گزارش آگهی
                       </button>
                     )}
                   </div>

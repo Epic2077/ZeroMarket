@@ -2,7 +2,6 @@
 
 import { CURRENT_ADMIN_ID } from "@/context/adminData";
 import { useSession } from "@/context/SessionProvider";
-import { Crown } from "lucide-react";
 import { useEffect, useState } from "react";
 import TaxonomyManager from "../management/TaxonomyManager";
 import UserManagementTable from "../management/UserManagementTable";
@@ -10,6 +9,7 @@ import AdminAssignments from "./AdminAssignments";
 import OwnerOverview from "./OwnerOverview";
 import OwnerNotifications from "./OwnerNotifications";
 import ProductsCatalog from "./ProductsCatalog";
+import OwnerTransactions from "./OwnerTransactions";
 import MarketRequestsFeed from "../admin-panel/MarketRequestsFeed";
 import TicketsTab from "../shared/TicketsTab";
 import { useUserInfo } from "@/context/UserInfoProvider";
@@ -28,6 +28,7 @@ const tabs = [
   { id: "options", label: "گزینه‌های ثبت آگهی" },
   { id: "notifications", label: "اعلان‌ها" },
   { id: "tickets", label: "تیکت‌ها" },
+  { id: "transactions", label: "معاملات و آمار" },
   { id: "market", label: "تراکنش‌های بازار" },
 ] as const;
 
@@ -152,6 +153,7 @@ export default function OwnerDashboard() {
         />
       )}
       {active === "tickets" && <TicketsTab />}
+      {active === "transactions" && <OwnerTransactions />}
       {active === "market" && <MarketRequestsFeed />}
     </div>
   );

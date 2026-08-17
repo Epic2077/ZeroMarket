@@ -470,7 +470,7 @@ export const brandVolumeData = [
 
 export function formatPrice(price: number): string {
   if (price >= 1000000000) {
-    return (price / 1000000000).toFixed(2) + "میلیارد";
+    return (price / 1000000000).toFixed(3) + "میلیارد";
   }
   if (price >= 1000000) {
     return (price / 1000000).toFixed(0) + "میلیون";

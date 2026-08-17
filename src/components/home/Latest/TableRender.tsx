@@ -12,6 +12,10 @@ import { useListings } from "@/hooks/useListings";
 import { useSellers } from "@/hooks/useSellers";
 import { listingRowToListing } from "@/lib/supabase/listings";
 import {
+  fetchMarketPriceMap,
+  computePriceVsMarket,
+} from "@/lib/supabase/marketInsights";
+import {
   ArrowLeft,
   BadgeCheck,
   ExternalLink,
@@ -19,33 +23,47 @@ import {
   ShoppingCart,
 } from "lucide-react";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import LatestTable from "./Table";
 import type { LatestRow } from "@/context/latestTable";
 
 export default function TableRender() {
   const { listings: rawListings, loading, error } = useListings();
   const { sellers } = useSellers();
+  const [marketMap, setMarketMap] = useState<Map<string, number>>(new Map());
+
+  useEffect(() => {
+    if (!rawListings.length) return;
+    fetchMarketPriceMap(rawListings)
+      .then(setMarketMap)
+      .catch(() => {});
+  }, [rawListings]);
 
   const rows = useMemo<LatestRow[]>(() => {
     const sellersMap = new Map(sellers.map((s) => [s.id, s]));
-    return rawListings
-      .slice(0, 8)
+    const sliced = rawListings.slice(0, 8);
+    return sliced
       .map((row) => listingRowToListing(row))
-      .map((l) => ({
-        id: l.id,
-        brand: brandModelLabel(l),
-        trim: l.trim,
-        year: l.year,
-        color: colorLabel(l.color),
-        seller: sellersMap.get(l.seller_id ?? "")?.name ?? l.sellerName,
-        verified:
-          sellersMap.get(l.seller_id ?? "")?.verified ?? l.sellerVerified,
-        cost: l.price,
-        status: l.status,
-        listingType: l.listingType,
-      }));
-  }, [rawListings, sellers]);
+      .map((l) => {
+        const key = `${l.brand}|${l.model}|${l.year}`;
+        const marketAvg = marketMap.get(key);
+        const vs = marketAvg ? computePriceVsMarket(l.price, marketAvg) : 0;
+        return {
+          id: l.id,
+          brand: brandModelLabel(l),
+          trim: l.trim,
+          year: l.year,
+          color: colorLabel(l.color),
+          seller: sellersMap.get(l.seller_id ?? "")?.name ?? l.sellerName,
+          verified:
+            sellersMap.get(l.seller_id ?? "")?.verified ?? l.sellerVerified,
+          cost: l.price,
+          status: l.status,
+          listingType: l.listingType,
+          priceVsMarket: vs,
+        };
+      });
+  }, [rawListings, sellers, marketMap]);
 
   return (
     <div
@@ -123,6 +141,16 @@ export default function TableRender() {
                     <div className="text-sm font-semibold tabular-nums">
                       {formatCost(row.cost)}
                     </div>
+                    {row.priceVsMarket !== 0 && (
+                      <div
+                        className={`text-2xs font-600 ${row.priceVsMarket >= 0 ? "text-danger" : "text-success"}`}
+                      >
+                        {row.priceVsMarket > 0 ? "+" : ""}
+                        {row.priceVsMarket}٪{" "}
+                        {row.priceVsMarket >= 0 ? "بالاتر" : "پایین‌تر"} از
+                        میانگین
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -161,8 +189,8 @@ export default function TableRender() {
                 <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
                   <div className="flex flex-col gap-0.5">
                     <span className="text-muted-foreground">سال ساخت</span>
-                    <span className="font-medium tabular-nums">
-                      {toFa(row.year)}
+                    <span className="font-medium font-mono">
+                      {row.year} / {toFa(row.year - 621)}
                     </span>
                   </div>
                   <div className="flex flex-col gap-0.5">

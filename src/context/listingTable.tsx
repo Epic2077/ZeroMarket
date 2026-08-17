@@ -12,6 +12,11 @@ import {
 import type { Listing, SellerSummary } from "@/types/dataTypes";
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, HandCoins, ShoppingCart } from "lucide-react";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 
 // Re-exported for existing consumers importing the digit helper from here.
 export { toFa };
@@ -196,10 +201,21 @@ export function listingColumns(
       header: ({ column }) => <SortHeader label="سال" column={column} />,
       cell: ({ getValue }) => {
         const gYear = getValue() as number;
+        const persianYear = gYear - 621;
         return (
-          <span className="tabular-nums">
-            {toFa(gYear)} / {toFa(gYear - 621)}
-          </span>
+          <HoverCard>
+            <HoverCardTrigger asChild>
+              <Badge
+                variant="outline"
+                className="cursor-default font-mono text-xs px-2"
+              >
+                {gYear}
+              </Badge>
+            </HoverCardTrigger>
+            <HoverCardContent className="w-auto px-3 py-2 text-xs" side="top">
+              سال {toFa(persianYear)} شمسی
+            </HoverCardContent>
+          </HoverCard>
         );
       },
     },
@@ -264,11 +280,25 @@ export function listingColumns(
       header: ({ column }) => (
         <SortHeader label="قیمت (تومان)" column={column} />
       ),
-      cell: ({ getValue }) => (
-        <span className="font-medium tabular-nums">
-          {formatPriceFa(getValue() as number)}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const price = row.original.price;
+        const vs = row.original.priceVsMarket;
+        return (
+          <div className="flex flex-col">
+            <span className="font-medium tabular-nums">
+              {formatPriceFa(price)}
+            </span>
+            {vs !== 0 && (
+              <span
+                className={`text-[12px] font-600 ${vs >= 0 ? "text-danger" : "text-success"}`}
+              >
+                {vs > 0 ? "+" : ""}
+                {toFa(vs)}٪ {vs >= 0 ? "بالاتر" : "پایین‌تر"}
+              </span>
+            )}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "status",

@@ -9,42 +9,31 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useTaxonomyOptions } from "@/hooks/useTaxonomyOptions";
-import { brandFa, cityOptions } from "@/context/marketFilters";
+import { fetchModelsByBrand } from "@/lib/supabase/taxonomy";
+import { createPriceAlert } from "@/lib/supabase/priceAlerts";
+import { useUserInfo } from "@/context/UserInfoProvider";
 import { requiredText } from "@/lib/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ChevronDown, Search, X } from "lucide-react";
+import { ChevronDown, Loader2, Search, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
 interface Props {
   onClose: () => void;
-  onCreate: (alert: {
-    title: string;
-    targetPrice: number;
-    currentPrice: number;
-    city?: string;
-    color?: string;
-  }) => void;
+  onCreated: () => void;
 }
 
-const brandOptions = Object.values(brandFa);
-
 const alertSchema = z.object({
-  title: requiredText("نام آگهی را وارد کنید"),
+  brand: requiredText("برند را انتخاب کنید"),
+  model: requiredText("مدل را انتخاب کنید"),
+  year: z.string().optional(),
   targetPrice: z
     .string()
     .trim()
     .min(1, "قیمت هدف را وارد کنید")
-    .refine((value) => Number(value) > 0, "قیمت هدف نامعتبر است"),
-  currentPrice: z
-    .string()
-    .trim()
-    .min(1, "قیمت فعلی را وارد کنید")
-    .refine((value) => Number(value) > 0, "قیمت فعلی نامعتبر است"),
-  city: z.string().optional(),
-  color: z.string().optional(),
+    .refine((v) => Number(v.replace(/\D/g, "")) > 0, "قیمت هدف نامعتبر است"),
 });
 
 type AlertValues = z.infer<typeof alertSchema>;
@@ -55,12 +44,14 @@ function SearchablePicker({
   options,
   placeholder,
   searchPlaceholder,
+  disabled,
 }: {
   value: string;
   onChange: (value: string) => void;
   options: string[];
   placeholder: string;
   searchPlaceholder: string;
+  disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -77,7 +68,9 @@ function SearchablePicker({
     <div className="relative">
       <button
         type="button"
+        disabled={disabled}
         onClick={() => {
+          if (disabled) return;
           if (open) {
             setOpen(false);
             return;
@@ -85,7 +78,7 @@ function SearchablePicker({
           setQuery("");
           setOpen(true);
         }}
-        className="flex h-8 w-full items-center justify-between rounded-lg border border-input bg-transparent px-2.5 text-sm text-foreground transition-colors hover:bg-muted/20 focus:outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="flex h-9 w-full items-center justify-between rounded-lg border border-border bg-card px-2.5 text-sm text-foreground transition-colors hover:bg-muted/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:opacity-50"
       >
         <span className={value ? "text-foreground" : "text-muted-foreground"}>
           {value || placeholder}
@@ -148,44 +141,78 @@ function SearchablePicker({
   );
 }
 
-export default function NewPriceAlertModal({ onClose, onCreate }: Props) {
+export default function NewPriceAlertModal({ onClose, onCreated }: Props) {
+  const { user } = useUserInfo();
   const { values: taxonomyValues } = useTaxonomyOptions();
-  const colorOptions = taxonomyValues("COLOR");
+  const brandOptions = useMemo(() => taxonomyValues("BRAND"), [taxonomyValues]);
+  const yearOptions = useMemo(() => taxonomyValues("YEAR"), [taxonomyValues]);
+
+  const [modelOptions, setModelOptions] = useState<string[]>([]);
+  const [modelsLoading, setModelsLoading] = useState(false);
+
   const {
     handleSubmit,
     control,
+    setValue,
     register,
     formState: { errors, isSubmitting },
   } = useForm<AlertValues>({
     resolver: zodResolver(alertSchema),
-    defaultValues: {
-      title: "",
-      targetPrice: "",
-      currentPrice: "",
-      city: "",
-      color: "",
-    },
+    defaultValues: { brand: "", model: "", year: "", targetPrice: "" },
   });
+
+  const selectedBrand = useWatch({ control, name: "brand" });
+
+  // Load models when brand changes.
+  useEffect(() => {
+    if (!selectedBrand) {
+      setModelOptions([]);
+      return;
+    }
+    let cancelled = false;
+    setModelsLoading(true);
+    fetchModelsByBrand(selectedBrand)
+      .then((rows) => {
+        if (!cancelled) setModelOptions(rows.map((r) => r.value));
+      })
+      .catch(() => {
+        if (!cancelled) setModelOptions([]);
+      })
+      .finally(() => {
+        if (!cancelled) setModelsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedBrand]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
     };
-
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
 
   const submit = handleSubmit(async (values) => {
-    onCreate({
-      title: values.title.trim(),
-      targetPrice: Number(values.targetPrice),
-      currentPrice: Number(values.currentPrice),
-      city: values.city?.trim() || undefined,
-      color: values.color?.trim() || undefined,
-    });
-    toast.success("هشدار قیمت جدید ثبت شد");
-    onClose();
+    if (!user?.id) {
+      toast.error("ابتدا وارد حساب کاربری خود شوید");
+      return;
+    }
+    try {
+      await createPriceAlert({
+        userId: user.id,
+        brand: values.brand,
+        model: values.model,
+        year: values.year ? Number(values.year) : null,
+        targetPrice: Number(values.targetPrice.replace(/\D/g, "")),
+      });
+      toast.success("هشدار قیمت جدید ثبت شد");
+      onCreated();
+      onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "خطا در ثبت هشدار");
+    }
   });
 
   return (
@@ -212,7 +239,7 @@ export default function NewPriceAlertModal({ onClose, onCreate }: Props) {
               ثبت هشدار جدید
             </h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              برای یک آگهی جدید، قیمت هدف و قیمت فعلی را وارد کنید.
+              برند، مدل و قیمت هدف را وارد کنید تا هنگام رسیدن قیمت، مطلع شوید.
             </p>
           </div>
           <button
@@ -230,90 +257,100 @@ export default function NewPriceAlertModal({ onClose, onCreate }: Props) {
             برند خودرو
             <Controller
               control={control}
-              name="title"
+              name="brand"
               render={({ field }) => (
                 <SearchablePicker
                   value={field.value}
-                  onChange={field.onChange}
+                  onChange={(value) => {
+                    field.onChange(value);
+                    setValue("model", "");
+                  }}
                   options={brandOptions}
                   placeholder="انتخاب برند"
                   searchPlaceholder="جستجوی برند"
                 />
               )}
             />
-            {errors.title?.message && (
+            {errors.brand?.message && (
               <span className="text-xs text-danger">
-                {errors.title.message}
+                {errors.brand.message}
               </span>
             )}
           </label>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <label className="flex flex-col gap-1.5 text-xs font-600 text-muted-foreground">
-              شهر دلخواه
-              <Controller
-                control={control}
-                name="city"
-                render={({ field }) => (
-                  <Select
-                    dir="rtl"
-                    value={field.value || undefined}
-                    onValueChange={(value) =>
-                      field.onChange(value === "__none__" ? "" : value)
-                    }
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="همه شهرها" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">همه شهرها</SelectItem>
-                      {cityOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.label}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </label>
+          <label className="flex flex-col gap-1.5 text-xs font-600 text-muted-foreground">
+            مدل
+            <Controller
+              control={control}
+              name="model"
+              render={({ field }) => (
+                <SearchablePicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  options={modelOptions}
+                  placeholder={
+                    modelsLoading ? "در حال بارگذاری…" : "انتخاب مدل"
+                  }
+                  searchPlaceholder="جستجوی مدل"
+                  disabled={!selectedBrand || modelsLoading}
+                />
+              )}
+            />
+            {errors.model?.message && (
+              <span className="text-xs text-danger">
+                {errors.model.message}
+              </span>
+            )}
+          </label>
 
-            <label className="flex flex-col gap-1.5 text-xs font-600 text-muted-foreground">
-              رنگ خاص
-              <Controller
-                control={control}
-                name="color"
-                render={({ field }) => (
-                  <Select
-                    dir="rtl"
-                    value={field.value || undefined}
-                    onValueChange={(value) =>
-                      field.onChange(value === "__none__" ? "" : value)
-                    }
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="بدون محدودیت" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">بدون محدودیت</SelectItem>
-                      {colorOptions.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </label>
-          </div>
+          <label className="flex flex-col gap-1.5 text-xs font-600 text-muted-foreground">
+            سال (اختیاری)
+            <Controller
+              control={control}
+              name="year"
+              render={({ field }) => (
+                <Select
+                  dir="rtl"
+                  value={field.value || undefined}
+                  onValueChange={(value) =>
+                    field.onChange(value === "__none__" ? "" : value)
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="همه سال‌ها" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">همه سال‌ها</SelectItem>
+                    {yearOptions.map((y) => (
+                      <SelectItem key={y} value={y}>
+                        {y}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </label>
 
           <label className="flex flex-col gap-1.5 text-xs font-600 text-muted-foreground">
             قیمت هدف (تومان)
             <Input
-              {...register("targetPrice")}
+              {...register("targetPrice", {
+                onChange: (e) => {
+                  const digits = e.target.value.replace(/\D/g, "");
+                  setValue(
+                    "targetPrice",
+                    digits ? Number(digits).toLocaleString("en-US") : "",
+                    {
+                      shouldValidate: true,
+                    },
+                  );
+                },
+              })}
               inputMode="numeric"
-              placeholder="مثلا 2,700,000,000"
+              dir="ltr"
+              className="text-right font-mono"
+              placeholder="2,700,000,000"
             />
             {errors.targetPrice?.message && (
               <span className="text-xs text-danger">
@@ -322,24 +359,9 @@ export default function NewPriceAlertModal({ onClose, onCreate }: Props) {
             )}
           </label>
 
-          <label className="flex flex-col gap-1.5 text-xs font-600 text-muted-foreground">
-            قیمت فعلی (تومان)
-            <Input
-              {...register("currentPrice")}
-              inputMode="numeric"
-              placeholder="مثلا 2,850,000,000"
-            />
-            {errors.currentPrice?.message && (
-              <span className="text-xs text-danger">
-                {errors.currentPrice.message}
-              </span>
-            )}
-          </label>
-
           <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
-            بعد از ثبت، هشدار در همین تب دیده می‌شود و می‌توانید آن را فعال یا
-            غیرفعال کنید. در صورت انتخاب، شهر و رنگ هم در خلاصه هشدار ذخیره
-            می‌شوند.
+            وقتی آگهی مطابق با برند و مدل شما ثبت شود و قیمت به هدف شما برسد،
+            اعلان دریافت می‌کنید.
           </div>
         </div>
 
@@ -354,8 +376,9 @@ export default function NewPriceAlertModal({ onClose, onCreate }: Props) {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="btn-primary text-sm"
+            className="btn-primary text-sm flex items-center gap-2"
           >
+            {isSubmitting && <Loader2 size={14} className="animate-spin" />}
             ثبت هشدار
           </button>
         </div>

@@ -29,6 +29,7 @@ export interface ListingRow {
   created_at: string;
   updated_at: string;
   listing_type: string;
+  deleted_at?: string | null;
 }
 
 export type ListingStatus =
@@ -218,5 +219,6 @@ export function listingRowToListing(
     listingType: (row.listing_type === "BUY"
       ? "BUY"
       : "SELL") as Listing["listingType"],
+    deletedAt: row.deleted_at ?? null,
   };
 }

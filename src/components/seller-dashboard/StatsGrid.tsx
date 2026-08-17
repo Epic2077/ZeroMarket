@@ -1,6 +1,11 @@
 import { toFa } from "@/context/carLabels";
+import { formatPrice } from "@/context/data";
 import { useUserInfo } from "@/context/UserInfoProvider";
 import { useSeller } from "@/hooks/useSellers";
+import {
+  fetchSellerStats,
+  type SellerStats,
+} from "@/lib/supabase/completedSales";
 import {
   ArrowDown,
   ArrowUp,
@@ -9,6 +14,7 @@ import {
   MessageSquare,
   Star,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 interface StatCard {
@@ -23,6 +29,26 @@ interface StatCard {
 export default function StatsGrid() {
   const { profile } = useUserInfo();
   const { seller, loading } = useSeller(profile?.id ?? "");
+  const [soldStats, setSoldStats] = useState<SellerStats>({
+    total_cars_sold: 0,
+    total_volume: 0,
+  });
+
+  useEffect(() => {
+    const id = profile?.id;
+    if (!id) return;
+    let cancelled = false;
+    fetchSellerStats(id)
+      .then((s) => {
+        if (!cancelled) setSoldStats(s);
+      })
+      .catch(() => {
+        /* keep zeros */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [profile?.id]);
 
   if (loading || !seller) {
     return (
@@ -55,9 +81,9 @@ export default function StatsGrid() {
     {
       id: "st-sold",
       label: "فروخته شده",
-      value: toFa(summary.totalSoldCount),
-      change: `${toFa(summary.responseRate)}٪ پاسخ`,
-      up: summary.responseRate >= 80,
+      value: toFa(soldStats.total_cars_sold),
+      change: formatPrice(soldStats.total_volume),
+      up: soldStats.total_cars_sold > 0,
       icon: <CheckCircle size={18} className="text-success" />,
     },
     {

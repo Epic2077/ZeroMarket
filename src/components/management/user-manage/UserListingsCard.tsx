@@ -58,7 +58,13 @@ export function UserListingsCard({ listings, loading }: Props) {
                     {formatPrice(l.price)}
                   </td>
                   <td className="py-2.5 px-2">
-                    <StatusBadge status={l.status} />
+                    {l.deletedAt ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-muted text-muted-foreground text-2xs font-700">
+                        حذف شده
+                      </span>
+                    ) : (
+                      <StatusBadge status={l.status} />
+                    )}
                   </td>
                   <td className="py-2.5 px-2">
                     <div className="flex items-center gap-2">

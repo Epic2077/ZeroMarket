@@ -22,7 +22,7 @@ create table public.buy_requests (
 
   offered_price numeric not null,
   message text,
-  status text not null default 'WAITING' check (status in ('WAITING', 'ACCEPTED', 'NEGOTIABLE', 'REJECTED')),
+  status text not null default 'WAITING' check (status in ('WAITING', 'ACCEPTED', 'NEGOTIABLE', 'REJECTED', 'COMPLETED')),
 
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -87,6 +87,22 @@ join public.profiles p on p.id = br.buyer_id;
 
 ---
 
+### 1b. Migration — if `buy_requests` already exists
+
+If the table was created before the `COMPLETED` status was added, the old check
+constraint still rejects it. Run this to update the existing constraint:
+
+```sql
+alter table public.buy_requests
+  drop constraint buy_requests_status_check;
+
+alter table public.buy_requests
+  add constraint buy_requests_status_check
+  check (status in ('WAITING', 'ACCEPTED', 'NEGOTIABLE', 'REJECTED', 'COMPLETED'));
+```
+
+---
+
 ### 2. Notification Triggers
 
 These two triggers handle automated alerts through your existing `user_notifications` table:
@@ -144,6 +160,89 @@ create trigger trigger_notify_buyer_request_update
   after update on public.buy_requests
   for each row execute function public.notify_buyer_on_request_update();
 
+```
+
+---
+
+### 2b. Buyer Completion Trigger (COMPLETED)
+
+When the buyer finalizes an accepted request (`COMPLETED`), the request is closed:
+both parties are notified and a sold post is recorded in `completed_sales` so the
+seller + market totals update.
+
+```sql
+-- Notify both parties + record the sold post when a request is completed
+create or replace function public.on_buy_request_completed()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_listing_type text;
+begin
+  if new.status = 'COMPLETED' and old.status is distinct from 'COMPLETED' then
+
+    select l.listing_type into v_listing_type
+    from public.listings l where l.id = new.listing_id;
+
+    -- 1. Record the sold post (completed_sales status CONFIRMED counts toward totals)
+    insert into public.completed_sales (
+      seller_id, buyer_id, listing_id, listing_type, final_sold_price, status
+    ) values (
+      new.seller_id,
+      new.buyer_id,
+      new.listing_id,
+      coalesce(v_listing_type, 'SELL'),
+      new.offered_price,
+      'CONFIRMED'
+    );
+
+    -- 2. Notify the buyer
+    insert into public.user_notifications (user_id, title, description, kind, href)
+    values (
+      new.buyer_id,
+      'درخواست بسته شد',
+      'معامله تکمیل شد و به آمار فروش فروشنده اضافه گردید.',
+      'REQUEST',
+      '/dashboard/user'
+    );
+
+    -- 3. Notify the seller
+    insert into public.user_notifications (user_id, title, description, kind, href)
+    values (
+      new.seller_id,
+      'درخواست بسته شد',
+      'خریدار معامله را تأیید و تکمیل کرد.',
+      'REQUEST',
+      '/dashboard/seller'
+    );
+  end if;
+
+  return new;
+end;
+$$;
+
+create trigger trigger_on_buy_request_completed
+  after update on public.buy_requests
+  for each row execute function public.on_buy_request_completed();
+
+-- Lock COMPLETED requests: once closed, the status can never change again.
+create or replace function public.guard_buy_request_status()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  if old.status = 'COMPLETED' and new.status is distinct from 'COMPLETED' then
+    raise exception 'Completed requests cannot be changed';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger trigger_guard_buy_request_status
+  before update on public.buy_requests
+  for each row execute function public.guard_buy_request_status();
 ```
 
 ---

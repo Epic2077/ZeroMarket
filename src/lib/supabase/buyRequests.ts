@@ -6,7 +6,8 @@ export type BuyRequestStatus =
   | "WAITING"
   | "ACCEPTED"
   | "NEGOTIABLE"
-  | "REJECTED";
+  | "REJECTED"
+  | "COMPLETED";
 
 /** Row shape for display. */
 export interface BuyRequestRow {
@@ -94,6 +95,16 @@ export async function updateRequestStatus(
   const { error } = await supabase
     .from("buy_requests")
     .update({ status: newStatus })
+    .eq("id", requestId);
+
+  if (error) throw error;
+}
+
+/** Buyer finalizes an accepted request (terminal → COMPLETED). */
+export async function completeBuyRequest(requestId: string): Promise<void> {
+  const { error } = await supabase
+    .from("buy_requests")
+    .update({ status: "COMPLETED" as BuyRequestStatus })
     .eq("id", requestId);
 
   if (error) throw error;

@@ -16,6 +16,7 @@ export type LatestRow = {
   cost: number;
   status: string;
   listingType: "SELL" | "BUY";
+  priceVsMarket: number;
 };
 
 export const statusMap: Record<string, { label: string; className: string }> = {
@@ -156,10 +157,20 @@ export const LatestTableColumns: ColumnDef<LatestRow>[] = [
         <ArrowUpDown className="h-3.5 w-3.5" />
       </Button>
     ),
-    cell: ({ getValue }) => (
-      <span className="font-mono-nums font-600">
-        {formatCost(getValue() as number)}
-      </span>
+    cell: ({ row }) => (
+      <div className="flex flex-col">
+        <span className="font-mono-nums font-600">
+          {formatCost(row.original.cost)}
+        </span>
+        {row.original.priceVsMarket !== 0 && (
+          <span
+            className={`text-[12px] font-600 ${row.original.priceVsMarket >= 0 ? "text-danger" : "text-success"}`}
+          >
+            {row.original.priceVsMarket > 0 ? "+" : ""}
+            {toFa(row.original.priceVsMarket)}٪
+          </span>
+        )}
+      </div>
     ),
   },
   {

@@ -18,7 +18,8 @@ export function useTaxonomyOptions(): UseTaxonomyOptionsResult {
   const [taxonomy, setTaxonomy] = useState<
     Record<TaxonomyCategory, TaxonomyRow[]>
   >({} as Record<TaxonomyCategory, TaxonomyRow[]>);
-  const [loading, setLoading] = useState(true);
+  // Start false so SSR and the client's first hydration render match.
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {

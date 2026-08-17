@@ -1,10 +1,11 @@
-import { performanceMetrics, quickActions } from "@/context/sellerDashboard";
+import { toFa } from "@/context/carLabels";
 import { useUserInfo } from "@/context/UserInfoProvider";
 import {
   fetchSellerRequests,
   updateRequestStatus,
   type BuyRequestRow,
 } from "@/lib/supabase/buyRequests";
+import { useSeller } from "@/hooks/useSellers";
 import {
   Collapsible,
   CollapsibleContent,
@@ -15,6 +16,8 @@ import {
   ChevronDown,
   Loader2,
   MessageSquare,
+  PlusCircle,
+  Upload,
   XCircle,
 } from "lucide-react";
 import Link from "next/link";
@@ -35,6 +38,7 @@ const STATUS_MAP: Record<string, RequestStatus> = {
   ACCEPTED: "approved",
   NEGOTIABLE: "negotiable",
   REJECTED: "declined",
+  COMPLETED: "completed",
 };
 
 /** Relative-time label from an ISO date string (Persian). */
@@ -159,6 +163,7 @@ export default function OverviewTab({
   onBulkImport,
 }: Props) {
   const { profile } = useUserInfo();
+  const { seller } = useSeller(profile?.id ?? "");
   const [requests, setRequests] = useState<BuyRequestRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [actingId, setActingId] = useState<string | null>(null);
@@ -199,6 +204,38 @@ export default function OverviewTab({
   };
 
   const visible = requests.slice(0, 3);
+
+  // Real performance metrics derived from the seller profile and requests.
+  const summary = seller?.summary;
+  const processed = requests.filter((r) => r.status !== "WAITING");
+  const approvedCount = requests.filter(
+    (r) => r.status === "ACCEPTED" || r.status === "COMPLETED",
+  ).length;
+  const approvalRate = processed.length
+    ? Math.round((approvedCount / processed.length) * 100)
+    : 0;
+  const clamp = (n: number) => Math.min(100, Math.max(0, n));
+  const performance = [
+    {
+      label: "نرخ پاسخگویی",
+      value: `${toFa(summary?.responseRate ?? 0)}٪`,
+      bar: clamp(summary?.responseRate ?? 0),
+      color: "bg-success",
+    },
+    {
+      label: "نرخ تأیید درخواست",
+      value: `${toFa(approvalRate)}٪`,
+      bar: approvalRate,
+      color: "bg-primary",
+    },
+    {
+      label: "امتیاز فروشنده",
+      value: toFa(summary?.sellerScore ?? 0),
+      bar: clamp(summary?.sellerScore ?? 0),
+      color: "bg-accent",
+    },
+  ];
+
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
       {/* Recent requests */}
@@ -279,15 +316,14 @@ export default function OverviewTab({
         </div>
       </div>
 
-      {/* Quick stats sidebar */}
-      <div className="flex flex-col gap-4">
-        {/* Performance card */}
+      {/* Performance + quick actions */}
+      <div className="flex flex-col gap-4 h-fit">
         <div className="card-elevated p-5">
           <h3 className="text-sm font-700 text-foreground mb-4">
             عملکرد این ماه
           </h3>
           <div className="flex flex-col gap-3">
-            {performanceMetrics.map((item) => (
+            {performance.map((item) => (
               <div key={`perf-${item.label}`}>
                 <div className="flex justify-between text-xs mb-1">
                   <span className="text-muted-foreground">{item.label}</span>
@@ -308,29 +344,20 @@ export default function OverviewTab({
         <div className="card-elevated p-5">
           <h3 className="text-sm font-700 text-foreground mb-3">دسترسی سریع</h3>
           <div className="flex flex-col gap-2">
-            {quickActions.map((action) =>
-              action.href ? (
-                <Link
-                  key={`action-${action.label}`}
-                  href={action.href}
-                  className="flex items-center gap-2.5 px-3 py-2 text-sm font-500 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors duration-150 text-right w-full"
-                >
-                  <span className={action.color}>{action.icon}</span>
-                  {action.label}
-                </Link>
-              ) : (
-                <button
-                  key={`action-${action.label}`}
-                  onClick={
-                    action.modal === "bulkImport" ? onBulkImport : undefined
-                  }
-                  className="flex items-center gap-2.5 px-3 py-2 text-sm font-500 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors duration-150 text-right w-full"
-                >
-                  <span className={action.color}>{action.icon}</span>
-                  {action.label}
-                </button>
-              ),
-            )}
+            <Link
+              href="/dashboard/seller/products/new"
+              className="flex items-center gap-2.5 px-3 py-2 text-sm font-500 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors duration-150 text-right w-full"
+            >
+              <PlusCircle size={14} className="text-primary" />
+              ثبت آگهی جدید
+            </Link>
+            <button
+              onClick={onBulkImport}
+              className="flex items-center gap-2.5 px-3 py-2 text-sm font-500 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors duration-150 text-right w-full"
+            >
+              <Upload size={14} className="text-accent" />
+              ورود گروهی (اکسل)
+            </button>
           </div>
         </div>
       </div>

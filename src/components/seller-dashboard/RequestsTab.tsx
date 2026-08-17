@@ -31,6 +31,7 @@ const STATUS_FROM_DB: Record<string, RequestStatus> = {
   ACCEPTED: "approved",
   NEGOTIABLE: "negotiable",
   REJECTED: "declined",
+  COMPLETED: "completed",
 };
 
 const STATUS_TO_DB: Record<string, BuyRequestStatus> = {
@@ -156,6 +157,7 @@ export default function RequestsTab() {
       <div className="divide-y divide-border">
         {requests.map((req) => {
           const frontendStatus = STATUS_FROM_DB[req.status] ?? "pending";
+          const completed = req.status === "COMPLETED";
           const listingTitle = req.listing_brand
             ? `${req.listing_brand} ${req.listing_model ?? ""}`
             : "آگهی";
@@ -164,7 +166,9 @@ export default function RequestsTab() {
           return (
             <div
               key={req.id}
-              className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-5 py-4 hover:bg-muted/30 transition-colors duration-150"
+              className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-5 py-4 transition-colors duration-150 ${
+                completed ? "opacity-50 bg-muted/20" : "hover:bg-muted/30"
+              }`}
             >
               <div className="flex items-center gap-3">
                 <Link
@@ -244,24 +248,25 @@ export default function RequestsTab() {
                   </span>
                 )}
                 <div className="flex items-center gap-1.5">
-                  {requestActions.map((action) => {
-                    const Icon = action.icon;
-                    const isActive = frontendStatus === action.status;
-                    const isBusy = actingId === req.id;
-                    return (
-                      <button
-                        key={action.status}
-                        onClick={() => handleStatus(req.id, action.status)}
-                        disabled={isBusy}
-                        title={action.title}
-                        aria-label={action.title}
-                        className={`flex items-center gap-1 px-3 py-1.5 border text-xs font-700 rounded-lg transition-colors duration-150 disabled:opacity-50 ${action.className} ${isActive ? "ring-1 ring-current" : ""}`}
-                      >
-                        <Icon size={12} />
-                        {action.title}
-                      </button>
-                    );
-                  })}
+                  {!completed &&
+                    requestActions.map((action) => {
+                      const Icon = action.icon;
+                      const isActive = frontendStatus === action.status;
+                      const isBusy = actingId === req.id;
+                      return (
+                        <button
+                          key={action.status}
+                          onClick={() => handleStatus(req.id, action.status)}
+                          disabled={isBusy}
+                          title={action.title}
+                          aria-label={action.title}
+                          className={`flex items-center gap-1 px-3 py-1.5 border text-xs font-700 rounded-lg transition-colors duration-150 disabled:opacity-50 ${action.className} ${isActive ? "ring-1 ring-current" : ""}`}
+                        >
+                          <Icon size={12} />
+                          {action.title}
+                        </button>
+                      );
+                    })}
                 </div>
               </div>
             </div>

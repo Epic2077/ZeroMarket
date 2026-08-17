@@ -7,7 +7,14 @@ import {
 } from "@/context/carLabels";
 import { formatPrice } from "@/context/data";
 import type { Listing } from "@/types/dataTypes";
-import { Calendar, MapPin, TrendingDown, TrendingUp } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  TrendingDown,
+  TrendingUp,
+  HandCoins,
+  ShoppingCart,
+} from "lucide-react";
 import Link from "next/link";
 import StatusBadge from "./StatusBadge";
 import VerifiedBadge from "./VerifiedBadeg";
@@ -59,7 +66,20 @@ export default function ListingCard({ listing }: Props) {
             </div>
           </div>
         </div>
-        <StatusBadge status={listing.status} />
+        <div className="flex items-center gap-1.5 shrink-0">
+          {listing.listingType === "BUY" ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-2xs font-600 bg-accent/10 text-accent border border-accent/25">
+              <HandCoins size={10} />
+              خرید
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-2xs font-600 bg-primary/10 text-primary border border-primary/25">
+              <ShoppingCart size={10} />
+              فروش
+            </span>
+          )}
+          <StatusBadge status={listing.status} />
+        </div>
       </div>
 
       {/* Spec chips */}

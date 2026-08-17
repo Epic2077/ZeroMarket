@@ -369,6 +369,17 @@
     align-items: center;
     gap: 0.25rem;
   }
+  .status-completed {
+    background-color: #e2e8f0;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
   .filter-chip {
     display: inline-flex;
     align-items: center;

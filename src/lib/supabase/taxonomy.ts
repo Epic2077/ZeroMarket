@@ -445,3 +445,28 @@ export async function resolveNotification(
 
   if (error) throw error;
 }
+
+/** Report a listing to the owner/staff inbox.
+ *  Uses a service-role API route so any logged-in user can report
+ *  (owner_notifications RLS only allows staff to insert directly). */
+export async function reportListing(input: {
+  listingId: string;
+  listingLabel: string;
+  reason?: string;
+}): Promise<void> {
+  const res = await fetch(`/api/listings/${input.listingId}/report`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      listingLabel: input.listingLabel,
+      reason: input.reason ?? null,
+    }),
+  });
+
+  if (!res.ok) {
+    const body = (await res.json().catch(() => null)) as {
+      error?: string;
+    } | null;
+    throw new Error(body?.error ?? "خطا در ثبت گزارش");
+  }
+}

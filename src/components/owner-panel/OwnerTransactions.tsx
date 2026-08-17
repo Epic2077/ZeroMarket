@@ -1,30 +1,28 @@
 "use client";
 
+import {
+  fetchPlatformSummary,
+  fetchRecentSales,
+  type CompletedSaleRow,
+  type PlatformSummary,
+} from "@/lib/supabase/completedSales";
 import { formatPrice } from "@/context/data";
 import { toFa } from "@/context/carLabels";
-import { useUserInfo } from "@/context/UserInfoProvider";
-import { useSeller } from "@/hooks/useSellers";
-import {
-  fetchSellerSales,
-  fetchSellerStats,
-  type CompletedSaleRow,
-  type SellerStats,
-} from "@/lib/supabase/completedSales";
-import {
-  HandCoins,
-  ListChecks,
-  MessageSquare,
-  ShoppingCart,
-  TrendingUp,
-} from "lucide-react";
+import { HandCoins, ShoppingCart, TrendingUp, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 
-const dateFa = (iso: string) =>
-  new Intl.DateTimeFormat("fa-IR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date(iso));
+const typeBadge = (type: CompletedSaleRow["listing_type"]) =>
+  type === "BUY" ? (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-accent/10 text-accent text-2xs font-700">
+      <HandCoins size={11} />
+      خرید
+    </span>
+  ) : (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-primary/10 text-primary text-2xs font-700">
+      <ShoppingCart size={11} />
+      فروش
+    </span>
+  );
 
 const statusBadge = (status: CompletedSaleRow["status"]) => {
   const map = {
@@ -45,30 +43,29 @@ const statusBadge = (status: CompletedSaleRow["status"]) => {
   );
 };
 
-export default function AnalyticsTab() {
-  const { profile } = useUserInfo();
-  const sellerId = profile?.id ?? "";
-  const { seller } = useSeller(sellerId);
+const dateFa = (iso: string) =>
+  new Intl.DateTimeFormat("fa-IR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(iso));
 
-  const [stats, setStats] = useState<SellerStats>({
-    total_cars_sold: 0,
-    total_volume: 0,
-  });
+export default function OwnerTransactions() {
+  const [summary, setSummary] = useState<PlatformSummary | null>(null);
   const [sales, setSales] = useState<CompletedSaleRow[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!sellerId) return;
     let cancelled = false;
     (async () => {
       setLoading(true);
       try {
         const [s, r] = await Promise.all([
-          fetchSellerStats(sellerId),
-          fetchSellerSales(sellerId),
+          fetchPlatformSummary(),
+          fetchRecentSales(50),
         ]);
         if (!cancelled) {
-          setStats(s);
+          setSummary(s);
           setSales(r);
         }
       } catch {
@@ -80,61 +77,62 @@ export default function AnalyticsTab() {
     return () => {
       cancelled = true;
     };
-  }, [sellerId]);
-
-  const summary = seller?.summary;
+  }, []);
 
   const cards = [
     {
-      title: "کل معاملات ثبت‌شده",
-      value: toFa(stats.total_cars_sold),
-      sub: "مجموع معاملات شما",
-      icon: <ShoppingCart size={20} className="text-primary" />,
+      label: "حجم کل معاملات بازار",
+      value: formatPrice(summary?.grand_total_volume ?? 0),
+      unit: "تومان",
+      icon: <TrendingUp size={16} />,
+      tone: "text-primary bg-primary/10",
     },
     {
-      title: "حجم معاملات",
-      value: toFa(stats.total_volume),
-      sub: "مجموع ارزش معاملات",
-      icon: <TrendingUp size={20} className="text-success" />,
+      label: "تعداد کل معاملات",
+      value: toFa(summary?.grand_total_cars_sold ?? 0),
+      unit: "دستگاه خودرو",
+      icon: <ShoppingCart size={16} />,
+      tone: "text-success bg-success/10",
     },
     {
-      title: "آگهی فعال",
-      value: toFa(summary?.activeListings ?? 0),
-      sub: `${toFa(summary?.totalListings ?? 0)} آگهی کل`,
-      icon: <ListChecks size={20} className="text-accent" />,
-    },
-    {
-      title: "نرخ پاسخگویی",
-      value: `${toFa(summary?.responseRate ?? 0)}٪`,
-      sub: "پاسخ به درخواست‌ها",
-      icon: <MessageSquare size={20} className="text-warning" />,
+      label: "فروشندگان فعال",
+      value: toFa(summary?.total_active_sellers ?? 0),
+      unit: "فروشنده",
+      icon: <Users size={16} />,
+      tone: "text-negotiable bg-negotiable/10",
     },
   ];
 
   return (
     <div dir="rtl" className="vazir-matn flex flex-col gap-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {cards.map((card) => (
-          <div key={card.title} className="card-elevated p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
-                {card.icon}
+      {/* Summary cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {cards.map((c) => (
+          <div
+            key={c.label}
+            className="card-elevated rounded-2xl p-5 flex items-start gap-3"
+          >
+            <span
+              className={`flex items-center justify-center w-9 h-9 rounded-xl shrink-0 ${c.tone}`}
+            >
+              {c.icon}
+            </span>
+            <div>
+              <div className="text-xs text-muted-foreground">{c.label}</div>
+              <div className="mt-1 flex items-baseline gap-1.5">
+                <span className="stat-value text-foreground">{c.value}</span>
+                <span className="text-2xs text-muted-foreground">{c.unit}</span>
               </div>
-            </div>
-            <div className="stat-value text-3xl mb-1">{card.value}</div>
-            <div className="text-sm font-600 text-foreground">{card.title}</div>
-            <div className="text-xs text-muted-foreground mt-0.5">
-              {card.sub}
             </div>
           </div>
         ))}
       </div>
 
-      {/* Transaction history */}
+      {/* Recent transactions log */}
       <div className="card-elevated rounded-2xl overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <h3 className="text-sm font-800 text-foreground">
-            آخرین معاملات شما
+            آخرین معاملات ثبت‌شده
           </h3>
           <span className="text-2xs text-muted-foreground">
             {loading ? "در حال بارگذاری…" : `${toFa(sales.length)} معامله`}
@@ -143,7 +141,7 @@ export default function AnalyticsTab() {
 
         {!loading && sales.length === 0 ? (
           <div className="py-10 text-center text-xs text-muted-foreground">
-            هنوز معامله‌ای برای شما ثبت نشده است.
+            هنوز معامله‌ای ثبت نشده است.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -151,6 +149,7 @@ export default function AnalyticsTab() {
               <thead>
                 <tr className="bg-muted/40 text-muted-foreground">
                   <th className="px-5 py-2.5 text-right font-600">تاریخ</th>
+                  <th className="px-5 py-2.5 text-right font-600">فروشنده</th>
                   <th className="px-5 py-2.5 text-right font-600">خودرو</th>
                   <th className="px-5 py-2.5 text-right font-600">نوع</th>
                   <th className="px-5 py-2.5 text-right font-600">وضعیت</th>
@@ -166,24 +165,15 @@ export default function AnalyticsTab() {
                     <td className="px-5 py-3 text-muted-foreground whitespace-nowrap">
                       {dateFa(s.created_at)}
                     </td>
-                    <td className="px-5 py-3 text-foreground">
+                    <td className="px-5 py-3 text-foreground font-600">
+                      {s.seller_name}
+                    </td>
+                    <td className="px-5 py-3 text-muted-foreground">
                       {[s.listing_brand, s.listing_model]
                         .filter(Boolean)
                         .join(" ")}
                     </td>
-                    <td className="px-5 py-3">
-                      {s.listing_type === "BUY" ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-accent/10 text-accent text-2xs font-700">
-                          <HandCoins size={11} />
-                          خرید
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-primary/10 text-primary text-2xs font-700">
-                          <ShoppingCart size={11} />
-                          فروش
-                        </span>
-                      )}
-                    </td>
+                    <td className="px-5 py-3">{typeBadge(s.listing_type)}</td>
                     <td className="px-5 py-3">{statusBadge(s.status)}</td>
                     <td className="px-5 py-3 text-left font-mono text-foreground whitespace-nowrap">
                       {s.final_sold_price.toLocaleString("fa-IR")} تومان

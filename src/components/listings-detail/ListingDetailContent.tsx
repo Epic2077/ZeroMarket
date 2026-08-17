@@ -9,6 +9,7 @@ import { sellerSlug } from "@/lib/utils";
 import BrandIcon from "../shared/BrandIcon";
 import StatusBadge from "../shared/StatusBadge";
 import VerifiedBadge from "../shared/VerifiedBadeg";
+import SaveListingButton from "../shared/SaveListingButton";
 
 import ListingDetailSpecs from "./ListingDetailSpecs";
 import ListingDetailSeller from "./ListingDetailSeller";
@@ -16,12 +17,12 @@ import ListingDetailPricePanel from "./ListingDetailPricePanel";
 import ListingDetailSimilar from "./ListingDetailSimilar";
 import ListingDetailRelated from "./ListingDetailRelated";
 import ListingAuctionModal from "./ListingAuctionModal";
+import ReportListingModal from "./ReportListingModal";
 
 import {
   ChevronRight,
   ArrowLeft,
   Share2,
-  Heart,
   Flag,
   Clock,
   MapPin,
@@ -46,8 +47,8 @@ type RequestStatus =
 
 export default function ListingDetailContent({ listing }: Props) {
   const [auctionOpen, setAuctionOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const [requestStatus, setRequestStatus] = useState<RequestStatus>("none");
-  const [saved, setSaved] = useState(false);
 
   // ── Private note (visible to admin, owner, and the seller) ──────────
   // Auth is enforced server-side by the API route; the client always
@@ -166,13 +167,7 @@ export default function ListingDetailContent({ listing }: Props) {
               <ArrowLeft size={13} className="rotate-180" />
               بازگشت
             </Link>
-            <button
-              onClick={() => setSaved(!saved)}
-              className={`p-2 rounded-lg border transition-colors duration-150 ${saved ? "border-danger/30 bg-danger/8 text-danger" : "border-border text-muted-foreground hover:bg-muted"}`}
-              title={saved ? "حذف از ذخیره‌شده‌ها" : "ذخیره این آگهی"}
-            >
-              <Heart size={15} fill={saved ? "currentColor" : "none"} />
-            </button>
+            <SaveListingButton listingId={listing.id} />
             <button
               className="p-2 rounded-lg border border-border text-muted-foreground hover:bg-muted transition-colors duration-150"
               title="اشتراک‌گذاری این آگهی"
@@ -182,6 +177,7 @@ export default function ListingDetailContent({ listing }: Props) {
             <button
               className="p-2 rounded-lg border border-border text-muted-foreground hover:bg-muted hover:text-danger transition-colors duration-150"
               title="گزارش این آگهی"
+              onClick={() => setReportOpen(true)}
             >
               <Flag size={15} />
             </button>
@@ -267,7 +263,6 @@ export default function ListingDetailContent({ listing }: Props) {
           <div className="xl:col-span-2 flex flex-col gap-6">
             <ListingDetailSpecs listing={listing} />
             <ListingDetailSimilar
-              listings={listing}
               currentSeller={listing.sellerName}
               currentId={listing.id}
             />
@@ -296,6 +291,13 @@ export default function ListingDetailContent({ listing }: Props) {
             setRequestStatus(s);
             setAuctionOpen(false);
           }}
+        />
+      )}
+      {/* Report modal */}
+      {reportOpen && (
+        <ReportListingModal
+          listing={listing}
+          onClose={() => setReportOpen(false)}
         />
       )}
     </>

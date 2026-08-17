@@ -18,7 +18,9 @@ const SUSPENDED_SAFE_PAGES = [
   "/favicon.ico",
 ];
 const OWNER_ONLY_PREFIXES = ["/dashboard/owner"];
-const ADMIN_OR_OWNER_PREFIXES = ["/dashboard/admin", "/dashboard/manage"];
+// `/dashboard/manage/products` is intentionally excluded — sellers can edit
+// their own listings there (enforced client-side by ProductEditorGuard).
+const ADMIN_OR_OWNER_PREFIXES = ["/dashboard/admin", "/dashboard/manage/users"];
 
 function matchesPrefix(pathname: string, prefix: string) {
   return pathname === prefix || pathname.startsWith(`${prefix}/`);
