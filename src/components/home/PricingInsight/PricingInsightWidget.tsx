@@ -4,7 +4,7 @@ import { TrendingUp, Plus, X, Loader2 } from "lucide-react";
 import { useTaxonomyOptions } from "@/hooks/useTaxonomyOptions";
 import { fetchModelsByBrand } from "@/lib/supabase/taxonomy";
 import { supabase } from "@/lib/supabase/client";
-import { toFa } from "@/context/carLabels";
+import { toFa, toEn } from "@/context/carLabels";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 
@@ -99,7 +99,7 @@ export default function PriceInsightWidget() {
             .select("avg_listed_price, avg_price_7d_ago, total_active_listings")
             .eq("brand", s.brand)
             .eq("model", s.model);
-          if (s.year) q = q.eq("year", s.year);
+          if (s.year) q = q.eq("year", Number(toEn(s.year)));
           const { data } = await q.maybeSingle();
           if (!data) return null;
           const avg = Number(data.avg_listed_price),

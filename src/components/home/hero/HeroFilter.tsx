@@ -58,6 +58,9 @@ export default function HeroFilter() {
         <SelectContent>
           <SelectGroup>
             <SelectLabel className="text-black">برند ها</SelectLabel>
+            <SelectItem key="" value="">
+              تمام برندها
+            </SelectItem>
             {brandOptions.map((b) => (
               <SelectItem key={b} value={b}>
                 {b}
@@ -73,6 +76,9 @@ export default function HeroFilter() {
         <SelectContent>
           <SelectGroup>
             <SelectLabel className="text-black">شهر ها</SelectLabel>
+            <SelectItem key="" value="">
+              تمام شهرها
+            </SelectItem>
             {cityOptions.map((c) => (
               <SelectItem key={c} value={c}>
                 {c}
