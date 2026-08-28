@@ -67,7 +67,7 @@ export async function fetchCarSpecsByBrandModel(
   model: string,
   year?: string | null,
 ): Promise<CarSpecRow | null> {
-  let query = supabase
+  const query = supabase
     .from("car_specs")
     .select("*")
     .eq("brand", brand)

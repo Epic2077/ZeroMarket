@@ -132,7 +132,7 @@ export function IdentitySection({
             placeholder="انتخاب سال"
             error={errors.year?.message}
             withCurrent={withCurrent}
-            currentValue={listing ? toPersianYear(listing.year) : undefined}
+            currentValue={listing?.year ? toPersianYear(listing.year) : undefined}
           />
           <Field data-invalid={!!errors.bodyType}>
             <FieldLabel htmlFor="p-body">نوع بدنه</FieldLabel>

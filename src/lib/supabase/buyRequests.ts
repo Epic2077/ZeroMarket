@@ -53,8 +53,8 @@ export async function fetchSellerRequests(
       message: string | null;
       status: BuyRequestStatus;
       created_at: string;
-      buyer: { full_name: string; phone: string | null } | null;
-      listing: { brand: string; model: string; listing_type: string } | null;
+      buyer: { full_name: string; phone: string | null }[] | null;
+      listing: { brand: string; model: string; listing_type: string }[] | null;
     }>
   ).map((row) => ({
     id: row.id,
@@ -64,15 +64,15 @@ export async function fetchSellerRequests(
     message: row.message,
     status: row.status,
     created_at: row.created_at,
-    buyer_name: row.buyer?.full_name ?? "خریدار",
+    buyer_name: row.buyer?.[0]?.full_name ?? "خریدار",
     // Only reveal phone for accepted/negotiable (mirrors the DB view's logic)
     buyer_phone:
       row.status === "ACCEPTED" || row.status === "NEGOTIABLE"
-        ? (row.buyer?.phone ?? null)
+        ? (row.buyer?.[0]?.phone ?? null)
         : null,
-    listing_brand: row.listing?.brand,
-    listing_model: row.listing?.model,
-    listing_type: row.listing?.listing_type ?? "SELL",
+    listing_brand: row.listing?.[0]?.brand,
+    listing_model: row.listing?.[0]?.model,
+    listing_type: row.listing?.[0]?.listing_type ?? "SELL",
   }));
 }
 
@@ -180,8 +180,8 @@ export async function fetchBuyerRequests(
       offered_price: number;
       status: BuyRequestStatus;
       created_at: string;
-      seller: { full_name: string; phone: string | null } | null;
-      listing: { brand: string; model: string; listing_type: string } | null;
+      seller: { full_name: string; phone: string | null }[] | null;
+      listing: { brand: string; model: string; listing_type: string }[] | null;
     }>
   ).map((row) => ({
     id: row.id,
@@ -189,16 +189,16 @@ export async function fetchBuyerRequests(
     offered_price: row.offered_price,
     status: row.status,
     created_at: row.created_at,
-    seller_name: row.seller?.full_name ?? "فروشنده",
+    seller_name: row.seller?.[0]?.full_name ?? "فروشنده",
     // Only reveal seller phone for accepted/negotiable
     seller_phone:
       row.status === "ACCEPTED" || row.status === "NEGOTIABLE"
-        ? (row.seller?.phone ?? null)
+        ? (row.seller?.[0]?.phone ?? null)
         : null,
-    listing_title: row.listing
-      ? `${row.listing.brand} ${row.listing.model}`
+    listing_title: row.listing?.[0]
+      ? `${row.listing[0].brand} ${row.listing[0].model}`
       : "آگهی",
-    listing_type: row.listing?.listing_type ?? "SELL",
+    listing_type: row.listing?.[0]?.listing_type ?? "SELL",
   }));
 }
 

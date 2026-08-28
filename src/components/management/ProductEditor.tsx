@@ -108,7 +108,7 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<ProductFormValues>({
-    resolver: zodResolver(productSchema),
+    resolver: zodResolver(productSchema) as import("react-hook-form").Resolver<ProductFormValues>,
     defaultValues: {
       brand: listing?.brand ?? "",
       model: listing?.model ?? "",
@@ -137,18 +137,18 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
   useEffect(() => {
     if (!listing?.id) return;
     let cancelled = false;
-    supabase
-      .from("listing_private_notes")
-      .select("note")
-      .eq("listing_id", listing.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (cancelled || !data) return;
-        setValue("sellerNotes", (data as { note: string }).note ?? "", {
-          shouldValidate: false,
-        });
-      })
-      .catch(() => {});
+    Promise.resolve(
+      supabase
+        .from("listing_private_notes")
+        .select("note")
+        .eq("listing_id", listing.id)
+        .maybeSingle(),
+    ).then(({ data }) => {
+      if (cancelled || !data) return;
+      setValue("sellerNotes", (data as { note: string }).note ?? "", {
+        shouldValidate: false,
+      });
+    });
     return () => {
       cancelled = true;
     };

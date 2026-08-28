@@ -94,7 +94,7 @@ function brandLogoStyle(brand: string): {
 // Reusable sortable header button (RTL, ghost styling matching LatestTable).
 function SortHeader({
   label,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   column,
 }: {
   label: string;

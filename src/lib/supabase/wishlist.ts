@@ -59,8 +59,8 @@ export async function fetchWishlistListings(
   if (error) throw error;
 
   return (
-    (data ?? []) as Array<{ listing_id: string; listings: ListingRow | null }>
+    (data ?? []) as Array<{ listing_id: string; listings: ListingRow[] | null }>
   )
-    .map((row) => row.listings)
+    .map((row) => row.listings?.[0])
     .filter((l): l is ListingRow => Boolean(l));
 }

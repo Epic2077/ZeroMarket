@@ -1,4 +1,5 @@
 export interface BlogAuthor {
+  id?: string;
   name: string;
   handle: string;
   role: string;
@@ -31,6 +32,8 @@ export interface BlogPost {
     reposts: number;
     likes: number;
   };
+  sourceName?: string;
+  sourceUrl?: string;
 }
 
 export interface BlogNotification {
@@ -52,4 +55,5 @@ export interface ConfirmedAgency {
   responseTime: string;
   activeDeals: number;
   verified: boolean;
+  id?: string;
 }

@@ -13,11 +13,26 @@ import {
   PencilLine,
   ShieldCheck,
   Sparkles,
+  Edit,
+  X,
+  Check,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BlogMediaPreview } from "./BlogMedia";
 import BlogPostCard from "./BlogPostCard";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import { updateConfirmedAgency } from "@/lib/supabase/blog";
+import { toast } from "sonner";
+import { useState } from "react";
 
 export function BlogRightRail() {
   const pathname = usePathname();
@@ -174,6 +189,20 @@ export function BlogLeftRail() {
 export function BlogNotificationsView() {
   const { notifications } = useBlog();
 
+  if (notifications.length === 0) {
+    return (
+      <div className="card-elevated p-8 text-center space-y-2">
+        <div className="w-12 h-12 rounded-full bg-muted mx-auto flex items-center justify-center">
+          <span className="text-2xl">🔔</span>
+        </div>
+        <h3 className="text-lg font-700 text-foreground">هیچ اعلانی وجود ندارد</h3>
+        <p className="text-sm text-muted-foreground">
+          وقتی اعلان جدیدی داشته باشید، اینجا نمایش داده خواهد شد.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {notifications.map((notification) => (
@@ -215,6 +244,63 @@ export function BlogNotificationsView() {
 
 export function BlogAgenciesView() {
   const { agencies } = useBlog();
+  const { role } = useSession();
+  const canEdit = role === "admin" || role === "owner";
+  const [editingAgency, setEditingAgency] = useState<typeof agencies[0] | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    city: "",
+    summary: "",
+    specialties: "",
+    responseTime: "",
+    activeDeals: "",
+    verified: false,
+  });
+
+  const handleEditClick = (agency: typeof agencies[0]) => {
+    setEditingAgency(agency);
+    setFormData({
+      name: agency.name,
+      city: agency.city,
+      summary: agency.summary,
+      specialties: agency.specialties.join(", "),
+      responseTime: agency.responseTime,
+      activeDeals: agency.activeDeals.toString(),
+      verified: agency.verified,
+    });
+  };
+
+  const handleSave = async () => {
+    if (!editingAgency || !editingAgency.id) return;
+
+    setIsSaving(true);
+    try {
+      await updateConfirmedAgency(editingAgency.id, {
+        name: formData.name,
+        city: formData.city,
+        summary: formData.summary,
+        specialties: formData.specialties
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        response_time: formData.responseTime,
+        active_deals: Number(formData.activeDeals),
+        verified: formData.verified,
+      });
+      toast.success("آژانس با موفقیت به‌روزرسانی شد");
+      setEditingAgency(null);
+    } catch (error) {
+      console.error("Failed to update agency:", error);
+      toast.error("خطا در به‌روزرسانی آژانس");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setEditingAgency(null);
+  };
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
@@ -237,6 +323,16 @@ export function BlogAgenciesView() {
                 {agency.city} · {agency.responseTime}
               </div>
             </div>
+            {canEdit && agency.id && (
+              <button
+                type="button"
+                onClick={() => handleEditClick(agency)}
+                className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+                aria-label="ویرایش آژانس"
+              >
+                <Edit size={16} />
+              </button>
+            )}
           </div>
 
           <p className="text-sm leading-7 text-muted-foreground">
@@ -257,6 +353,147 @@ export function BlogAgenciesView() {
           </div>
         </article>
       ))}
+
+      {editingAgency && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          onClick={handleCancel}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="edit-agency-title"
+        >
+          <div
+            className="card-elevated w-full max-w-md p-6 space-y-4 bg-background"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 id="edit-agency-title" className="text-lg font-800 text-foreground">
+                ویرایش آژانس
+              </h3>
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <FieldGroup className="space-y-4">
+              <Field>
+                <FieldLabel htmlFor="agency-name">نام آژانس</FieldLabel>
+                <Input
+                  id="agency-name"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, name: e.target.value }))
+                  }
+                  required
+                />
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="agency-city">شهر</FieldLabel>
+                <Input
+                  id="agency-city"
+                  value={formData.city}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, city: e.target.value }))
+                  }
+                  required
+                />
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="agency-summary">توضیحات</FieldLabel>
+                <textarea
+                  id="agency-summary"
+                  rows={3}
+                  className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                  value={formData.summary}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, summary: e.target.value }))
+                  }
+                  required
+                />
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="agency-specialties">تخصص‌ها (با ویرگول جدا کنید)</FieldLabel>
+                <Input
+                  id="agency-specialties"
+                  value={formData.specialties}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, specialties: e.target.value }))
+                  }
+                  placeholder="تویوتا, هیوندای, کیا"
+                />
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="agency-response-time">زمان پاسخ‌گویی</FieldLabel>
+                <Input
+                  id="agency-response-time"
+                  value={formData.responseTime}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, responseTime: e.target.value }))
+                  }
+                  placeholder="کمتر از ۳۰ دقیقه"
+                />
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="agency-active-deals">معاملات فعال</FieldLabel>
+                <Input
+                  id="agency-active-deals"
+                  type="number"
+                  value={formData.activeDeals}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, activeDeals: e.target.value }))
+                  }
+                  required
+                />
+              </Field>
+
+              <Field>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="agency-verified"
+                    checked={formData.verified}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, verified: e.target.checked }))
+                    }
+                    className="rounded border-border text-primary focus:ring-primary"
+                  />
+                  <FieldLabel htmlFor="agency-verified" className="mb-0 cursor-pointer">
+                    تأییدشده
+                  </FieldLabel>
+                </div>
+              </Field>
+            </FieldGroup>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <Button variant="secondary" onClick={handleCancel} disabled={isSaving}>
+                انصراف
+              </Button>
+              <Button onClick={handleSave} disabled={isSaving}>
+                {isSaving ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin mr-2" />
+                    در حال ذخیره...
+                  </>
+                ) : (
+                  <>
+                    <Check size={16} className="mr-2" />
+                    ذخیره تغییرات
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

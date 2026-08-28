@@ -257,7 +257,7 @@ export default function SearchModal({ onClose }: Props) {
         {/* Search input */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-border shrink-0">
           <Search size={18} className="text-muted-foreground shrink-0" />
-          {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
+          { }
           <input
             autoFocus
             value={query}
