@@ -117,11 +117,11 @@ export async function fetchBlogPosts(): Promise<BlogPostWithRelations[]> {
       views_count, comments_count, reposts_count, likes_count,
       author:blog_authors(id, name, handle, role, avatar, verified),
       media:blog_media(id, kind, url, alt, caption)
-    `
+    `,
     )
     .order("published_at", { ascending: false });
 
-  if (error) throw error;
+  if (error) throw new Error(`Failed to fetch blog posts: ${error.message}`);
 
   const rawPosts = (posts ?? []) as BlogPostWithRelationsRaw[];
   return rawPosts.map((post) => ({
@@ -131,7 +131,7 @@ export async function fetchBlogPosts(): Promise<BlogPostWithRelations[]> {
 }
 
 export async function fetchBlogPostBySlug(
-  slug: string
+  slug: string,
 ): Promise<BlogPostWithRelations | null> {
   const { data, error } = await supabase
     .from("blog_posts")
@@ -142,7 +142,7 @@ export async function fetchBlogPostBySlug(
       views_count, comments_count, reposts_count, likes_count,
       author:blog_authors(id, name, handle, role, avatar, verified),
       media:blog_media(id, kind, url, alt, caption)
-    `
+    `,
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -167,12 +167,12 @@ export async function fetchBlogAuthors(): Promise<BlogAuthorRow[]> {
     .select("*")
     .order("name", { ascending: true });
 
-  if (error) throw error;
+  if (error) throw new Error(`Failed to fetch blog authors: ${error.message}`);
   return (data ?? []) as BlogAuthorRow[];
 }
 
 export async function createBlogAuthor(
-  author: Omit<BlogAuthorRow, "id" | "created_at" | "updated_at">
+  author: Omit<BlogAuthorRow, "id" | "created_at" | "updated_at">,
 ): Promise<BlogAuthorRow | null> {
   const { data, error } = await supabase
     .from("blog_authors")
@@ -190,13 +190,16 @@ export async function fetchConfirmedAgencies(): Promise<ConfirmedAgencyRow[]> {
     .select("*")
     .order("name", { ascending: true });
 
-  if (error) throw error;
+  if (error)
+    throw new Error(`Failed to fetch confirmed agencies: ${error.message}`);
   return (data ?? []) as ConfirmedAgencyRow[];
 }
 
 export async function updateConfirmedAgency(
   id: string,
-  updates: Partial<Omit<ConfirmedAgencyRow, "id" | "slug" | "created_at" | "updated_at">>
+  updates: Partial<
+    Omit<ConfirmedAgencyRow, "id" | "slug" | "created_at" | "updated_at">
+  >,
 ): Promise<ConfirmedAgencyRow | null> {
   const { data, error } = await supabase
     .from("confirmed_agencies")
@@ -211,7 +214,7 @@ export async function updateConfirmedAgency(
 
 export async function createBlogPost(
   client: SupabaseClient,
-  post: Omit<BlogPostRow, "id" | "created_at" | "updated_at">
+  post: Omit<BlogPostRow, "id" | "created_at" | "updated_at">,
 ): Promise<BlogPostRow | null> {
   const { data, error } = await client
     .from("blog_posts")
@@ -225,7 +228,7 @@ export async function createBlogPost(
 
 export async function createBlogMedia(
   client: SupabaseClient,
-  media: Omit<BlogMediaRow, "id" | "created_at">[]
+  media: Omit<BlogMediaRow, "id" | "created_at">[],
 ): Promise<BlogMediaRow[] | null> {
   const { data, error } = await client
     .from("blog_media")
@@ -242,6 +245,7 @@ export async function fetchBlogNotifications(): Promise<BlogNotificationRow[]> {
     .select("*")
     .order("created_at", { ascending: false });
 
-  if (error) throw error;
+  if (error)
+    throw new Error(`Failed to fetch blog notifications: ${error.message}`);
   return (data ?? []) as BlogNotificationRow[];
 }

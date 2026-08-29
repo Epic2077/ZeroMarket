@@ -1,6 +1,7 @@
 import { formatDate } from "./utils";
 import Avatar from "../../shared/Avatar";
 import RoleBadge from "../RoleBadge";
+import VerifiedBadge from "../../shared/VerifiedBadeg";
 import type { AdminUserRow } from "@/types/admin";
 import { Ban, Mail, MapPin, Pencil, Phone } from "lucide-react";
 
@@ -27,6 +28,7 @@ export function UserHeroCard({ user, onEdit }: Props) {
                 {user.full_name}
               </h1>
               <RoleBadge role={user.role} />
+              {user.verified && <VerifiedBadge size="md" />}
               {user.status === "SUSPENDED" && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-danger/20 bg-danger/10 text-danger text-2xs font-700">
                   <Ban size={11} />

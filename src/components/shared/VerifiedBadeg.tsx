@@ -21,7 +21,7 @@ export default function VerifiedBadge({
     >
       <BadgeCheck
         size={sizePx}
-        className={cn("text-blue-500 shrink-0", className)}
+        className={cn("text-primary shrink-0", className)}
         strokeWidth={3}
       />
     </span>

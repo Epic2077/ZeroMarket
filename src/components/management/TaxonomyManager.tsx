@@ -39,6 +39,7 @@ export default function TaxonomyManager() {
     handleAdd,
     handleRemove,
     handleRename,
+    handleUpdateHex,
     handleAddModel,
     toggleBrand,
   } = useTaxonomyManager();
@@ -202,6 +203,7 @@ export default function TaxonomyManager() {
                   canEdit={canEdit}
                   onRemove={handleRemove}
                   onRename={handleRename}
+                  onUpdateHex={handleUpdateHex}
                 />
               ) : (
                 <OptionsGrid

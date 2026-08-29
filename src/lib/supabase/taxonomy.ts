@@ -169,6 +169,21 @@ export async function ownerDeleteOption(
   if (error) throw error;
 }
 
+/** Owner: update metadata (e.g., hex color) for an option. */
+export async function ownerUpdateOptionMetadata(
+  category: TaxonomyCategory,
+  value: string,
+  metadata: Record<string, unknown>,
+): Promise<void> {
+  const { error } = await supabase
+    .from("taxonomy_options")
+    .update({ metadata })
+    .eq("category", category)
+    .eq("value", value);
+
+  if (error) throw error;
+}
+
 // ── Admin change requests (→ PENDING review by owner) ──────────────────
 
 export type ChangeAction = "ADD" | "UPDATE" | "DELETE";

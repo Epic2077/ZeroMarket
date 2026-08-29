@@ -77,9 +77,7 @@ const toPersianDate = (date = new Date()) =>
     day: "2-digit",
   }).format(date);
 
-function convertSupabasePostToFrontend(
-  item: BlogPostWithRelations
-): BlogPost {
+function convertSupabasePostToFrontend(item: BlogPostWithRelations): BlogPost {
   return {
     slug: item.slug,
     title: item.title,
@@ -126,7 +124,9 @@ function convertSupabaseAuthorToFrontend(author: BlogAuthorRow): BlogAuthor {
   };
 }
 
-function convertSupabaseAgencyToFrontend(agency: ConfirmedAgencyRow): ConfirmedAgency {
+function convertSupabaseAgencyToFrontend(
+  agency: ConfirmedAgencyRow,
+): ConfirmedAgency {
   return {
     slug: agency.slug,
     name: agency.name,
@@ -142,7 +142,7 @@ function convertSupabaseAgencyToFrontend(agency: ConfirmedAgencyRow): ConfirmedA
 }
 
 function convertSupabaseNotificationToFrontend(
-  notification: BlogNotificationRow
+  notification: BlogNotificationRow,
 ): BlogNotification {
   return {
     id: notification.id,
@@ -180,9 +180,14 @@ export function BlogProvider({ children }: { children: ReactNode }) {
         setPosts(postsData.map(convertSupabasePostToFrontend));
         setAuthors(authorsData.map(convertSupabaseAuthorToFrontend));
         setAgencies(agenciesData.map(convertSupabaseAgencyToFrontend));
-        setNotifications(notificationsData.map(convertSupabaseNotificationToFrontend));
+        setNotifications(
+          notificationsData.map(convertSupabaseNotificationToFrontend),
+        );
       } catch (error) {
-        console.error("Failed to load blog data:", error);
+        console.error(
+          "Failed to load blog data:",
+          error instanceof Error ? error.message : JSON.stringify(error),
+        );
         setPosts([]);
         setAuthors([]);
         setAgencies([]);
@@ -204,75 +209,72 @@ export function BlogProvider({ children }: { children: ReactNode }) {
 
   const getPostBySlug = useCallback(
     (slug: string) => posts.find((post) => post.slug === slug),
-    [posts]
+    [posts],
   );
 
-  const createPost = useCallback(
-    async (input: BlogCreateInput) => {
-      const baseSlug = toSlug(input.title) || "new-post";
-      const nextSlug = `${baseSlug}-${Date.now()}`;
+  const createPost = useCallback(async (input: BlogCreateInput) => {
+    const baseSlug = toSlug(input.title) || "new-post";
+    const nextSlug = `${baseSlug}-${Date.now()}`;
 
-      const postData = {
-        slug: nextSlug,
-        title: input.title,
-        excerpt: input.excerpt,
-        content: input.content,
-        tags: input.tags,
-        published_at: new Date().toISOString(),
-        read_time: estimateReadMinutes(input.content),
-        featured: Boolean(input.featured),
-        source_name: input.sourceName ?? null,
-        source_url: input.sourceUrl ?? null,
-        views_count: 0,
-        comments_count: 0,
-        reposts_count: 0,
-        likes_count: 0,
-        author_id: input.author.id ?? "default-author",
-      };
+    const postData = {
+      slug: nextSlug,
+      title: input.title,
+      excerpt: input.excerpt,
+      content: input.content,
+      tags: input.tags,
+      published_at: new Date().toISOString(),
+      read_time: estimateReadMinutes(input.content),
+      featured: Boolean(input.featured),
+      source_name: input.sourceName ?? null,
+      source_url: input.sourceUrl ?? null,
+      views_count: 0,
+      comments_count: 0,
+      reposts_count: 0,
+      likes_count: 0,
+      author_id: input.author.id ?? "default-author",
+    };
 
-      const createdPost = await createBlogPost(supabase, postData);
+    const createdPost = await createBlogPost(supabase, postData);
 
-      if (!createdPost) {
-        throw new Error("Failed to create post");
-      }
+    if (!createdPost) {
+      throw new Error("Failed to create post");
+    }
 
-      if (input.media && input.media.length > 0) {
-        const mediaData = input.media.map((m) => ({
-          post_id: createdPost.id,
-          kind: m.kind,
-          url: m.url,
-          alt: m.alt ?? null,
-          caption: m.caption ?? null,
-        }));
-        await createBlogMedia(supabase, mediaData);
-      }
+    if (input.media && input.media.length > 0) {
+      const mediaData = input.media.map((m) => ({
+        post_id: createdPost.id,
+        kind: m.kind,
+        url: m.url,
+        alt: m.alt ?? null,
+        caption: m.caption ?? null,
+      }));
+      await createBlogMedia(supabase, mediaData);
+    }
 
-      const newPost: BlogPost = {
-        slug: createdPost.slug,
-        title: createdPost.title,
-        excerpt: createdPost.excerpt,
-        content: createdPost.content,
-        tags: createdPost.tags,
-        publishedAt: toPersianDate(),
-        readTime: createdPost.read_time,
-        featured: createdPost.featured,
-        media: input.media,
-        author: input.author,
-        stats: {
-          views: 0,
-          comments: 0,
-          reposts: 0,
-          likes: 0,
-        },
-        sourceName: input.sourceName,
-        sourceUrl: input.sourceUrl,
-      };
+    const newPost: BlogPost = {
+      slug: createdPost.slug,
+      title: createdPost.title,
+      excerpt: createdPost.excerpt,
+      content: createdPost.content,
+      tags: createdPost.tags,
+      publishedAt: toPersianDate(),
+      readTime: createdPost.read_time,
+      featured: createdPost.featured,
+      media: input.media,
+      author: input.author,
+      stats: {
+        views: 0,
+        comments: 0,
+        reposts: 0,
+        likes: 0,
+      },
+      sourceName: input.sourceName,
+      sourceUrl: input.sourceUrl,
+    };
 
-      setPosts((prev) => [newPost, ...prev]);
-      return nextSlug;
-    },
-    []
-  );
+    setPosts((prev) => [newPost, ...prev]);
+    return nextSlug;
+  }, []);
 
   const value = useMemo<BlogContextValue>(
     () => ({
@@ -285,7 +287,16 @@ export function BlogProvider({ children }: { children: ReactNode }) {
       getPostBySlug,
       createPost,
     }),
-    [posts, notifications, agencies, authors, hydrated, loading, getPostBySlug, createPost]
+    [
+      posts,
+      notifications,
+      agencies,
+      authors,
+      hydrated,
+      loading,
+      getPostBySlug,
+      createPost,
+    ],
   );
 
   return <BlogContext.Provider value={value}>{children}</BlogContext.Provider>;

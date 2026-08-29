@@ -9,6 +9,7 @@ import {
   ownerAddOption,
   ownerDeleteOption,
   ownerRenameOption,
+  ownerUpdateOptionMetadata,
   requestTaxonomyChange,
   type TaxonomyCategory,
   type TaxonomyRow,
@@ -38,6 +39,7 @@ interface UseTaxonomyManagerReturn {
   handleAdd: () => Promise<void>;
   handleRemove: (value: string, category?: TaxonomyCategory) => Promise<void>;
   handleRename: (oldValue: string, newValue: string, category?: TaxonomyCategory) => Promise<void>;
+  handleUpdateHex: (value: string, newHex: string, category?: TaxonomyCategory) => Promise<void>;
   handleAddModel: (brand: string) => Promise<void>;
   loadModels: () => Promise<void>;
   toggleBrand: (brand: string) => void;
@@ -160,6 +162,30 @@ export function useTaxonomyManager(): UseTaxonomyManagerReturn {
     loadModels();
   }, [active, isOwner, user, refresh, loadModels]);
 
+  const handleUpdateHex = useCallback(async (
+    value: string,
+    newHex: string,
+    category?: TaxonomyCategory,
+  ) => {
+    const cat = category ?? active;
+    if (cat !== "COLOR") return;
+    if (isOwner) {
+      await ownerUpdateOptionMetadata(cat, value, { hex: newHex });
+      toast.success("کد رنگ ویرایش شد");
+    } else {
+      await requestTaxonomyChange({
+        category: cat,
+        action: "UPDATE",
+        value,
+        newValue: value,
+        metadata: { hex: newHex },
+        requestedBy: user?.id ?? "",
+      });
+      toast.success("درخواست ویرایش کد رنگ برای تایید مالک ثبت شد");
+    }
+    refresh();
+  }, [active, isOwner, user, refresh]);
+
   const handleAddModel = useCallback(async (brand: string) => {
     const value = (modelDrafts[brand] ?? "").trim();
     if (!value) return;
@@ -214,6 +240,7 @@ export function useTaxonomyManager(): UseTaxonomyManagerReturn {
     handleAdd,
     handleRemove,
     handleRename,
+    handleUpdateHex,
     handleAddModel,
     loadModels,
     toggleBrand,

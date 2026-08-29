@@ -8,6 +8,7 @@ interface ColorsGridProps {
   canEdit: boolean;
   onRemove: (color: string) => Promise<void>;
   onRename: (oldVal: string, newVal: string) => Promise<void>;
+  onUpdateHex: (color: string, newHex: string) => Promise<void>;
 }
 
 function getColorHex(taxonomy: any, colorName: string): string {
@@ -23,6 +24,7 @@ export function ColorsGrid({
   canEdit,
   onRemove,
   onRename,
+  onUpdateHex,
 }: ColorsGridProps) {
   if (colors.length === 0) {
     return (
@@ -54,8 +56,10 @@ export function ColorsGrid({
             {canEdit && (
               <OptionActions
                 value={color}
+                hex={hex}
                 onRemove={() => onRemove(color)}
                 onRename={(newVal) => onRename(color, newVal)}
+                onUpdateHex={(newHex) => onUpdateHex(color, newHex)}
               />
             )}
           </div>

@@ -49,8 +49,6 @@ export default function SellerProfileHero({ seller }: Props) {
     },
   ];
 
-  console.log(seller);
-
   return (
     <div className="card-elevated overflow-hidden mb-8">
       {/* Banner */}
