@@ -1,19 +1,20 @@
 "use client";
 
 import { OptionActions } from "./OptionActions";
+import type { TaxonomyCategory, TaxonomyRow } from "@/lib/supabase/taxonomy";
 
 interface ColorsGridProps {
   colors: string[];
-  taxonomy: any;
+  taxonomy: Record<TaxonomyCategory, TaxonomyRow[]>;
   canEdit: boolean;
   onRemove: (color: string) => Promise<void>;
   onRename: (oldVal: string, newVal: string) => Promise<void>;
   onUpdateHex: (color: string, newHex: string) => Promise<void>;
 }
 
-function getColorHex(taxonomy: any, colorName: string): string {
+function getColorHex(taxonomy: Record<TaxonomyCategory, TaxonomyRow[]>, colorName: string): string {
   return (
-    taxonomy.COLOR?.find((r: any) => r.value === colorName)?.metadata?.hex ??
+    (taxonomy.COLOR?.find((r) => r.value === colorName)?.metadata?.hex as string) ??
     "#1b4fd8"
   );
 }
