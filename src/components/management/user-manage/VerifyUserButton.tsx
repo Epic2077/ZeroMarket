@@ -10,7 +10,6 @@ interface Props {
 }
 
 export function VerifyUserButton({ user, onUpdate }: Props) {
-  console.log("[VerifyUserButton] user received:", user, "verified:", user?.verified, "type:", typeof user?.verified);
   const handleClick = async () => {
     const verify = user.verified === false;
     const ok = await onUpdate({ verified: verify });

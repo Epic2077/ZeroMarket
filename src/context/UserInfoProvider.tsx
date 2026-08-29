@@ -75,7 +75,7 @@ export function UserInfoProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange((_event: string, nextSession: Session | null) => {
       setSession(nextSession);
 
       if (nextSession?.user?.id) {

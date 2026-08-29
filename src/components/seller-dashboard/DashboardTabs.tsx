@@ -20,7 +20,7 @@ export default function DashboardTabs({ active, onChange }: Props) {
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id)
       .eq("is_unread", true)
-      .then(({ count, error }) => {
+      .then(({ count, error }: { count: number | null; error: any }) => {
         if (!error && count != null) setUnreadCount(count);
       });
   }, [user?.id]);

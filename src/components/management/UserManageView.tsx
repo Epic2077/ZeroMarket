@@ -251,9 +251,8 @@ export default function UserManageView({ userId }: Props) {
                 const body = await res.json().catch(() => ({}));
                 throw new Error(body.error ?? `HTTP ${res.status}`);
               }
-const data = await res.json();
-      console.log("[UserManageView] API response user:", data.user);
-      startTransition(() => setUser(data.user ?? null));
+              const data = await res.json();
+              startTransition(() => setUser(data.user ?? null));
               toast.success("پروفایل با موفقیت به‌روزرسانی شد");
             } catch (err) {
               toast.error(

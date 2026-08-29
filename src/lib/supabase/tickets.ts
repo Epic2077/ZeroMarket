@@ -54,7 +54,14 @@ export async function fetchTickets(
     .from("profiles")
     .select(isAdmin ? "id, full_name, email" : "id, full_name")
     .in("id", userIds);
-  const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
+  interface ProfileMapEntry {
+    id: string;
+    full_name: string;
+    email?: string;
+  }
+  const profileMap = new Map<string, ProfileMapEntry>(
+    (profiles ?? []).map((p: ProfileMapEntry) => [p.id, p]),
+  );
 
   return rows.map((row) => ({
     id: row.id,
@@ -118,7 +125,14 @@ export async function fetchTicketMessages(
     .from("profiles")
     .select("id, full_name, role")
     .in("id", senderIds);
-  const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
+  interface ProfileMapEntry2 {
+    id: string;
+    full_name: string;
+    role: string;
+  }
+  const profileMap = new Map<string, ProfileMapEntry2>(
+    (profiles ?? []).map((p: ProfileMapEntry2) => [p.id, p]),
+  );
 
   return rows.map((row) => ({
     id: row.id,
@@ -236,7 +250,7 @@ export function subscribeToTicketMessages(
         table: "ticket_messages",
         filter: `ticket_id=eq.${ticketId}`,
       },
-      async (payload) => {
+      async (payload: { new: Record<string, unknown> }) => {
         const raw = payload.new as any;
         const { data: profile } = await supabase
           .from("profiles")

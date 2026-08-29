@@ -17,19 +17,33 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
+function createSupabaseClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!url || !anonKey) {
+    return null;
+  }
+
+  return createServerClient(url, anonKey, {
+    cookies: {
+      getAll: async () => (await cookies()).getAll(),
+      setAll: () => {},
+    },
+  });
+}
+
 export default async function SinglePage({ params }: PageProps) {
   const { id } = await params;
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: async () => (await cookies()).getAll(),
-        setAll: () => {},
-      },
-    },
-  );
+  // Check if Supabase env vars are available
+  const supabase = createSupabaseClient();
+
+  if (!supabase) {
+    // During build without env vars, return notFound to skip static generation
+    // The page will work at runtime when env vars are configured
+    notFound();
+  }
 
   // Fetch listing
   const { data: listingData, error: listingError } = await supabase
