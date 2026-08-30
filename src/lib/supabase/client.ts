@@ -2,6 +2,32 @@ import { createBrowserClient } from "@supabase/ssr";
 
 let supabaseInstance: ReturnType<typeof createBrowserClient> | null = null;
 
+function createMockQueryBuilder() {
+  const mock = {
+    select: () => mock,
+    insert: () => mock,
+    update: () => mock,
+    delete: () => mock,
+    eq: () => mock,
+    neq: () => mock,
+    gt: () => mock,
+    gte: () => mock,
+    lt: () => mock,
+    lte: () => mock,
+    like: () => mock,
+    ilike: () => mock,
+    in: () => mock,
+    is: () => mock,
+    order: () => mock,
+    limit: () => mock,
+    range: () => mock,
+    single: async () => ({ data: null, error: { message: "Supabase not configured" } }),
+    maybeSingle: async () => ({ data: null, error: { message: "Supabase not configured" } }),
+    then: (resolve: any) => resolve({ data: [], error: { message: "Supabase not configured" } }),
+  };
+  return mock;
+}
+
 function getSupabaseClient() {
   if (supabaseInstance) return supabaseInstance;
 
@@ -9,11 +35,10 @@ function getSupabaseClient() {
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !anonKey) {
-    // Return a dummy client that throws on use, allowing build to proceed
+    // Return a fully functional mock client that returns empty data instead of crashing
+    const mockQueryBuilder = createMockQueryBuilder();
     return {
-      from: () => {
-        throw new Error("Supabase client not initialized - missing env vars");
-      },
+      from: () => mockQueryBuilder,
       auth: {
         getSession: async () => ({ data: { session: null }, error: null }),
         getUser: async () => ({ data: { user: null }, error: null }),
@@ -22,12 +47,12 @@ function getSupabaseClient() {
       },
       storage: {
         from: () => ({
-          upload: async () => ({ data: null, error: new Error("Supabase not configured") }),
-          remove: async () => ({ data: null, error: new Error("Supabase not configured") }),
+          upload: async () => ({ data: null, error: { message: "Supabase not configured" } }),
+          remove: async () => ({ data: null, error: { message: "Supabase not configured" } }),
           getPublicUrl: () => ({ data: { publicUrl: "" } }),
         }),
       },
-      rpc: async () => ({ data: null, error: new Error("Supabase not configured") }),
+      rpc: async () => ({ data: null, error: { message: "Supabase not configured" } }),
     } as any;
   }
 
