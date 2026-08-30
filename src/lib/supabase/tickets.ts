@@ -50,25 +50,11 @@ export async function fetchTickets(
   // Fetch profile names separately (avoids RLS issues with join).
   // Only admins get email — regular users only see names.
   const userIds = [...new Set(rows.map((r) => r.user_id))];
-  interface ProfileMapEntry {
-    id: string;
-    full_name: string;
-    email?: string;
-  }
-
-  let profileMap = new Map<string, ProfileMapEntry>();
-  if (userIds.length > 0) {
-    const { data: profiles, error: profileError } = await supabase
-      .from("profiles")
-      .select(isAdmin ? "id, full_name, email" : "id, full_name")
-      .in("id", userIds);
-
-    if (!profileError && profiles) {
-      profileMap = new Map<string, ProfileMapEntry>(
-        (profiles as ProfileMapEntry[]).map((p) => [p.id, p]),
-      );
-    }
-  }
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select(isAdmin ? "id, full_name, email" : "id, full_name")
+    .in("id", userIds);
+  const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
 
   return rows.map((row) => ({
     id: row.id,
@@ -128,25 +114,11 @@ export async function fetchTicketMessages(
 
   const rows = (data ?? []) as any[];
   const senderIds = [...new Set(rows.map((r) => r.sender_id))];
-  interface ProfileMapEntry2 {
-    id: string;
-    full_name: string;
-    role: string;
-  }
-
-  let profileMap = new Map<string, ProfileMapEntry2>();
-  if (senderIds.length > 0) {
-    const { data: profiles, error: profileError } = await supabase
-      .from("profiles")
-      .select("id, full_name, role")
-      .in("id", senderIds);
-
-    if (!profileError && profiles) {
-      profileMap = new Map<string, ProfileMapEntry2>(
-        (profiles as ProfileMapEntry2[]).map((p) => [p.id, p]),
-      );
-    }
-  }
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, full_name, role")
+    .in("id", senderIds);
+  const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
 
   return rows.map((row) => ({
     id: row.id,
@@ -264,7 +236,7 @@ export function subscribeToTicketMessages(
         table: "ticket_messages",
         filter: `ticket_id=eq.${ticketId}`,
       },
-      async (payload: { new: Record<string, unknown> }) => {
+      async (payload) => {
         const raw = payload.new as any;
         const { data: profile } = await supabase
           .from("profiles")
