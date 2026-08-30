@@ -53,8 +53,8 @@ function redirectToLogin(request: NextRequest) {
   return NextResponse.redirect(loginUrl);
 }
 
-// Renamed to middleware for standard Next.js execution (or proxy if using Next 16 proxy convention)
-export async function middleware(request: NextRequest) {
+// Next.js 16 proxy.ts requires 'export async function proxy' or 'export default'
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -64,7 +64,6 @@ export async function middleware(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  // 1. Fallback Guard Check: Prevents crashing if env vars are missing on Vercel
   if (!supabaseUrl || !supabaseAnonKey) {
     return response;
   }
@@ -110,7 +109,6 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // Fetch profile role/status
   const { data: profile } = await supabase
     .from("profiles")
     .select("role, status")
