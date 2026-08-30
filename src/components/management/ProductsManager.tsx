@@ -3,38 +3,70 @@
 import StatusBadge from "@/components/shared/StatusBadge";
 import { brandModelLabel, cityLabel } from "@/context/carLabels";
 import { formatPrice } from "@/context/data";
-import { useListings } from "@/context/ListingsProvider";
+import { useListings } from "@/hooks/useListings";
+import { listingRowToListing } from "@/lib/supabase/listings";
+import { supabase } from "@/lib/supabase/client";
 import type { PlatformUser, ProductInput } from "@/types/admin";
 import type { Listing } from "@/types/dataTypes";
-import { Eye, Pencil, Plus, ShoppingBag, Trash2, Upload } from "lucide-react";
+import {
+  Eye,
+  Pencil,
+  Plus,
+  ShoppingBag,
+  ShoppingCart,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import BulkImportProductsModal from "./BulkImportProductsModal";
 import ConfirmDialog from "./ConfirmDialog";
+import RecordSaleModal from "./RecordSaleModal";
 
 interface Props {
   user: PlatformUser;
 }
 
 export default function ProductsManager({ user }: Props) {
-  const { listingsByOwner, createListing, deleteListing } = useListings();
+  const { listings: rawListings } = useListings();
+  const products = rawListings
+    .filter((r) => r.seller_id === user.id)
+    .map((r) => listingRowToListing(r));
   const [pendingDelete, setPendingDelete] = useState<Listing | null>(null);
+  const [pendingSale, setPendingSale] = useState<Listing | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
 
-  // Buyers don't list cars — only sellers can have products.
-  const canHaveProducts = user.role !== "buyer";
-  const products = listingsByOwner(user.id);
+  const canHaveProducts = user.role !== "USER";
 
-  const sellerBase: Partial<Listing> = {
-    sellerName: user.name,
-    sellerAvatar: user.avatar,
-    sellerVerified: user.role === "confirmed_seller",
-    sellerMemberSince: user.joinedAt,
-  };
-
-  const handleBulk = (rows: ProductInput[]) => {
-    rows.forEach((row) => createListing(user.id, sellerBase, row));
+  const handleBulk = async (rows: ProductInput[]) => {
+    for (const row of rows) {
+      await supabase.from("listings").insert({
+        seller_id: user.id,
+        brand: row.brand,
+        model: row.model,
+        trim: row.trim,
+        year: row.year,
+        price: row.price,
+        price_unit: "تومان",
+        color: row.color,
+        color_hex: row.colorHex ?? "#1b4fd8",
+        city: row.city,
+        shipment_days: row.deliveryDays,
+        body_type: row.bodyType,
+        engine_power: row.engine,
+        gearbox: row.transmission,
+        fuel: row.fuelType,
+        other_options: row.factoryOptions ?? [],
+        status: "WAITING",
+        slug: `${row.brand}-${row.model}-${row.year}-${crypto.randomUUID().slice(0, 8)}`.replace(
+          /\s+/g,
+          "-",
+        ),
+      });
+    }
+    toast.success(`${rows.length.toLocaleString("fa-IR")} محصول افزوده شد`);
+    setBulkOpen(false);
   };
 
   return (
@@ -96,7 +128,13 @@ export default function ProductsManager({ user }: Props) {
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <StatusBadge status={p.status} />
+                {p.deletedAt ? (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-muted text-muted-foreground text-2xs font-700">
+                    حذف شده
+                  </span>
+                ) : (
+                  <StatusBadge status={p.status} />
+                )}
                 <Link
                   href={`/market/listings/${p.id}`}
                   aria-label="مشاهده محصول"
@@ -114,6 +152,14 @@ export default function ProductsManager({ user }: Props) {
                   <Pencil size={14} />
                 </Link>
                 <button
+                  onClick={() => setPendingSale(p)}
+                  aria-label="ثبت معامله"
+                  title="ثبت معامله"
+                  className="flex items-center justify-center w-8 h-8 rounded-lg border border-border text-muted-foreground hover:text-success hover:border-success/40 transition-colors duration-150"
+                >
+                  <ShoppingCart size={14} />
+                </button>
+                <button
                   onClick={() => setPendingDelete(p)}
                   aria-label="حذف محصول"
                   title="حذف"
@@ -127,13 +173,23 @@ export default function ProductsManager({ user }: Props) {
         </div>
       )}
 
+      {pendingSale && (
+        <RecordSaleModal
+          listing={pendingSale}
+          sellerId={user.id}
+          onRecorded={() => {}}
+          onClose={() => setPendingSale(null)}
+        />
+      )}
+
       {pendingDelete && (
         <ConfirmDialog
           title="حذف محصول"
-          description={`«${brandModelLabel(pendingDelete)} ${pendingDelete.trim}» برای همیشه حذف می‌شود.`}
+          description={`«${brandModelLabel(pendingDelete)} ${pendingDelete.trim}» از دید عموم حذف می‌شود و فقط برای مدیران قابل مشاهده می‌ماند.`}
           confirmLabel="حذف"
-          onConfirm={() => {
-            deleteListing(pendingDelete.id);
+          onConfirm={async () => {
+            await supabase.from("listings").delete().eq("id", pendingDelete.id);
+            setPendingDelete(null);
             toast.success("محصول حذف شد");
           }}
           onClose={() => setPendingDelete(null)}

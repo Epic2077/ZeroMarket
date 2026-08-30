@@ -1,12 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  brandModelLabel,
-  colorLabel,
-  sellerFa,
-  toFa,
-} from "@/context/carLabels";
-import { listings } from "@/context/data";
+import { toFa } from "@/context/carLabels";
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, BadgeCheck, ExternalLink } from "lucide-react";
 import Link from "next/link";
@@ -21,6 +15,8 @@ export type LatestRow = {
   verified: boolean;
   cost: number;
   status: string;
+  listingType: "SELL" | "BUY";
+  priceVsMarket: number;
 };
 
 export const statusMap: Record<string, { label: string; className: string }> = {
@@ -45,18 +41,6 @@ export const statusMap: Record<string, { label: string; className: string }> = {
     className: "bg-slate-100 text-slate-600 border-slate-200",
   },
 };
-
-export const latestTableData: LatestRow[] = listings.slice(0, 8).map((l) => ({
-  id: l.id,
-  brand: brandModelLabel(l),
-  trim: l.trim,
-  year: l.year,
-  color: colorLabel(l.color),
-  seller: sellerFa[l.sellerName] ?? l.sellerName,
-  verified: l.sellerVerified,
-  cost: l.price,
-  status: l.status,
-}));
 
 export function formatCost(cost: number): string {
   if (cost >= 1_000_000_000) {
@@ -173,10 +157,20 @@ export const LatestTableColumns: ColumnDef<LatestRow>[] = [
         <ArrowUpDown className="h-3.5 w-3.5" />
       </Button>
     ),
-    cell: ({ getValue }) => (
-      <span className="font-mono-nums font-600">
-        {formatCost(getValue() as number)}
-      </span>
+    cell: ({ row }) => (
+      <div className="flex flex-col">
+        <span className="font-mono-nums font-600">
+          {formatCost(row.original.cost)}
+        </span>
+        {row.original.priceVsMarket !== 0 && (
+          <span
+            className={`text-[12px] font-600 ${row.original.priceVsMarket >= 0 ? "text-danger" : "text-success"}`}
+          >
+            {row.original.priceVsMarket > 0 ? "+" : ""}
+            {toFa(row.original.priceVsMarket)}٪
+          </span>
+        )}
+      </div>
     ),
   },
   {

@@ -1,7 +1,22 @@
 import { ArrowRight, PlusCircle } from "lucide-react";
 import Link from "next/link";
+import { fetchVerifiedSellersCount } from "@/lib/supabase/sellers";
+import { fetchActiveListingsCount } from "@/lib/supabase/listings";
+import { toFa } from "@/context/carLabels";
 
-export default function HomeCTA() {
+export default async function HomeCTA() {
+  let verifiedSellers = 0;
+  let activeListings = 0;
+
+  try {
+    [verifiedSellers, activeListings] = await Promise.all([
+      fetchVerifiedSellersCount(),
+      fetchActiveListingsCount(),
+    ]);
+  } catch {
+    // Use fallback values if DB is unavailable
+  }
+
   return (
     <section
       className="max-w-screen-2xl mx-auto px-4 lg:px-8 xl:px-10 py-14 vazir-matn"
@@ -36,7 +51,7 @@ export default function HomeCTA() {
             آماده خرید یا فروش خودروی صفرکیلومتر هستید؟
           </h2>
           <p className="text-white/70 text-sm leading-relaxed">
-            به ۱٬۲۴۱ فروشنده تأییدشده و بیش از ۴۰٬۰۰۰ خریدار در تنها پلتفرم
+            به {toFa(verifiedSellers)}+ فروشنده تأییدشده و بیش از {toFa(activeListings)}+ خریدار در تنها پلتفرم
             تخصصی خودروهای صفرکیلومتر بپیوندید.
           </p>
         </div>

@@ -6,8 +6,10 @@ import {
   sellerLabel,
   toFa,
 } from "@/context/carLabels";
-import { formatPrice, listings } from "@/context/data";
-import { sellers } from "@/context/sellers";
+import { formatPrice } from "@/context/data";
+import { useListings } from "@/hooks/useListings";
+import { useSellers } from "@/hooks/useSellers";
+import { listingRowToListing } from "@/lib/supabase/listings";
 import VerifiedBadge from "@/components/shared/VerifiedBadeg";
 import StatusBadge from "@/components/shared/StatusBadge";
 import {
@@ -30,6 +32,7 @@ import {
   Sliders,
   Shield,
   ChevronDown,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -79,6 +82,16 @@ const SelectField = ({
 export default function SearchModal({ onClose }: Props) {
   const [query, setQuery] = useState("");
   const [showFilters, setShowFilters] = useState(true);
+
+  // ── Supabase data ──────────────────────────────────────────────────
+  const { listings: rawListings, loading: listingsLoading } = useListings();
+  const { sellers, loading: sellersLoading } = useSellers();
+  const loading = listingsLoading || sellersLoading;
+
+  const allListings = useMemo(
+    () => rawListings.map((row) => listingRowToListing(row)),
+    [rawListings],
+  );
 
   // Filters State
   const [brand, setBrand] = useState("");
@@ -163,7 +176,7 @@ export default function SearchModal({ onClose }: Props) {
 
   const carResults = useMemo(() => {
     if (!hasActiveFilter) return [];
-    return listings
+    return allListings
       .filter((l) => {
         if (q) {
           const haystack = [
@@ -193,6 +206,7 @@ export default function SearchModal({ onClose }: Props) {
       })
       .slice(0, CAR_LIMIT);
   }, [
+    allListings,
     hasActiveFilter,
     q,
     brand,
@@ -222,7 +236,7 @@ export default function SearchModal({ onClose }: Props) {
         return true;
       })
       .slice(0, SELLER_LIMIT);
-  }, [hasActiveFilter, q, brand, city, verifiedOnly]);
+  }, [sellers, hasActiveFilter, q, brand, city, verifiedOnly]);
 
   const hasResults = carResults.length > 0 || sellerResults.length > 0;
 
@@ -243,7 +257,7 @@ export default function SearchModal({ onClose }: Props) {
         {/* Search input */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-border shrink-0">
           <Search size={18} className="text-muted-foreground shrink-0" />
-          {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
+          { }
           <input
             autoFocus
             value={query}
@@ -357,7 +371,14 @@ export default function SearchModal({ onClose }: Props) {
 
         {/* Results */}
         <div className="overflow-y-auto px-2 py-2">
-          {!hasActiveFilter ? (
+          {loading ? (
+            <div className="flex items-center justify-center gap-2 py-10">
+              <Loader2 size={18} className="animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">
+                در حال بارگذاری…
+              </span>
+            </div>
+          ) : !hasActiveFilter ? (
             <p className="px-3 py-10 text-center text-sm text-muted-foreground">
               نام خودرو، برند یا فروشنده را وارد کنید یا فیلترها را اعمال کنید.
             </p>
@@ -422,7 +443,7 @@ export default function SearchModal({ onClose }: Props) {
                       className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors duration-150"
                     >
                       <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center text-2xs font-800 text-white shrink-0">
-                        {s.avatar}
+                        {s.avatar_path || s.name.slice(0, 1)}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">

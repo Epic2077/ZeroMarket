@@ -1,56 +1,120 @@
 "use client";
 
-import { useAdmin } from "@/context/AdminProvider";
-import { ROLE_ORDER, roleLabel } from "@/context/adminData";
-import { toFa } from "@/context/carLabels";
-import { formatPrice } from "@/context/data";
-import { useListings } from "@/context/ListingsProvider";
+import type { AdminUserRow } from "@/types/admin";
 import { useSession } from "@/context/SessionProvider";
-import {
-  ArrowRight,
-  Ban,
-  BarChart3,
-  CheckCircle2,
-  Eye,
-  Mail,
-  MapPin,
-  Pencil,
-  Phone,
-  Send,
-  ShieldHalf,
-  ShoppingBag,
-  TrendingUp,
-} from "lucide-react";
+import { supabase } from "@/lib/supabase/client";
+import { listingRowToListing, type ListingRow } from "@/lib/supabase/listings";
+import type { Listing } from "@/types/dataTypes";
+import { ArrowRight, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { toast } from "sonner";
 import ConfirmDialog from "./ConfirmDialog";
-import ProductsManager from "./ProductsManager";
 import ProfileFormModal from "./ProfileFormModal";
-import RoleBadge from "./RoleBadge";
+import { UserHeroCard } from "./user-manage/UserHeroCard";
+import { UserAnalyticsCard } from "./user-manage/UserAnalyticsCard";
+import { UserListingsCard } from "./user-manage/UserListingsCard";
+import { UserRolePanel } from "./user-manage/UserRolePanel";
+import { VerifyUserButton } from "./user-manage/VerifyUserButton";
+import { formatDate, initials } from "./user-manage/utils";
 
 interface Props {
   userId: string;
 }
 
-const faPct = (n: number) => `${toFa(n)}٪`;
-
 export default function UserManageView({ userId }: Props) {
-  const { users, admins, setUserRole, setUserStatus, updateUserProfile, makeUserAdmin } =
-    useAdmin();
-  const { role: viewerRole, adminId } = useSession();
-  const { listingsByOwner } = useListings();
+  const { role: viewerRole } = useSession();
+  const [user, setUser] = useState<AdminUserRow | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [confirmSuspend, setConfirmSuspend] = useState(false);
   const [editProfile, setEditProfile] = useState(false);
 
-  const user = users.find((u) => u.id === userId);
-  const backHref = viewerRole === "admin" ? "/dashboard/admin" : "/dashboard/owner";
+  // ── Listings ─────────────────────────────────────────────────────────
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [listingsLoading, setListingsLoading] = useState(false);
 
-  if (!user) {
+  const fetchListings = useCallback(async () => {
+    setListingsLoading(true);
+    const { data, error } = await supabase
+      .from("listings")
+      .select("*")
+      .eq("seller_id", userId)
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      setListings(
+        (data as ListingRow[]).map((row) => listingRowToListing(row)),
+      );
+    }
+    setListingsLoading(false);
+  }, [userId]);
+
+  const backHref =
+    viewerRole === "admin" ? "/dashboard/admin" : "/dashboard/owner";
+
+  const fetchUser = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      startTransition(() => setUser(data.user ?? null));
+    } catch (err) {
+      startTransition(() => {
+        setError(err instanceof Error ? err.message : "Unknown error");
+        setUser(null);
+      });
+    } finally {
+      startTransition(() => setLoading(false));
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    void fetchUser();
+    void fetchListings();
+  }, [fetchUser, fetchListings]);
+
+  // ── Derived values (must stay above any early return) ────────────────
+  const activeCount = useMemo(
+    () =>
+      listings.filter((l) => l.status === "active" || l.status === "negotiable")
+        .length,
+    [listings],
+  );
+
+  if (loading) {
     return (
       <div className="max-w-3xl mx-auto px-4 lg:px-8 py-16 text-center">
-        <p className="text-sm text-muted-foreground">کاربر یافت نشد.</p>
-        <Link href={backHref} className="btn-secondary text-sm mt-4 inline-flex">
+        <Loader2
+          size={24}
+          className="text-muted-foreground mx-auto mb-3 animate-spin"
+        />
+        <p className="text-sm text-muted-foreground">در حال بارگذاری…</p>
+      </div>
+    );
+  }
+
+  if (error || !user) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 lg:px-8 py-16 text-center">
+        <p className="text-sm text-muted-foreground">
+          {error ? `خطا: ${error}` : "کاربر یافت نشد."}
+        </p>
+        <Link
+          href={backHref}
+          className="btn-secondary text-sm mt-4 inline-flex"
+        >
           بازگشت
         </Link>
       </div>
@@ -59,61 +123,39 @@ export default function UserManageView({ userId }: Props) {
 
   const canManageRoles = viewerRole === "owner";
 
-  // An admin may only manage users assigned to them.
-  if (viewerRole === "admin") {
-    const me = admins.find((a) => a.id === adminId);
-    if (!me?.assignedUserIds.includes(user.id)) {
-      return (
-        <div className="max-w-3xl mx-auto px-4 lg:px-8 py-16 text-center">
-          <ShieldHalf size={28} className="text-muted-foreground mx-auto mb-3" />
-          <p className="text-sm font-700 text-foreground">دسترسی ندارید</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            این کاربر به شما اختصاص داده نشده است.
-          </p>
-          <Link href={backHref} className="btn-secondary text-sm mt-4 inline-flex">
-            بازگشت
-          </Link>
-        </div>
-      );
+  const updateUser = async (updates: {
+    role?: string;
+    status?: string;
+    verified?: boolean;
+  }) => {
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      startTransition(() => setUser(data.user ?? null));
+      return true;
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "خطا در به‌روزرسانی");
+      return false;
     }
-  }
+  };
 
-  const managingAdmins = admins.filter((a) =>
-    a.assignedUserIds.includes(user.id),
-  );
-
-  // Live product counts from the listings provider (reflect edits/adds).
-  const ownerProducts = listingsByOwner(user.id);
-  const totalPosts = ownerProducts.length;
-  const activePosts = ownerProducts.filter((p) => p.status === "active").length;
-
-  const metrics = [
-    {
-      icon: <ShoppingBag size={16} className="text-primary" />,
-      label: "کل محصولات",
-      value: toFa(totalPosts),
-    },
-    {
-      icon: <CheckCircle2 size={16} className="text-success" />,
-      label: "محصول فعال",
-      value: toFa(activePosts),
-    },
-    {
-      icon: <Send size={16} className="text-accent" />,
-      label: "درخواست‌ها",
-      value: toFa(user.analytics.requests),
-    },
-    {
-      icon: <Eye size={16} className="text-warning" />,
-      label: "بازدید کل",
-      value: toFa(user.analytics.views),
-    },
-  ];
-
-  const bars = [
-    { label: "نرخ پاسخ", value: user.analytics.responseRate, color: "bg-success" },
-    { label: "نرخ تبدیل", value: user.analytics.conversion, color: "bg-primary" },
-  ];
+  const totalViews = user.total_views ?? 0;
+  const responseRate =
+    typeof user.response_rate === "string"
+      ? Number(user.response_rate)
+      : (user.response_rate ?? 0);
+  const salesVolume =
+    typeof user.total_sales_volume === "string"
+      ? Number(user.total_sales_volume)
+      : (user.total_sales_volume ?? 0);
 
   return (
     <div className="max-w-screen-xl mx-auto px-4 lg:px-8 xl:px-10 py-8">
@@ -127,214 +169,97 @@ export default function UserManageView({ userId }: Props) {
       </Link>
 
       {/* Hero */}
-      <div className="card-elevated p-6 mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-white font-800 text-xl shrink-0">
-              {user.avatar}
-            </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-2xl font-800 text-foreground">
-                  {user.name}
-                </h1>
-                <RoleBadge role={user.role} />
-                {user.status === "suspended" && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-danger/20 bg-danger/10 text-danger text-2xs font-700">
-                    <Ban size={11} />
-                    معلق
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                عضو از {user.joinedAt}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => setEditProfile(true)}
-            className="btn-secondary text-sm self-start"
-          >
-            <Pencil size={14} />
-            ویرایش پروفایل
-          </button>
-        </div>
-
-        {/* Contact */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5 pt-5 border-t border-border">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Mail size={15} className="text-primary shrink-0" />
-            <span className="truncate" dir="ltr">
-              {user.email}
-            </span>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Phone size={15} className="text-primary shrink-0" />
-            {user.phone}
-          </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <MapPin size={15} className="text-primary shrink-0" />
-            {user.city}
-          </div>
-        </div>
-
-        {managingAdmins.length > 0 && (
-          <div className="flex items-center gap-2 mt-4 flex-wrap">
-            <span className="text-2xs text-muted-foreground">مدیران مسئول:</span>
-            {managingAdmins.map((a) => (
-              <span
-                key={a.id}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-negotiable/10 text-negotiable text-2xs font-600"
-              >
-                <ShieldHalf size={10} />
-                {a.name}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
+      <UserHeroCard user={user} onEdit={() => setEditProfile(true)} />
 
       {/* Two-column: analytics + management */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Analytics (2/3) */}
         <div className="lg:col-span-2 flex flex-col gap-6">
-          <div className="card-elevated p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <BarChart3 size={18} className="text-primary" />
-              <h2 className="text-sm font-700 text-foreground">تحلیل‌ها</h2>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-              {metrics.map((m) => (
-                <div key={m.label} className="bg-muted rounded-xl p-3">
-                  <div className="w-8 h-8 rounded-lg bg-card flex items-center justify-center mb-2">
-                    {m.icon}
-                  </div>
-                  <div className="stat-value text-xl">{m.value}</div>
-                  <div className="text-2xs text-muted-foreground mt-0.5">
-                    {m.label}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="flex flex-col gap-3">
-              {bars.map((b) => (
-                <div key={b.label}>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-muted-foreground">{b.label}</span>
-                    <span className="font-700 text-foreground">
-                      {faPct(b.value)}
-                    </span>
-                  </div>
-                  <div className="h-1.5 bg-border rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${b.color}`}
-                      style={{ width: `${b.value}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-5 flex items-center justify-between bg-foreground rounded-xl px-4 py-3 text-white">
-              <span className="flex items-center gap-1.5 text-xs text-slate-400">
-                <TrendingUp size={14} />
-                حجم فروش
-              </span>
-              <span className="text-price text-lg">
-                {formatPrice(user.analytics.salesVolume)} تومان
-              </span>
-            </div>
-          </div>
-
-          {/* Products */}
-          <div className="card-elevated p-6">
-            <ProductsManager user={user} />
-          </div>
+          <UserAnalyticsCard
+            totalListings={listings.length}
+            activeCount={activeCount}
+            totalViews={totalViews}
+            responseRate={responseRate}
+            salesVolume={salesVolume}
+          />
+          <UserListingsCard listings={listings} loading={listingsLoading} />
         </div>
 
         {/* Management (1/3) */}
         <div className="flex flex-col gap-6">
           {canManageRoles ? (
-            <div className="card-elevated p-5">
-              <h2 className="text-sm font-700 text-foreground mb-3">
-                مدیریت نقش
-              </h2>
-              <div className="flex flex-col gap-2">
-                {ROLE_ORDER.map((role) => {
-                  const isCurrent = user.role === role;
-                  return (
-                    <button
-                      key={role}
-                      onClick={() => {
-                        if (isCurrent) return;
-                        setUserRole(user.id, role);
-                        toast.success(`نقش به «${roleLabel[role]}» تغییر کرد`);
-                      }}
-                      disabled={isCurrent}
-                      className={`w-full text-right px-3 py-2 rounded-lg text-xs font-700 border transition-colors duration-150 ${
-                        isCurrent
-                          ? "bg-primary/10 border-primary/30 text-primary cursor-default"
-                          : "bg-card border-border text-foreground hover:bg-muted"
-                      }`}
-                    >
-                      {isCurrent
-                        ? `نقش فعلی: ${roleLabel[role]}`
-                        : `تبدیل به ${roleLabel[role]}`}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <h2 className="text-sm font-700 text-foreground mt-5 mb-3">
-                وضعیت و دسترسی
-              </h2>
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => {
-                    makeUserAdmin(user.id);
-                    toast.success(`«${user.name}» به‌عنوان مدیر افزوده شد`);
-                  }}
-                  className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-700 bg-negotiable/10 border border-negotiable/25 text-negotiable hover:bg-negotiable/20 transition-colors duration-150"
-                >
-                  <ShieldHalf size={14} />
-                  تبدیل به مدیر
-                </button>
-                {user.status === "active" ? (
-                  <button
-                    onClick={() => setConfirmSuspend(true)}
-                    className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-700 bg-danger/10 border border-danger/25 text-danger hover:bg-danger/20 transition-colors duration-150"
-                  >
-                    <Ban size={14} />
-                    تعلیق حساب
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => {
-                      setUserStatus(user.id, "active");
-                      toast.success("حساب فعال شد");
-                    }}
-                    className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-700 bg-success/10 border border-success/25 text-success hover:bg-success/20 transition-colors duration-150"
-                  >
-                    <CheckCircle2 size={14} />
-                    فعال‌سازی حساب
-                  </button>
-                )}
-              </div>
-            </div>
+            <UserRolePanel
+              user={user}
+              onUpdate={updateUser}
+              onSuspendRequest={() => setConfirmSuspend(true)}
+            />
           ) : (
-            <div className="card-elevated p-5 text-xs text-muted-foreground leading-relaxed">
-              شما به‌عنوان مدیر می‌توانید پروفایل و آگهی‌های این کاربر را ویرایش
-              کنید. تغییر نقش، تعلیق حساب و مدیریت مدیران تنها در اختیار مالک است.
-            </div>
+            <>
+              <VerifyUserButton user={user} onUpdate={updateUser} />
+              <div className="card-elevated p-5 text-xs text-muted-foreground leading-relaxed">
+                شما به‌عنوان مدیر می‌توانید پروفایل و آگهی‌های این کاربر را
+                ویرایش کنید. تغییر نقش، تعلیق حساب و مدیریت مدیران تنها در
+                اختیار مالک است.
+              </div>
+            </>
           )}
         </div>
       </div>
 
       {editProfile && (
         <ProfileFormModal
-          user={user}
-          onSubmit={(input) => {
-            updateUserProfile(user.id, input);
-            toast.success("پروفایل کاربر به‌روزرسانی شد");
+          user={{
+            id: user.id,
+            name: user.full_name,
+            email: user.email,
+            phone: user.phone ?? "",
+            city: user.city ?? "",
+            avatar: initials(user.full_name),
+            avatarPath: user.avatar_path,
+            role: user.role,
+            verified: user.verified,
+            status: user.status,
+            joinedAt: formatDate(user.created_at),
+            analytics: {
+              requests: 0,
+              views: totalViews,
+              salesVolume,
+              responseRate,
+              conversion: 0,
+            },
+          }}
+          onAvatarChange={(avatarPath) => {
+            startTransition(() =>
+              setUser((prev) =>
+                prev ? { ...prev, avatar_path: avatarPath } : prev,
+              ),
+            );
+          }}
+          onSubmit={async (input) => {
+            try {
+              const res = await fetch(`/api/admin/users/${userId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  full_name: input.name,
+                  email: input.email,
+                  phone: input.phone,
+                  city: input.city,
+                }),
+              });
+              if (!res.ok) {
+                const body = await res.json().catch(() => ({}));
+                throw new Error(body.error ?? `HTTP ${res.status}`);
+              }
+              const data = await res.json();
+              startTransition(() => setUser(data.user ?? null));
+              toast.success("پروفایل با موفقیت به‌روزرسانی شد");
+            } catch (err) {
+              toast.error(
+                err instanceof Error ? err.message : "خطا در به‌روزرسانی",
+              );
+            }
+            setEditProfile(false);
           }}
           onClose={() => setEditProfile(false)}
         />
@@ -343,11 +268,12 @@ export default function UserManageView({ userId }: Props) {
       {confirmSuspend && (
         <ConfirmDialog
           title="تعلیق حساب کاربر"
-          description={`«${user.name}» تا فعال‌سازی مجدد به آگهی‌ها و درخواست‌ها دسترسی نخواهد داشت.`}
+          description={`«${user.full_name}» تا فعال‌سازی مجدد به آگهی‌ها و درخواست‌ها دسترسی نخواهد داشت.`}
           confirmLabel="تعلیق"
-          onConfirm={() => {
-            setUserStatus(user.id, "suspended");
-            toast.success("حساب معلق شد");
+          onConfirm={async () => {
+            const ok = await updateUser({ status: "SUSPENDED" });
+            if (ok) toast.success("حساب معلق شد");
+            setConfirmSuspend(false);
           }}
           onClose={() => setConfirmSuspend(false)}
         />

@@ -31,7 +31,9 @@ export default function SellerDashboard() {
       {activeTab === "requests" && <RequestsTab />}
       {activeTab === "analytics" && <AnalyticsTab />}
 
-      {showBulkImport && <BulkImportModal onClose={() => setShowBulkImport(false)} />}
+      {showBulkImport && (
+        <BulkImportModal onClose={() => setShowBulkImport(false)} />
+      )}
     </div>
   );
 }

@@ -1,8 +1,9 @@
 "use client";
 
-import { useAdmin } from "@/context/AdminProvider";
-import { useListings } from "@/context/ListingsProvider";
+import { useListings } from "@/hooks/useListings";
+import { listingRowToListing } from "@/lib/supabase/listings";
 import { formatPrice } from "@/context/data";
+import { fetchPlatformSummary } from "@/lib/supabase/completedSales";
 import {
   BadgeCheck,
   Ban,
@@ -11,22 +12,51 @@ import {
   Store,
   Users,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useState } from "react";
+import { useAdminUsers } from "@/hooks/useAdminUsers";
+import { Spinner } from "../ui/spinner";
 
 const faNum = (n: number) => n.toLocaleString("fa-IR");
 
 export default function OwnerOverview() {
-  const { users, admins } = useAdmin();
-  const { listings } = useListings();
+  const { listings: rawListings } = useListings();
+  const listings = rawListings.map((row) => listingRowToListing(row));
 
-  const sellers = users.filter((u) => u.role !== "buyer");
-  const confirmed = users.filter((u) => u.role === "confirmed_seller");
-  const suspended = users.filter((u) => u.status === "suspended");
+  // ── Live admin API demo ──────────────────────────────────────────────
+  const {
+    users: apiUsers,
+    total: apiTotal,
+    loading: apiLoading,
+    error: apiError,
+  } = useAdminUsers(1, 5);
+
+  const totalUsers = apiLoading || apiError ? null : apiTotal;
+
+  const verified = new Set(apiUsers.filter((l) => l.verified).map((l) => l.id))
+    .size;
+  const regularUsers =
+    totalUsers === null ? null : Math.max(totalUsers - verified, 0);
+  const suspended = apiUsers.filter((u) => u.status === "SUSPENDED");
   const totalPosts = listings.length;
-  const salesVolume = users.reduce(
-    (sum, u) => sum + u.analytics.salesVolume,
-    0,
-  );
+  const [salesVolume, setSalesVolume] = useState(0);
+
+  const admins = apiUsers.filter((u) => u.role === "ADMIN");
+
+  // ── Live platform sales volume (from owner_platform_summary view) ───
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const summary = await fetchPlatformSummary();
+        if (!cancelled && summary) setSalesVolume(summary.grand_total_volume);
+      } catch {
+        // keep 0 on error
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const stats: {
     id: string;
@@ -37,19 +67,19 @@ export default function OwnerOverview() {
     {
       id: "users",
       label: "کل کاربران",
-      value: faNum(users.length),
+      value: totalUsers === null ? "—" : faNum(totalUsers),
       icon: <Users size={18} className="text-primary" />,
     },
     {
-      id: "sellers",
-      label: "فروشندگان",
-      value: faNum(sellers.length),
+      id: "Sells",
+      label: "کاربران عادی",
+      value: regularUsers === null ? "—" : faNum(regularUsers),
       icon: <Store size={18} className="text-accent" />,
     },
     {
       id: "confirmed",
       label: "فروشندگان تأییدشده",
-      value: faNum(confirmed.length),
+      value: verified === null ? "—" : faNum(verified),
       icon: <BadgeCheck size={18} className="text-success" />,
     },
     {
@@ -80,7 +110,11 @@ export default function OwnerOverview() {
             <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center mb-3">
               {stat.icon}
             </div>
-            <div className="stat-value text-2xl">{stat.value}</div>
+            {apiLoading || apiError ? (
+              <Spinner className="size-6 text-2xl" />
+            ) : (
+              <div className="stat-value text-2xl">{stat.value}</div>
+            )}
             <div className="text-xs text-muted-foreground mt-0.5">
               {stat.label}
             </div>
@@ -94,7 +128,7 @@ export default function OwnerOverview() {
             حجم کل فروش پلتفرم
           </div>
           <div className="text-foreground text-3xl mt-1">
-            {salesVolume.toLocaleString()}{" "}
+            {salesVolume.toLocaleString("fa-IR")}{" "}
             <span className="text-sm text-slate-400">تومان</span>
             <p className="text-sm text-muted-foreground">
               {formatPrice(salesVolume)}

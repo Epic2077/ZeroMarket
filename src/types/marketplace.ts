@@ -8,6 +8,7 @@ export interface FilterState {
   priceMax: string;
   verifiedOnly: boolean;
   status: string;
+  listingType: string;
   sortBy: string;
   sortDir: "asc" | "desc";
 }

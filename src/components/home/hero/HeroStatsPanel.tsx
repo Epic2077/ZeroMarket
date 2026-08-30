@@ -1,10 +1,44 @@
+"use client";
+
 import { brandModelLabel, colorLabel, toFa } from "@/context/carLabels";
-import { formatPrice, listings } from "@/context/data";
-import { ArrowLeft, TrendingDown, TrendingUp } from "lucide-react";
+import { formatPrice } from "@/context/data";
+import { brandLogoStyle } from "@/context/latestTable";
+import { useListings } from "@/hooks/useListings";
+import { listingRowToListing } from "@/lib/supabase/listings";
+import {
+  fetchMarketPriceMap,
+  computePriceVsMarket,
+} from "@/lib/supabase/marketInsights";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 
 export default function HeroStatsPanel() {
-  const recent = listings.slice(0, 5);
+  const { listings: rawListings } = useListings();
+  const [marketMap, setMarketMap] = useState<Map<string, number>>(new Map());
+
+  useEffect(() => {
+    if (!rawListings.length) return;
+    fetchMarketPriceMap(rawListings)
+      .then(setMarketMap)
+      .catch(() => {});
+  }, [rawListings]);
+
+  const recent = useMemo(
+    () =>
+      rawListings.slice(0, 5).map((row) => {
+        const l = listingRowToListing(row);
+        const key = `${l.brand}|${l.model}|${l.year}`;
+        const marketAvg = marketMap.get(key);
+        return {
+          ...l,
+          priceVsMarket: marketAvg
+            ? computePriceVsMarket(l.price, marketAvg)
+            : 0,
+        };
+      }),
+    [rawListings, marketMap],
+  );
 
   return (
     <div className="w-full max-w-95 bg-card rounded-2xl shadow-2xl shadow-black/30 ring-1 ring-black/5 overflow-hidden vazir-matn">
@@ -18,7 +52,7 @@ export default function HeroStatsPanel() {
           <span className="text-sm font-700 text-foreground">بازار زنده</span>
         </div>
         <span className="text-xs text-muted-foreground font-mono-nums">
-          {toFa(listings.length)} آگهی فعال
+          {toFa(rawListings.length)} آگهی فعال
         </span>
       </div>
 
@@ -32,10 +66,10 @@ export default function HeroStatsPanel() {
           >
             <div className="flex items-center gap-3 min-w-0">
               <span
-                className="w-9 h-9 rounded-lg flex items-center justify-center text-2xs font-700 text-white shrink-0"
-                style={{ backgroundColor: l.colorHex === "#F5F5F0" ? "#1b4fd8" : l.colorHex }}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xs font-bold"
+                style={brandLogoStyle(l.brand)}
               >
-                {brandModelLabel(l).slice(0, 2)}
+                {l.brand.slice(0, 3).toUpperCase()}
               </span>
               <div className="min-w-0">
                 <div className="text-sm font-700 text-foreground leading-tight truncate">
@@ -50,21 +84,17 @@ export default function HeroStatsPanel() {
               <div className="text-sm font-700 font-mono text-foreground">
                 {formatPrice(l.price)}
               </div>
-              <div
-                className={`flex items-center justify-end gap-0.5 text-2xs mt-0.5 font-600 ${
-                  l.trend7d >= 0 ? "text-success" : "text-danger"
-                }`}
-              >
-                {l.trend7d >= 0 ? (
-                  <TrendingUp size={10} />
-                ) : (
-                  <TrendingDown size={10} />
-                )}
-                <span className="font-mono">
-                  {l.trend7d >= 0 ? "+" : ""}
-                  {toFa(l.trend7d.toFixed(1))}٪
-                </span>
-              </div>
+              {l.priceVsMarket !== 0 && (
+                <div
+                  className={`flex items-center justify-end gap-0.5 text-[12px] mt-0.5 font-600 ${l.priceVsMarket >= 0 ? "text-danger" : "text-success"}`}
+                >
+                  {l.priceVsMarket > 0 ? "+" : ""}
+                  {toFa(l.priceVsMarket)}٪{" "}
+                  {l.priceVsMarket >= 0
+                    ? "بالاتر از میانگین"
+                    : "پایین‌تر از میانگین"}
+                </div>
+              )}
             </div>
           </Link>
         ))}

@@ -15,7 +15,7 @@ export default function PostAdButton() {
         onClick={() =>
           (window.location.href = "/dashboard/seller/products/new")
         }
-        className="py-2 px-4 text-sm hover:bg-primary/90 transition-colors duration-150 hidden sm:flex"
+        className="py-2 px-4 text-sm hover:bg-primary/90 transition-colors duration-150 hidden md:flex"
       >
         ثبت آگهی
       </Button>

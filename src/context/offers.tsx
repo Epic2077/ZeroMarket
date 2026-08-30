@@ -3,7 +3,13 @@ import { formatPrice } from "@/context/data";
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, CheckCircle, MessageSquare, XCircle } from "lucide-react";
 
-export type OfferStatus = "pending" | "accepted" | "rejected" | "negotiable";
+export type OfferStatus =
+  | "pending"
+  | "accepted"
+  | "rejected"
+  | "negotiable"
+  | "completed"
+  | "closed";
 
 export interface CarOffer {
   id: string;
@@ -66,6 +72,8 @@ export const offerStatusMap: Record<
   accepted: { label: "تأیید شده", className: "status-active" },
   rejected: { label: "رد شده", className: "status-sold" },
   negotiable: { label: "قابل مذاکره", className: "status-negotiable" },
+  completed: { label: "تکمیل شده", className: "status-completed" },
+  closed: { label: "بسته شد", className: "status-completed" },
 };
 
 // The status-change controls the seller uses to respond to an offer.
@@ -98,6 +106,7 @@ const statusActions: {
 // Columns are built with a callback so the seller can change an offer's status.
 export const getOfferColumns = (
   onStatusChange: (id: string, status: OfferStatus) => void,
+  onReject: (id: string) => void,
 ): ColumnDef<CarOffer>[] => [
   {
     accessorKey: "buyer",
@@ -135,7 +144,9 @@ export const getOfferColumns = (
   },
   {
     accessorKey: "date",
-    header: () => <span className="text-sm font-semibold vazir-matn">زمان</span>,
+    header: () => (
+      <span className="text-sm font-semibold vazir-matn">زمان</span>
+    ),
     cell: ({ getValue }) => (
       <span className="text-muted-foreground">{getValue() as string}</span>
     ),
@@ -150,23 +161,30 @@ export const getOfferColumns = (
       return (
         <div className="flex items-center gap-2">
           <span className={current.className}>{current.label}</span>
-          <div className="flex items-center gap-1">
-            {statusActions.map((action) => {
-              const Icon = action.icon;
-              const isActive = row.original.status === action.status;
-              return (
-                <button
-                  key={action.status}
-                  onClick={() => onStatusChange(row.original.id, action.status)}
-                  title={action.title}
-                  aria-label={action.title}
-                  className={`p-1 rounded-md transition-colors duration-150 ${action.className} ${isActive ? "ring-1 ring-current" : ""}`}
-                >
-                  <Icon size={13} />
-                </button>
-              );
-            })}
-          </div>
+          {row.original.status !== "completed" &&
+            row.original.status !== "closed" && (
+              <div className="flex items-center gap-1">
+                {statusActions.map((action) => {
+                  const Icon = action.icon;
+                  const isActive = row.original.status === action.status;
+                  return (
+                    <button
+                      key={action.status}
+                      onClick={() =>
+                        action.status === "rejected"
+                          ? onReject(row.original.id)
+                          : onStatusChange(row.original.id, action.status)
+                      }
+                      title={action.title}
+                      aria-label={action.title}
+                      className={`p-1 rounded-md transition-colors duration-150 ${action.className} ${isActive ? "ring-1 ring-current" : ""}`}
+                    >
+                      <Icon size={13} />
+                    </button>
+                  );
+                })}
+              </div>
+            )}
         </div>
       );
     },

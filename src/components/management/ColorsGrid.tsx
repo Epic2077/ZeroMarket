@@ -1,0 +1,71 @@
+"use client";
+
+import { OptionActions } from "./OptionActions";
+import type { TaxonomyCategory, TaxonomyRow } from "@/lib/supabase/taxonomy";
+
+interface ColorsGridProps {
+  colors: string[];
+  taxonomy: Record<TaxonomyCategory, TaxonomyRow[]>;
+  canEdit: boolean;
+  onRemove: (color: string) => Promise<void>;
+  onRename: (oldVal: string, newVal: string) => Promise<void>;
+  onUpdateHex: (color: string, newHex: string) => Promise<void>;
+}
+
+function getColorHex(taxonomy: Record<TaxonomyCategory, TaxonomyRow[]>, colorName: string): string {
+  return (
+    (taxonomy.COLOR?.find((r) => r.value === colorName)?.metadata?.hex as string) ??
+    "#1b4fd8"
+  );
+}
+
+export function ColorsGrid({
+  colors,
+  taxonomy,
+  canEdit,
+  onRemove,
+  onRename,
+  onUpdateHex,
+}: ColorsGridProps) {
+  if (colors.length === 0) {
+    return (
+      <p className="rounded-lg border border-dashed border-border py-8 text-center text-xs text-muted-foreground">
+        گزینه‌ای ثبت نشده است.
+      </p>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+      {colors.map((color) => {
+        const hex = getColorHex(taxonomy, color);
+        return (
+          <div
+            key={color}
+            className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span
+                className="w-5 h-5 rounded-full border border-border shrink-0"
+                style={{ backgroundColor: hex }}
+              />
+              <span className="text-sm text-foreground truncate">{color}</span>
+              <span className="text-2xs text-muted-foreground font-mono-nums shrink-0">
+                {hex}
+              </span>
+            </div>
+            {canEdit && (
+              <OptionActions
+                value={color}
+                hex={hex}
+                onRemove={() => onRemove(color)}
+                onRename={(newVal) => onRename(color, newVal)}
+                onUpdateHex={(newHex) => onUpdateHex(color, newHex)}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}

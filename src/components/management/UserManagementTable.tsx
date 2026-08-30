@@ -9,45 +9,78 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { roleLabel } from "@/context/adminData";
-import { toFa } from "@/context/carLabels";
-import { formatPrice } from "@/context/data";
-import { useListings } from "@/context/ListingsProvider";
-import type { PlatformRole, PlatformUser } from "@/types/admin";
-import { Ban, ChevronLeft, Search, X } from "lucide-react";
+import type { AdminUserRow, ProfileRole, ProfileStatus } from "@/types/admin";
+import {
+  Ban,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Search,
+  X,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import RoleBadge from "./RoleBadge";
+import Avatar from "../shared/Avatar";
 
 interface Props {
-  users: PlatformUser[];
+  users: AdminUserRow[];
+  loading?: boolean;
   emptyText?: string;
+  /** Server-side pagination */
+  total?: number;
+  page?: number;
+  pageSize?: number;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (size: number) => void;
 }
 
-type RoleFilter = "all" | PlatformRole;
-type StatusFilter = "all" | "active" | "suspended";
+type RoleFilter = "all" | ProfileRole;
+type StatusFilter = "all" | ProfileStatus;
 
 const roleFilters: { value: RoleFilter; label: string }[] = [
   { value: "all", label: "همه نقش‌ها" },
-  { value: "buyer", label: roleLabel.buyer },
-  { value: "seller", label: roleLabel.seller },
-  { value: "confirmed_seller", label: roleLabel.confirmed_seller },
+  { value: "USER", label: roleLabel.USER },
+  { value: "ADMIN", label: roleLabel.ADMIN },
+  { value: "OWNER", label: roleLabel.OWNER },
 ];
 
 const statusFilters: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "همه" },
-  { value: "active", label: "فعال" },
-  { value: "suspended", label: "معلق" },
+  { value: "ACTIVE", label: "فعال" },
+  { value: "SUSPENDED", label: "معلق" },
 ];
+
+function initials(name: string) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0] ?? "")
+    .join("");
+}
 
 export default function UserManagementTable({
   users,
+  loading = false,
   emptyText = "کاربری یافت نشد.",
+  total,
+  page = 1,
+  pageSize = 20,
+  onPageChange,
+  onPageSizeChange,
 }: Props) {
   const router = useRouter();
-  const { listingsByOwner } = useListings();
   const [query, setQuery] = useState("");
   const [role, setRole] = useState<RoleFilter>("all");
   const [status, setStatus] = useState<StatusFilter>("all");
+
+  const faNum = (n: number) => n.toLocaleString("fa-IR");
+
+  const totalPages =
+    total != null ? Math.max(1, Math.ceil(total / pageSize)) : null;
+  const hasPagination = total != null && onPageChange != null;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -56,9 +89,9 @@ export default function UserManagementTable({
       if (status !== "all" && u.status !== status) return false;
       if (!q) return true;
       return (
-        u.name.toLowerCase().includes(q) ||
+        u.full_name.toLowerCase().includes(q) ||
         u.email.toLowerCase().includes(q) ||
-        u.city.toLowerCase().includes(q)
+        (u.city ?? "").toLowerCase().includes(q)
       );
     });
   }, [users, query, role, status]);
@@ -125,7 +158,11 @@ export default function UserManagementTable({
           {filtered.length.toLocaleString("fa-IR")} کاربر
         </div>
 
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className="py-14 text-center text-sm text-muted-foreground">
+            در حال بارگذاری…
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="py-14 text-center text-sm text-muted-foreground">
             {emptyText}
           </div>
@@ -139,6 +176,9 @@ export default function UserManagementTable({
                 <TableHead className="hidden md:table-cell text-right text-2xs font-700 text-muted-foreground">
                   نقش
                 </TableHead>
+                <TableHead className="hidden md:table-cell text-right text-2xs font-700 text-muted-foreground">
+                  شهر
+                </TableHead>
                 <TableHead className="hidden md:table-cell text-center text-2xs font-700 text-muted-foreground">
                   آگهی
                 </TableHead>
@@ -147,6 +187,9 @@ export default function UserManagementTable({
                 </TableHead>
                 <TableHead className="hidden md:table-cell text-right text-2xs font-700 text-muted-foreground">
                   حجم فروش
+                </TableHead>
+                <TableHead className="hidden md:table-cell text-right text-2xs font-700 text-muted-foreground">
+                  وضعیت
                 </TableHead>
                 <TableHead className="w-10" />
               </TableRow>
@@ -163,15 +206,17 @@ export default function UserManagementTable({
                   {/* User */}
                   <TableCell>
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-sm font-700 text-foreground shrink-0">
-                        {user.avatar}
-                      </div>
+                      <Avatar
+                        src={user.avatar_path}
+                        name={user.full_name}
+                        size="w-10 h-10"
+                      />
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
                           <span className="text-sm font-700 text-foreground truncate">
-                            {user.name}
+                            {user.full_name}
                           </span>
-                          {user.status === "suspended" && (
+                          {user.status === "SUSPENDED" && (
                             <Ban size={11} className="text-danger shrink-0" />
                           )}
                         </div>
@@ -190,21 +235,37 @@ export default function UserManagementTable({
                     <RoleBadge role={user.role} />
                   </TableCell>
 
-                  {/* Posts */}
-                  <TableCell className="hidden md:table-cell text-center text-sm font-700 text-foreground">
-                    {toFa(listingsByOwner(user.id).length)}
+                  {/* City */}
+                  <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
+                    {user.city ?? "—"}
                   </TableCell>
 
-                  {/* Requests */}
-                  <TableCell className="hidden md:table-cell text-center text-sm font-700 text-foreground">
-                    {toFa(user.analytics.requests)}
+                  {/* Posts — placeholder until backend endpoint is ready */}
+                  <TableCell className="hidden md:table-cell text-center text-sm text-muted-foreground">
+                    —
                   </TableCell>
 
-                  {/* Sales */}
-                  <TableCell className="hidden md:table-cell text-price text-xs text-foreground">
-                    {user.analytics.salesVolume > 0
-                      ? formatPrice(user.analytics.salesVolume)
-                      : "—"}
+                  {/* Requests — placeholder until backend endpoint is ready */}
+                  <TableCell className="hidden md:table-cell text-center text-sm text-muted-foreground">
+                    —
+                  </TableCell>
+
+                  {/* Sales volume — placeholder until backend endpoint is ready */}
+                  <TableCell className="hidden md:table-cell text-center text-sm text-muted-foreground">
+                    —
+                  </TableCell>
+
+                  {/* Status */}
+                  <TableCell className="hidden md:table-cell">
+                    <span
+                      className={
+                        user.status === "ACTIVE"
+                          ? "status-active"
+                          : "status-pending"
+                      }
+                    >
+                      {user.status === "ACTIVE" ? "فعال" : "معلق"}
+                    </span>
                   </TableCell>
 
                   {/* Manage chevron */}
@@ -220,6 +281,75 @@ export default function UserManagementTable({
           </Table>
         )}
       </div>
+
+      {/* Pagination */}
+      {hasPagination && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-border">
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground">
+              {faNum(total!)} کاربر
+            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-2xs text-muted-foreground">
+                تعداد در صفحه
+              </span>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  const newSize = Number(e.target.value);
+                  onPageSizeChange?.(newSize);
+                }}
+                className="h-7 rounded-lg border border-border bg-card px-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
+              >
+                {[10, 20, 50, 100].map((size) => (
+                  <option key={size} value={size}>
+                    {faNum(size)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">
+              صفحه {faNum(page)} از {faNum(totalPages!)}
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => onPageChange!(1)}
+                disabled={page <= 1}
+                className="h-8 w-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                aria-label="صفحه اول"
+              >
+                <ChevronsRight size={15} />
+              </button>
+              <button
+                onClick={() => onPageChange!(page - 1)}
+                disabled={page <= 1}
+                className="h-8 w-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                aria-label="صفحه قبلی"
+              >
+                <ChevronRight size={15} />
+              </button>
+              <button
+                onClick={() => onPageChange!(page + 1)}
+                disabled={page >= totalPages!}
+                className="h-8 w-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                aria-label="صفحه بعدی"
+              >
+                <ChevronLeft size={15} />
+              </button>
+              <button
+                onClick={() => onPageChange!(totalPages!)}
+                disabled={page >= totalPages!}
+                className="h-8 w-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                aria-label="صفحه آخر"
+              >
+                <ChevronsLeft size={15} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -24,12 +24,11 @@ import {
   brandModelLabel,
   cityLabel,
   colorLabel,
-  sellerLabel,
   toFa,
 } from "@/context/carLabels";
-import { listings } from "@/context/data";
 import { listingColumns } from "@/context/listingTable";
 import { Listing } from "@/types/dataTypes";
+import { useSellers } from "@/hooks/useSellers";
 import {
   flexRender,
   getCoreRowModel,
@@ -44,6 +43,8 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  HandCoins,
+  ShoppingCart,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -56,8 +57,12 @@ const dateFormatter = new Intl.DateTimeFormat("fa-IR", {
   month: "numeric",
   day: "numeric",
 });
-const formatUploadDate = (iso: string): string =>
-  dateFormatter.format(new Date(iso));
+// listedDate may already be a Persian display string (Supabase rows) — only
+// re-format values that actually parse as dates.
+const formatUploadDate = (iso: string): string => {
+  const date = new Date(iso);
+  return isNaN(date.getTime()) ? iso : dateFormatter.format(date);
+};
 
 const statusFa: Record<
   Listing["status"],
@@ -108,26 +113,32 @@ function brandLogoStyle(brand: string): {
 }
 
 interface ListingTableProps {
-  data?: Listing[];
+  data: Listing[];
 }
 
-export default function ListingTable({ data = listings }: ListingTableProps) {
+export default function ListingTable({ data }: ListingTableProps) {
   const [sorting, setSorting] = useState<SortingState>([
     { id: "listedDate", desc: true },
   ]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
+  const { sellers } = useSellers();
+  const sellersMap = new Map(sellers.map((s) => [s.id, s]));
+
+  const columns = listingColumns(sellersMap);
+
   const navigate = useRouter();
 
   const table = useReactTable({
     data,
-    columns: listingColumns,
+    columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     onSortingChange: setSorting,
     onRowSelectionChange: setRowSelection,
     getPaginationRowModel: getPaginationRowModel(),
     enableRowSelection: true,
+    initialState: { pagination: { pageSize: 50 } },
     state: { sorting, rowSelection },
   });
 
@@ -145,10 +156,16 @@ export default function ListingTable({ data = listings }: ListingTableProps) {
           table.getRowModel().rows.map((row) => {
             const listing = row.original;
             const status = statusFa[listing.status];
+            const seller = sellersMap.get(listing.seller_id ?? "");
+            const isBuy = listing.listingType === "BUY";
             return (
               <div
                 key={row.id}
-                className="group cursor-pointer rounded-2xl border border-border/70 bg-gradient-to-br from-background via-background to-muted/30 p-4 shadow-sm transition hover:border-primary/30 hover:shadow-md"
+                className={`group cursor-pointer rounded-2xl border p-4 shadow-sm transition hover:border-primary/30 hover:shadow-md ${
+                  isBuy
+                    ? "bg-accent/5 border-accent/20"
+                    : "bg-linear-to-br from-background via-background to-muted/30 border-border/70"
+                }`}
                 onClick={() => navigate.push(`/market/listings/${listing.id}`)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
@@ -195,11 +212,34 @@ export default function ListingTable({ data = listings }: ListingTableProps) {
                       <div className="text-sm font-semibold tabular-nums">
                         {formatPriceFa(listing.price)}
                       </div>
+                      <div
+                        className={`text-2xs font-600 ${listing.priceVsMarket >= 0 ? "text-danger" : "text-success"}`}
+                      >
+                        {listing.priceVsMarket > 0 ? "+" : ""}
+                        {listing.priceVsMarket}٪{" "}
+                        {listing.priceVsMarket >= 0 ? "بالاتر" : "پایین‌تر"} از
+                        میانگین
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Badge
+                    variant="outline"
+                    className={`text-xs font-medium inline-flex items-center gap-1 ${
+                      isBuy
+                        ? "bg-accent/10 text-accent border-accent/25"
+                        : "bg-primary/10 text-primary border-primary/25"
+                    }`}
+                  >
+                    {isBuy ? (
+                      <HandCoins size={11} />
+                    ) : (
+                      <ShoppingCart size={11} />
+                    )}
+                    {isBuy ? "آگهی خرید" : "آگهی فروش"}
+                  </Badge>
                   {status && (
                     <Badge
                       variant="outline"
@@ -208,16 +248,13 @@ export default function ListingTable({ data = listings }: ListingTableProps) {
                       {status.label}
                     </Badge>
                   )}
-                  <span className="text-xs text-muted-foreground">
-                    تاریخ ثبت {formatUploadDate(listing.listedDate)}
-                  </span>
                 </div>
 
                 <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
                   <div className="flex flex-col gap-0.5">
                     <span className="text-muted-foreground">سال ساخت</span>
-                    <span className="font-medium tabular-nums">
-                      {toFa(listing.year)}
+                    <span className="font-medium font-mono">
+                      {listing.year} / {toFa(listing.year - 621)}
                     </span>
                   </div>
                   <div className="flex flex-col gap-0.5">
@@ -241,16 +278,21 @@ export default function ListingTable({ data = listings }: ListingTableProps) {
                   <div className="flex flex-col gap-0.5">
                     <span className="text-muted-foreground">فروشنده</span>
                     <span className="flex items-center gap-1 font-medium">
-                      {sellerLabel(listing.sellerName)}
-                      {listing.sellerVerified && <VerifiedBadge size="sm" />}
+                      {seller?.name ?? listing.sellerName}
+                      {(seller?.verified ?? listing.sellerVerified) && (
+                        <VerifiedBadge size="sm" />
+                      )}
                     </span>
                   </div>
-                  <div className="flex flex-col gap-0.5">
+                  <span className="text-xs text-muted-foreground">
+                    تاریخ ثبت {formatUploadDate(listing.listedDate)}
+                  </span>
+                  {/* <div className="flex flex-col gap-0.5">
                     <span className="text-muted-foreground">شناسه آگهی</span>
                     <span className="font-medium tabular-nums">
                       {toFa(listing.id)}
                     </span>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             );
@@ -292,7 +334,9 @@ export default function ListingTable({ data = listings }: ListingTableProps) {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() ? "selected" : undefined}
-                  className="cursor-pointer border-b border-border/50 transition-colors hover:bg-accent/10 data-[state=selected]:bg-accent/15"
+                  className={`cursor-pointer border-b border-border/50 transition-colors hover:bg-accent/10 data-[state=selected]:bg-accent/15 ${
+                    row.original.listingType === "BUY" ? "bg-accent/5" : ""
+                  }`}
                   onClick={() =>
                     navigate.push(`/market/listings/${row.original.id}`)
                   }
@@ -313,7 +357,7 @@ export default function ListingTable({ data = listings }: ListingTableProps) {
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={listingColumns.length}
+                  colSpan={columns.length}
                   className="h-24 text-center text-muted-foreground vazir-matn"
                 >
                   داده‌ای یافت نشد

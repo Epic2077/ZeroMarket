@@ -1,14 +1,8 @@
-import {
-  MessageSquare,
-  Star,
-  ListChecks,
-  Clock,
-  ExternalLink,
-} from "lucide-react";
+import { Star, ListChecks, Clock, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import VerifiedBadge from "../shared/VerifiedBadeg";
-import { sellerSlug } from "@/context/sellers";
 import { Listing } from "@/types/dataTypes";
+import Avatar from "../shared/Avatar";
 
 interface Props {
   listing: Listing;
@@ -17,13 +11,21 @@ interface Props {
 export default function ListingDetailSeller({ listing }: Props) {
   return (
     <div className="card-elevated p-5">
-      <p className="section-label mb-3">پروفایل فروشنده</p>
+      {listing.listingType === "BUY" ? (
+        <p className="section-label mb-3">پروفایل خریدار</p>
+      ) : (
+        <p className="section-label mb-3">پروفایل فروشنده</p>
+      )}
 
       {/* Avatar + name */}
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-800 text-sm shrink-0 bg-primary">
-          {listing.sellerAvatar}
-        </div>
+        <Avatar
+          src={listing.sellerAvatar}
+          name={listing.sellerName}
+          size="w-12 h-12"
+        />
+        {/* <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-800 text-sm shrink-0 bg-primary">
+        </div> */}
         <div>
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-700 text-foreground">
@@ -74,9 +76,15 @@ export default function ListingDetailSeller({ listing }: Props) {
         <div className="flex items-center gap-2 p-2.5 bg-success/8 border border-success/20 rounded-xl mb-4">
           <VerifiedBadge size="sm" />
           <div>
-            <div className="text-xs font-700 text-success">
-              فروشنده تأییدشده
-            </div>
+            {listing.listingType === "BUY" ? (
+              <div className="text-xs font-700 text-success">
+                خریدار تأییدشده
+              </div>
+            ) : (
+              <div className="text-xs font-700 text-success">
+                فروشنده تأییدشده
+              </div>
+            )}
             <div className="text-2xs text-muted-foreground">
               هویت تأیید شده · آگهی‌ها توسط زیرومارکت بررسی شده
             </div>
@@ -86,12 +94,12 @@ export default function ListingDetailSeller({ listing }: Props) {
 
       {/* Actions */}
       <div className="flex gap-2">
-        <button className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-600 text-muted-foreground border border-border rounded-lg hover:bg-muted transition-colors duration-150">
+        {/* <button className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-600 text-muted-foreground border border-border rounded-lg hover:bg-muted transition-colors duration-150">
           <MessageSquare size={13} />
           پیام
-        </button>
+        </button> */}
         <Link
-          href={`/sellers/${sellerSlug(listing.sellerName)}`}
+          href={`/sellers/${listing.seller_id ?? listing.ownerId ?? ""}`}
           className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-600 text-primary bg-primary/8 border border-primary/20 rounded-lg hover:bg-primary/15 transition-colors duration-150"
         >
           <ExternalLink size={13} />

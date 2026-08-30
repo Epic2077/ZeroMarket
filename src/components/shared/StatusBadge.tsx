@@ -8,6 +8,8 @@ type StatusType =
   | "reserved"
   | "approved"
   | "declined"
+  | "completed"
+  | "closed"
   | "draft";
 
 interface StatusBadgeProps {
@@ -41,6 +43,16 @@ const statusConfig: Record<
     dot: "bg-success",
   },
   declined: { label: "رد شده", className: "status-sold", dot: "bg-danger" },
+  completed: {
+    label: "تکمیل شده",
+    className: "status-completed",
+    dot: "bg-muted-foreground",
+  },
+  closed: {
+    label: "بسته شد",
+    className: "status-completed",
+    dot: "bg-muted-foreground",
+  },
   draft: {
     label: "پیش‌نویس",
     className: "status-pending",

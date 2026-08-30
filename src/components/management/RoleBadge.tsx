@@ -1,26 +1,23 @@
 import { roleLabel } from "@/context/adminData";
-import type { PlatformRole } from "@/types/admin";
-import { BadgeCheck, ShoppingBag, Store } from "lucide-react";
+import type { ProfileRole } from "@/types/admin";
+import { BadgeCheck, ShieldHalf, User } from "lucide-react";
 
-const config: Record<
-  PlatformRole,
-  { className: string; icon: typeof Store }
-> = {
-  buyer: {
+const config: Record<ProfileRole, { className: string; icon: typeof User }> = {
+  USER: {
     className: "bg-muted text-muted-foreground border-border",
-    icon: ShoppingBag,
+    icon: User,
   },
-  seller: {
+  ADMIN: {
     className: "bg-primary/10 text-primary border-primary/20",
-    icon: Store,
+    icon: ShieldHalf,
   },
-  confirmed_seller: {
+  OWNER: {
     className: "bg-success/10 text-success border-success/20",
     icon: BadgeCheck,
   },
 };
 
-export default function RoleBadge({ role }: { role: PlatformRole }) {
+export default function RoleBadge({ role }: { role: ProfileRole }) {
   const { className, icon: Icon } = config[role];
   return (
     <span

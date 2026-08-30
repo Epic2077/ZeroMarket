@@ -1,12 +1,27 @@
 import { Shield, TrendingUp, Zap } from "lucide-react";
+import { fetchVerifiedSellersCount } from "@/lib/supabase/sellers";
+import { fetchActiveListingsCount } from "@/lib/supabase/listings";
+import { toFa } from "@/context/carLabels";
 
-const stats = [
-  { icon: <Shield size={14} />, label: "۱٬۲۴۰+ فروشنده تأییدشده" },
-  { icon: <TrendingUp size={14} />, label: "تحلیل قیمت لحظه‌ای" },
-  { icon: <Zap size={14} />, label: "۸٬۵۰۰+ آگهی فعال" },
-];
+export default async function HeroLabels() {
+  let verifiedSellers = 0;
+  let activeListings = 0;
 
-export default function HeroLabels() {
+  try {
+    [verifiedSellers, activeListings] = await Promise.all([
+      fetchVerifiedSellersCount(),
+      fetchActiveListingsCount(),
+    ]);
+  } catch {
+    // Use fallback values if DB is unavailable
+  }
+
+  const stats = [
+    { icon: <Shield size={14} />, label: `${toFa(verifiedSellers)}+ فروشنده تأییدشده` },
+    { icon: <TrendingUp size={14} />, label: "تحلیل قیمت لحظه‌ای" },
+    { icon: <Zap size={14} />, label: `${toFa(activeListings)}+ آگهی فعال` },
+  ];
+
   return (
     <div className="flex flex-wrap gap-3 mt-6">
       {stats.map((tag) => (

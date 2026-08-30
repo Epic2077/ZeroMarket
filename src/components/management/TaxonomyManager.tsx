@@ -1,306 +1,221 @@
 "use client";
 
-import { useSession } from "@/context/SessionProvider";
-import { useTaxonomy } from "@/context/TaxonomyProvider";
-import {
-  taxonomyCategories,
-  type TaxonomyCategory,
-} from "@/context/taxonomy";
-import { Check, CheckCheck, Pencil, Plus, Tags, Trash2, X } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
+import {
+  TaxonomyCategory,
+  taxonomyCategoryMeta,
+} from "@/lib/supabase/taxonomy";
+import { useTaxonomyManager } from "@/hooks/useTaxonomyManager";
+import { CategorySidebar } from "./CategorySidebar";
+import { AddOptionForm } from "./AddOptionForm";
+import { ColorsGrid } from "./ColorsGrid";
+import { OptionsGrid } from "./OptionsGrid";
+import { BrandAccordion } from "./BrandAccordion";
+import CarSpecsManager from "./CarSpecsManager";
 
-function OptionRow({
-  value,
-  category,
-  canEdit,
-  onRemove,
-  onRename,
-}: {
-  value: string;
-  category: TaxonomyCategory;
-  canEdit: boolean;
-  onRemove: (value: string) => void;
-  onRename: (oldValue: string, newValue: string) => boolean;
-}) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(value);
-
-  const save = () => {
-    if (!draft.trim()) return;
-    onRename(value, draft);
-    setEditing(false);
-    toast.success("گزینه ویرایش شد");
-  };
-
-  return (
-    <div className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2">
-      {editing ? (
-        <input
-          autoFocus
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") save();
-            if (e.key === "Escape") {
-              setDraft(value);
-              setEditing(false);
-            }
-          }}
-          className="flex-1 bg-transparent text-sm focus:outline-none"
-        />
-      ) : (
-        <span className="text-sm text-foreground">{value}</span>
-      )}
-
-      <div className="flex items-center gap-1 shrink-0">
-        {canEdit && editing ? (
-          <>
-            <button
-              onClick={save}
-              aria-label="ذخیره"
-              className="flex items-center justify-center w-7 h-7 rounded-lg text-success hover:bg-success/10 transition-colors duration-150"
-            >
-              <Check size={14} />
-            </button>
-            <button
-              onClick={() => {
-                setDraft(value);
-                setEditing(false);
-              }}
-              aria-label="انصراف"
-              className="flex items-center justify-center w-7 h-7 rounded-lg text-muted-foreground hover:bg-muted transition-colors duration-150"
-            >
-              <X size={14} />
-            </button>
-          </>
-        ) : canEdit ? (
-          <>
-            <button
-              onClick={() => setEditing(true)}
-              aria-label="ویرایش"
-              className="flex items-center justify-center w-7 h-7 rounded-lg text-muted-foreground hover:text-primary hover:bg-muted transition-colors duration-150"
-            >
-              <Pencil size={13} />
-            </button>
-            <button
-              onClick={() => onRemove(value)}
-              aria-label="حذف"
-              className="flex items-center justify-center w-7 h-7 rounded-lg text-muted-foreground hover:text-danger hover:bg-danger/10 transition-colors duration-150"
-            >
-              <Trash2 size={13} />
-            </button>
-          </>
-        ) : (
-          <span className="text-2xs text-muted-foreground">در انتظار تایید مالک</span>
-        )}
-      </div>
-    </div>
-  );
-}
+type Tab = "options" | "specs";
 
 export default function TaxonomyManager() {
   const {
     taxonomy,
-    addOption,
-    removeOption,
-    renameOption,
-    pendingChanges,
-    submitChange,
-    approveChange,
-    rejectChange,
-  } = useTaxonomy();
-  const { role } = useSession();
-  const [active, setActive] = useState<TaxonomyCategory>("brands");
-  const [draft, setDraft] = useState("");
+    values,
+    loading,
+    error,
+    refresh,
+    active,
+    setActive,
+    draft,
+    setDraft,
+    saving,
+    expandedBrands,
+    modelsByBrand,
+    modelsLoading,
+    modelDrafts,
+    setModelDrafts,
+    canEdit,
+    isOwner,
+    isAdmin,
+    handleAdd,
+    handleRemove,
+    handleRename,
+    handleUpdateHex,
+    handleAddModel,
+    toggleBrand,
+  } = useTaxonomyManager();
 
-  const meta = taxonomyCategories.find((c) => c.id === active)!;
-  const options = taxonomy[active];
-  const isOwner = role === "owner";
+  const [tab, setTab] = useState<Tab>("options");
 
-  const handleAdd = () => {
-    const value = draft.trim();
-    if (!value) return;
+  const meta = taxonomyCategoryMeta.find((c) => c.id === active)!;
+  const options = values(active);
+  const isBrandView = active === "BRAND";
+  const isColorView = active === "COLOR";
 
-    if (isOwner) {
-      if (addOption(active, value)) {
-        toast.success(`«${value}» افزوده شد`);
-        setDraft("");
-      } else {
-        toast.error("این گزینه از قبل وجود دارد");
-      }
-      return;
-    }
-
-    submitChange({
-      category: active,
-      action: "add",
-      value,
-      requestedBy: "admin",
-    });
-    toast.success("درخواست افزودن برای تایید مالک ثبت شد");
+  const handleCategorySelect = (cat: TaxonomyCategory) => {
+    setActive(cat);
     setDraft("");
   };
 
-  const handleRemove = (value: string) => {
-    if (isOwner) {
-      removeOption(active, value);
-      toast.success("گزینه حذف شد");
-      return;
-    }
+  const getCount = (cat: TaxonomyCategory) => values(cat).length;
 
-    submitChange({
-      category: active,
-      action: "remove",
-      value,
-      requestedBy: "admin",
-    });
-    toast.success("درخواست حذف برای تایید مالک ثبت شد");
+  const handleModelDraftChange = (brand: string, value: string) => {
+    setModelDrafts((prev) => ({ ...prev, [brand]: value }));
   };
 
-  const handleRename = (oldValue: string, newValue: string) => {
-    if (isOwner) {
-      return renameOption(active, oldValue, newValue);
-    }
+  // ── Tab bar shared by both views ───────────────────────────────────
+  const tabBar = (
+    <div className="flex items-center gap-1 mb-5 p-1 rounded-xl bg-muted w-fit">
+      <button
+        onClick={() => setTab("options")}
+        className={`px-4 py-1.5 rounded-lg text-sm font-600 transition-colors duration-150 ${
+          tab === "options"
+            ? "bg-card text-foreground shadow-sm"
+            : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        گزینه‌ها
+      </button>
+      <button
+        onClick={() => setTab("specs")}
+        className={`px-4 py-1.5 rounded-lg text-sm font-600 transition-colors duration-150 ${
+          tab === "specs"
+            ? "bg-card text-foreground shadow-sm"
+            : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        مشخصات فنی
+      </button>
+    </div>
+  );
 
-    submitChange({
-      category: active,
-      action: "rename",
-      value: oldValue,
-      newValue,
-      requestedBy: "admin",
-    });
-    toast.success("درخواست تغییر نام برای تایید مالک ثبت شد");
-    return true;
-  };
+  // ── Specs tab — standalone, no sidebar ─────────────────────────────
+  if (tab === "specs") {
+    return (
+      <div>
+        {tabBar}
+        <CarSpecsManager />
+      </div>
+    );
+  }
 
-  return (
-    <div className="grid grid-cols-1 gap-5 lg:grid-cols-4">
-      {isOwner && pendingChanges.length > 0 && (
-        <div className="card-elevated p-5 lg:col-span-4">
-          <div className="mb-4 flex items-center gap-2 text-sm font-700 text-foreground">
-            <CheckCheck size={16} className="text-primary" />
-            تغییرات در انتظار تایید مالک
-          </div>
-          <div className="space-y-3">
-            {pendingChanges.map((request) => (
-              <div
-                key={request.id}
-                className="flex flex-col gap-3 rounded-xl border border-border p-4 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div>
-                  <div className="text-sm font-700 text-foreground">
-                    {request.action === "add" && `افزودن «${request.value}»`}
-                    {request.action === "remove" && `حذف «${request.value}»`}
-                    {request.action === "rename" &&
-                      `تغییر «${request.value}» به «${request.newValue ?? ""}»`}
-                  </div>
-                  <div className="mt-1 text-xs text-muted-foreground">
-                    دسته: {
-                      taxonomyCategories.find((cat) => cat.id === request.category)?.label
-                    }
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => {
-                      const ok = approveChange(request.id);
-                      toast[ok ? "success" : "error"](
-                        ok ? "تغییر تایید و اعمال شد" : "اعمال تغییر ناموفق بود",
-                      );
-                    }}
-                    className="btn-primary text-sm"
-                  >
-                    تایید
-                  </button>
-                  <button
-                    onClick={() => {
-                      rejectChange(request.id);
-                      toast.success("تغییر رد شد");
-                    }}
-                    className="btn-secondary text-sm"
-                  >
-                    رد
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="card-elevated h-fit p-3">
-        <div className="flex items-center gap-1.5 px-2 py-1.5 mb-1 text-xs font-700 text-muted-foreground">
-          <Tags size={14} />
-          دسته‌بندی گزینه‌ها
-        </div>
-        <div className="flex flex-row gap-1 overflow-x-auto lg:flex-col">
-          {taxonomyCategories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => {
-                setActive(cat.id);
-                setDraft("");
-              }}
-              className={`whitespace-nowrap rounded-lg px-3 py-2 text-right text-sm font-600 transition-colors duration-150 ${
-                active === cat.id
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
-            >
-              {cat.label}
-              <span className="mr-1 text-2xs text-muted-foreground">
-                ({taxonomy[cat.id].length.toLocaleString("fa-IR")})
-              </span>
-            </button>
-          ))}
+  // ── Options tab — loading / error / content ────────────────────────
+  if (loading) {
+    return (
+      <div>
+        {tabBar}
+        <div className="card-elevated p-8 lg:col-span-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+          <Loader2 size={18} className="animate-spin text-primary" />
+          در حال بارگذاری گزینه‌ها…
         </div>
       </div>
+    );
+  }
 
-      <div className="card-elevated p-5 lg:col-span-3">
-        <h3 className="mb-1 text-sm font-700 text-foreground">{meta.label}</h3>
-        <p className="mb-4 text-xs text-muted-foreground">
-          {isOwner
-            ? `گزینه‌های «${meta.label}» در فرم ثبت آگهی نمایش داده می‌شوند.`
-            : `تغییرات «${meta.label}» پس از تایید مالک اعمال می‌شوند.`}
-        </p>
-
-        <div className="mb-4 flex items-center gap-2">
-          <input
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-            placeholder={`افزودن ${meta.noun} جدید…`}
-            className="flex-1 h-9 rounded-lg border border-border bg-card px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-          />
-          <button
-            onClick={handleAdd}
-            disabled={!draft.trim()}
-            className="btn-primary text-sm shrink-0 disabled:pointer-events-none disabled:opacity-40"
-          >
-            <Plus size={14} />
-            افزودن
+  if (error) {
+    return (
+      <div>
+        {tabBar}
+        <div className="card-elevated p-5 lg:col-span-4 text-center">
+          <p className="text-sm text-danger mb-3">خطا: {error}</p>
+          <button onClick={refresh} className="btn-secondary text-sm">
+            تلاش مجدد
           </button>
         </div>
+      </div>
+    );
+  }
 
-        {options.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-border py-8 text-center text-xs text-muted-foreground">
-            گزینه‌ای ثبت نشده است.
+  return (
+    <div>
+      {tabBar}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-4">
+        <CategorySidebar
+          active={active}
+          onSelect={handleCategorySelect}
+          getCount={getCount}
+        />
+
+        <div className="card-elevated p-5 lg:col-span-3">
+          <h3 className="mb-1 text-sm font-700 text-foreground">
+            {meta.label}
+          </h3>
+          <p className="mb-4 text-xs text-muted-foreground">
+            {isOwner
+              ? `گزینه‌های «${meta.label}» مستقیماً ویرایش می‌شوند.`
+              : isAdmin
+                ? `تغییرات «${meta.label}» برای تایید مالک ارسال می‌شود.`
+                : `شما دسترسی ویرایش گزینه‌ها را ندارید.`}
           </p>
-        ) : (
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {options.map((value) => (
-              <OptionRow
-                key={value}
-                value={value}
-                category={active}
-                canEdit={isOwner}
-                onRemove={handleRemove}
-                onRename={handleRename}
-              />
-            ))}
-          </div>
-        )}
+
+          <AddOptionForm
+            value={draft}
+            onChange={setDraft}
+            onSubmit={handleAdd}
+            placeholder={`افزودن ${meta.noun} جدید…`}
+            disabled={saving}
+          >
+            <input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+              placeholder={`افزودن ${meta.noun} جدید…`}
+              className="flex-1 h-9 rounded-lg border border-border bg-card px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              disabled={saving}
+            />
+            <button
+              onClick={handleAdd}
+              disabled={!draft.trim() || saving}
+              className="btn-primary text-sm shrink-0 disabled:pointer-events-none disabled:opacity-40"
+            >
+              <Plus size={14} />
+              افزودن
+            </button>
+          </AddOptionForm>
+
+          {isBrandView ? (
+            <BrandAccordion
+              brands={options}
+              modelsByBrand={modelsByBrand}
+              modelsLoading={modelsLoading}
+              expandedBrands={expandedBrands}
+              onToggleBrand={toggleBrand}
+              modelDrafts={modelDrafts}
+              onModelDraftChange={handleModelDraftChange}
+              onAddModel={handleAddModel}
+              canEdit={canEdit}
+              onRemoveBrand={handleRemove}
+              onRenameBrand={handleRename}
+              onRemoveModel={(model) => handleRemove(model, "MODEL")}
+              onRenameModel={(oldVal, newVal) =>
+                handleRename(oldVal, newVal, "MODEL")
+              }
+            />
+          ) : (
+            <>
+              {options.length === 0 ? (
+                <p className="rounded-lg border border-dashed border-border py-8 text-center text-xs text-muted-foreground">
+                  گزینه‌ای ثبت نشده است.
+                </p>
+              ) : isColorView ? (
+                <ColorsGrid
+                  colors={options}
+                  taxonomy={taxonomy}
+                  canEdit={canEdit}
+                  onRemove={handleRemove}
+                  onRename={handleRename}
+                  onUpdateHex={handleUpdateHex}
+                />
+              ) : (
+                <OptionsGrid
+                  options={options}
+                  canEdit={canEdit}
+                  onRemove={handleRemove}
+                  onRename={handleRename}
+                />
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -1,10 +1,14 @@
 import type { Listing } from "@/types/dataTypes";
 
-/* --------------------------- Persian digit helper ------------------------ */
+/* --------------------------- Persian digit helpers ----------------------- */
 
 // Convert latin digits to Persian digits (no thousands separator added).
 export const toFa = (value: string | number): string =>
   String(value).replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[Number(d)]);
+
+// Convert Persian/Arabic-Indic digits to latin digits.
+export const toEn = (value: string | number): string =>
+  String(value).replace(/[۰-۹]/g, (d) => "۰۱۲۳۴۵۶۷۸۹".indexOf(d).toString());
 
 /* ------------------------------ Label maps ------------------------------- */
 

@@ -1,15 +1,16 @@
 "use client";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
 import type { Listing } from "@/types/dataTypes";
+import { useUserInfo } from "@/context/UserInfoProvider";
 import AdminManageButton from "../management/AdminManageButton";
 import EditProductButton from "../management/EditProductButton";
-import { sellerSlug } from "@/context/sellers";
-import { useListings } from "@/context/ListingsProvider";
+import { sellerSlug } from "@/lib/utils";
 import BrandIcon from "../shared/BrandIcon";
 import StatusBadge from "../shared/StatusBadge";
 import VerifiedBadge from "../shared/VerifiedBadeg";
+import SaveListingButton from "../shared/SaveListingButton";
 
 import ListingDetailSpecs from "./ListingDetailSpecs";
 import ListingDetailSeller from "./ListingDetailSeller";
@@ -17,18 +18,21 @@ import ListingDetailPricePanel from "./ListingDetailPricePanel";
 import ListingDetailSimilar from "./ListingDetailSimilar";
 import ListingDetailRelated from "./ListingDetailRelated";
 import ListingAuctionModal from "./ListingAuctionModal";
+import ReportListingModal from "./ReportListingModal";
 
 import {
   ChevronRight,
   ArrowLeft,
   Share2,
-  Heart,
   Flag,
   Clock,
   MapPin,
   Zap,
   ShieldCheck,
   User,
+  NotebookPen,
+  HandCoins,
+  ShoppingCart,
 } from "lucide-react";
 
 interface Props {
@@ -42,15 +46,39 @@ type RequestStatus =
   | "declined"
   | "negotiable";
 
-export default function ListingDetailContent({ listing: initialListing }: Props) {
+export default function ListingDetailContent({ listing }: Props) {
+  const { user } = useUserInfo();
+  const isOwner = Boolean(user?.id && user.id === listing.seller_id);
   const [auctionOpen, setAuctionOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const [requestStatus, setRequestStatus] = useState<RequestStatus>("none");
-  const [saved, setSaved] = useState(false);
 
-  // Prefer the live (possibly edited) listing from the provider; fall back to
-  // the server-rendered prop on first paint.
-  const { getListing } = useListings();
-  const listing = getListing(initialListing.id) ?? initialListing;
+  // ── Private note (visible to admin, owner, and the seller) ──────────
+  // Auth is enforced server-side by the API route; the client always
+  // attempts the fetch and shows the note only when the API returns one.
+  const [privateNote, setPrivateNote] = useState<string | null>(null);
+  const [noteLoading, setNoteLoading] = useState(false);
+
+  const loadPrivateNote = useCallback(async () => {
+    if (!listing.id) return;
+    setNoteLoading(true);
+    try {
+      const res = await fetch(`/api/listings/${listing.id}/private-note`);
+      if (res.ok) {
+        const body = await res.json();
+        setPrivateNote(body.note ?? null);
+      } else {
+        setPrivateNote(null);
+      }
+    } catch {
+      setPrivateNote(null);
+    }
+    setNoteLoading(false);
+  }, [listing.id]);
+
+  useEffect(() => {
+    void loadPrivateNote();
+  }, [loadPrivateNote]);
 
   return (
     <>
@@ -92,6 +120,20 @@ export default function ListingDetailContent({ listing: initialListing }: Props)
                   {listing.brand} {listing.model}
                 </h1>
                 <StatusBadge status={listing.status} />
+                <span
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-600 border ${
+                    listing.listingType === "BUY"
+                      ? "bg-accent/10 text-accent border-accent/25"
+                      : "bg-primary/10 text-primary border-primary/25"
+                  }`}
+                >
+                  {listing.listingType === "BUY" ? (
+                    <HandCoins size={12} />
+                  ) : (
+                    <ShoppingCart size={12} />
+                  )}
+                  {listing.listingType === "BUY" ? "آگهی خرید" : "آگهی فروش"}
+                </span>
               </div>
               <div className="text-sm text-muted-foreground mt-0.5">
                 {listing.trim} · {listing.year} · صفرکیلومتر کارخانه
@@ -118,7 +160,9 @@ export default function ListingDetailContent({ listing: initialListing }: Props)
           {/* Header actions */}
           <div className="flex items-center gap-2 shrink-0">
             <EditProductButton listing={listing} />
-            <AdminManageButton userId={`usr-${sellerSlug(listing.sellerName)}`} />
+            <AdminManageButton
+              userId={`usr-${sellerSlug(listing.sellerName)}`}
+            />
             <Link
               href="/listings-marketplace"
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-600 text-muted-foreground border border-border rounded-lg hover:bg-muted transition-colors duration-150"
@@ -126,13 +170,7 @@ export default function ListingDetailContent({ listing: initialListing }: Props)
               <ArrowLeft size={13} className="rotate-180" />
               بازگشت
             </Link>
-            <button
-              onClick={() => setSaved(!saved)}
-              className={`p-2 rounded-lg border transition-colors duration-150 ${saved ? "border-danger/30 bg-danger/8 text-danger" : "border-border text-muted-foreground hover:bg-muted"}`}
-              title={saved ? "حذف از ذخیره‌شده‌ها" : "ذخیره این آگهی"}
-            >
-              <Heart size={15} fill={saved ? "currentColor" : "none"} />
-            </button>
+            <SaveListingButton listingId={listing.id} />
             <button
               className="p-2 rounded-lg border border-border text-muted-foreground hover:bg-muted transition-colors duration-150"
               title="اشتراک‌گذاری این آگهی"
@@ -142,11 +180,30 @@ export default function ListingDetailContent({ listing: initialListing }: Props)
             <button
               className="p-2 rounded-lg border border-border text-muted-foreground hover:bg-muted hover:text-danger transition-colors duration-150"
               title="گزارش این آگهی"
+              onClick={() => setReportOpen(true)}
             >
               <Flag size={15} />
             </button>
           </div>
         </div>
+
+        {/* Listing type banner — only shown for BUY requests */}
+        {listing.listingType === "BUY" && (
+          <div className="flex items-center gap-3 mb-5 p-4 bg-accent/8 border border-accent/25 rounded-xl">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/15">
+              <HandCoins size={20} className="text-accent" />
+            </div>
+            <div>
+              <div className="text-sm font-700 text-accent">
+                آگهی درخواست خرید
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                این آگهی یک درخواست خرید است — شخص به دنبال خرید این خودرو
+                می‌باشد. قیمت نمایش‌داده‌شده، قیمت پیشنهادی خریدار است.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Trust banner */}
         <div className="flex flex-wrap items-center gap-3 mb-6 p-3 bg-success/5 border border-success/20 rounded-xl">
@@ -157,7 +214,11 @@ export default function ListingDetailContent({ listing: initialListing }: Props)
           <div className="w-px h-3 bg-border hidden sm:block" />
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <User size={14} />
-            <span>فروشنده: {listing.sellerName}</span>
+            {listing.listingType === "BUY" ? (
+              <span>خریدار: {listing.sellerName}</span>
+            ) : (
+              <span>فروشنده: {listing.sellerName}</span>
+            )}
           </div>
           <div className="w-px h-3 bg-border hidden sm:block" />
           {listing.sellerVerified && (
@@ -174,6 +235,30 @@ export default function ListingDetailContent({ listing: initialListing }: Props)
             </span>
           </div>
         </div>
+
+        {/* Private note (admin / owner / seller only — enforced server-side) */}
+        {!noteLoading && privateNote && (
+          <div className="mb-6 p-4 bg-negotiable/5 border border-negotiable/20 rounded-xl">
+            <div className="flex items-center gap-2 mb-2">
+              <NotebookPen size={14} className="text-negotiable" />
+              <span className="text-xs font-700 text-negotiable">
+                یادداشت داخلی فروشنده
+              </span>
+              <span className="text-2xs text-muted-foreground">
+                (فقط برای شما قابل مشاهده است)
+              </span>
+            </div>
+            <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+              {privateNote}
+            </p>
+          </div>
+        )}
+        {noteLoading && (
+          <div className="mb-6 p-4 bg-muted/30 border border-border rounded-xl animate-pulse">
+            <div className="h-4 bg-muted rounded w-1/3 mb-2" />
+            <div className="h-3 bg-muted rounded w-full" />
+          </div>
+        )}
 
         {/* Main 2-col layout */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -192,6 +277,7 @@ export default function ListingDetailContent({ listing: initialListing }: Props)
               listing={listing}
               onRequestAuction={() => setAuctionOpen(true)}
               requestStatus={requestStatus}
+              isOwner={isOwner}
             />
             <ListingDetailSeller listing={listing} />
           </div>
@@ -209,6 +295,13 @@ export default function ListingDetailContent({ listing: initialListing }: Props)
             setRequestStatus(s);
             setAuctionOpen(false);
           }}
+        />
+      )}
+      {/* Report modal */}
+      {reportOpen && (
+        <ReportListingModal
+          listing={listing}
+          onClose={() => setReportOpen(false)}
         />
       )}
     </>

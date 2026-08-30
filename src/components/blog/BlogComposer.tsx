@@ -9,24 +9,29 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useBlog } from "@/context/BlogProvider";
 import { toFa } from "@/context/carLabels";
 import { useSession } from "@/context/SessionProvider";
 import { requiredText } from "@/lib/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Image, Plus, Video, X } from "lucide-react";
+import { Image, Plus, Video, X, UserPlus, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { createBlogAuthor } from "@/lib/supabase/blog";
 
 const composerSchema = z.object({
   title: requiredText("عنوان نوشته الزامی است"),
   excerpt: requiredText("خلاصه نوشته الزامی است"),
   content: requiredText("متن نوشته را وارد کنید"),
   tags: requiredText("حداقل یک برچسب وارد کنید"),
+  authorId: requiredText("انتخاب نویسنده الزامی است"),
+  sourceName: z.string().optional(),
+  sourceUrl: z.string().url("لینک معتبر وارد کنید").optional().or(z.literal("")),
 });
 
 type ComposerValues = z.infer<typeof composerSchema>;
@@ -34,19 +39,22 @@ type ComposerValues = z.infer<typeof composerSchema>;
 export default function BlogComposer() {
   const router = useRouter();
   const { role } = useSession();
-  const { createPost } = useBlog();
+  const { createPost, authors } = useBlog();
   const [mediaKind, setMediaKind] = useState<"image" | "video">("image");
   const [mediaUrl, setMediaUrl] = useState("");
   const [mediaCaption, setMediaCaption] = useState("");
   const [media, setMedia] = useState<
     { id: string; kind: "image" | "video"; url: string; caption?: string }[]
   >([]);
+  const [showNewAuthor, setShowNewAuthor] = useState(false);
+  const [creatingAuthor, setCreatingAuthor] = useState(false);
 
   const canCreate = role === "owner" || role === "admin";
 
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<ComposerValues>({
     resolver: zodResolver(composerSchema),
@@ -55,34 +63,16 @@ export default function BlogComposer() {
       excerpt: "",
       content: "",
       tags: "",
+      authorId: authors[0]?.id ?? "",
     },
   });
 
-  const author = useMemo(
-    () =>
-      role === "owner"
-        ? {
-            name: "مالک ZeroMarket",
-            handle: "@zeromarket-owner",
-            role: "مالک پلتفرم",
-            avatar: "OW",
-            verified: true,
-          }
-        : {
-            name: "مدیر ZeroMarket",
-            handle: "@zeromarket-admin",
-            role: "مدیر محتوا",
-            avatar: "AD",
-            verified: true,
-          },
-    [role],
-  );
+  const selectedAuthorId = watch("authorId");
+  const selectedAuthor = authors.find((a) => a.id === selectedAuthorId);
 
   const addMedia = () => {
     const url = mediaUrl.trim();
-    if (!url) {
-      return;
-    }
+    if (!url) return;
 
     const entry = {
       id: `media-${Date.now()}-${media.length + 1}`,
@@ -94,6 +84,44 @@ export default function BlogComposer() {
     setMedia((prev) => [...prev, entry]);
     setMediaUrl("");
     setMediaCaption("");
+  };
+
+  const handleCreateAuthor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!showNewAuthor) return;
+
+    const formData = new FormData(e.currentTarget as HTMLFormElement);
+    const name = formData.get("name") as string;
+    const handle = formData.get("handle") as string;
+    const authorRole = formData.get("role") as string;
+    const avatar = formData.get("avatar") as string;
+
+    if (!name || !handle) {
+      toast.error("نام و هندل نویسنده الزامی است");
+      return;
+    }
+
+    setCreatingAuthor(true);
+    try {
+      const newAuthor = await createBlogAuthor({
+        name,
+        handle: handle.startsWith("@") ? handle : `@${handle}`,
+        role: authorRole || "نویسنده",
+        avatar: avatar || name.charAt(0).toUpperCase(),
+        verified: true,
+      });
+
+      if (newAuthor) {
+        toast.success("نویسنده جدید با موفقیت ایجاد شد");
+        setShowNewAuthor(false);
+        (e.target as HTMLFormElement).reset();
+      }
+    } catch (error) {
+      console.error("Failed to create author:", error);
+      toast.error("خطا در ایجاد نویسنده");
+    } finally {
+      setCreatingAuthor(false);
+    }
   };
 
   const onSubmit = handleSubmit(async (values) => {
@@ -112,13 +140,28 @@ export default function BlogComposer() {
       .map((tag) => tag.trim())
       .filter(Boolean);
 
-    const slug = createPost({
+    const author = selectedAuthor || authors[0];
+    if (!author) {
+      toast.error("هیچ نویسنده‌ای یافت نشد");
+      return;
+    }
+
+    const slug = await createPost({
       title: values.title,
       excerpt: values.excerpt,
       content: blocks,
       tags,
       media,
-      author,
+      author: {
+        id: author.id,
+        name: author.name,
+        handle: author.handle,
+        role: author.role,
+        avatar: author.avatar,
+        verified: author.verified,
+      },
+      sourceName: values.sourceName || undefined,
+      sourceUrl: values.sourceUrl || undefined,
     });
 
     toast.success("پست جدید با موفقیت منتشر شد");
@@ -132,10 +175,7 @@ export default function BlogComposer() {
         <p className="text-sm leading-7 text-muted-foreground">
           برای انتشار پست باید با نقش مدیر یا مالک وارد شوید.
         </p>
-        <Link
-          href="/dashboard/owner"
-          className="btn-secondary inline-flex text-sm"
-        >
+        <Link href="/dashboard/owner" className="btn-secondary inline-flex text-sm">
           رفتن به پنل مالک
         </Link>
       </div>
@@ -209,6 +249,117 @@ export default function BlogComposer() {
             <FieldError>{errors.tags?.message}</FieldError>
           </Field>
 
+          <Field data-invalid={!!errors.sourceName}>
+            <FieldLabel htmlFor="blog-source-name">نام منبع (اختیاری)</FieldLabel>
+            <Input
+              id="blog-source-name"
+              aria-invalid={!!errors.sourceName}
+              {...register("sourceName")}
+              placeholder="نام سایت یا منبع خبری"
+            />
+            <FieldError>{errors.sourceName?.message}</FieldError>
+          </Field>
+
+          <Field data-invalid={!!errors.sourceUrl}>
+            <FieldLabel htmlFor="blog-source-url">لینک منبع (اختیاری)</FieldLabel>
+            <Input
+              id="blog-source-url"
+              type="url"
+              aria-invalid={!!errors.sourceUrl}
+              {...register("sourceUrl")}
+              placeholder="https://example.com/article"
+            />
+            <FieldError>{errors.sourceUrl?.message}</FieldError>
+          </Field>
+
+          <Field data-invalid={!!errors.authorId}>
+            <FieldLabel htmlFor="blog-author">نویسنده</FieldLabel>
+            <Select onValueChange={(value) => register("authorId").onChange({ target: { value } } as any)} defaultValue={authors[0]?.id ?? ""}>
+              <SelectTrigger id="blog-author" aria-invalid={!!errors.authorId}>
+                <SelectValue placeholder="نویسنده را انتخاب کنید" />
+              </SelectTrigger>
+              <SelectContent>
+                {authors.map((author) => (
+                  <SelectItem key={author.id} value={author.id ?? ""}>
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-700 flex items-center justify-center">
+                        {author.avatar}
+                      </span>
+                      <div>
+                        <p className="text-sm font-700 text-foreground">{author.name}</p>
+                        <p className="text-2xs text-muted-foreground">{author.handle} · {author.role}</p>
+                      </div>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.authorId && <FieldError>{errors.authorId.message}</FieldError>}
+
+            {role === "owner" && (
+              <div className="mt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowNewAuthor(!showNewAuthor)}
+                  className="inline-flex items-center gap-1.5 text-sm font-700 text-primary hover:underline"
+                >
+                  <UserPlus size={14} />
+                  {showNewAuthor ? "انصراف" : "افزودن نویسنده جدید"}
+                </button>
+
+                {showNewAuthor && (
+                  <form onSubmit={handleCreateAuthor} className="mt-3 space-y-3 p-3 rounded-xl border border-border bg-muted/20">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Input
+                        name="name"
+                        placeholder="نام نویسنده"
+                        required
+                        disabled={creatingAuthor}
+                      />
+                      <Input
+                        name="handle"
+                        placeholder="هندل (مثال: @username)"
+                        required
+                        disabled={creatingAuthor}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Input
+                        name="role"
+                        placeholder="نقش (مثال: تحلیل‌گر بازار)"
+                        disabled={creatingAuthor}
+                      />
+                      <Input
+                        name="avatar"
+                        placeholder="آواتار (مثال: MR)"
+                        maxLength={2}
+                        disabled={creatingAuthor}
+                      />
+                    </div>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button type="button" variant="secondary" onClick={() => setShowNewAuthor(false)} disabled={creatingAuthor}>
+                        انصراف
+                      </Button>
+                      <Button type="submit" disabled={creatingAuthor}>
+                        {creatingAuthor ? (
+                          <>
+                            <Loader2 size={14} className="animate-spin mr-2" />
+                            در حال ایجاد...
+                          </>
+                        ) : (
+                          <>
+                            <UserPlus size={14} className="mr-2" />
+                            ایجاد نویسنده
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            )}
+          </Field>
+
           <Field>
             <FieldLabel>مدیا (تصویر یا ویدیو)</FieldLabel>
             <div className="rounded-2xl border border-border p-3 space-y-3 bg-muted/20">
@@ -277,7 +428,7 @@ export default function BlogComposer() {
                         type="button"
                         onClick={() =>
                           setMedia((prev) =>
-                            prev.filter((entry) => entry.id !== item.id),
+                            prev.filter((entry) => entry.id !== item.id)
                           )
                         }
                         className="rounded-md border border-border p-1 text-muted-foreground hover:text-danger"

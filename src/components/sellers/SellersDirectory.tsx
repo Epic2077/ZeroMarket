@@ -8,10 +8,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toFa } from "@/context/carLabels";
-import { sellers } from "@/context/sellers";
-import { BadgeCheck, ListChecks, Search, Store, TrendingUp, X } from "lucide-react";
+import {
+  BadgeCheck,
+  ListChecks,
+  Loader2,
+  Search,
+  Store,
+  TrendingUp,
+  X,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import SellerCard from "./SellerCard";
+import { useSellers } from "@/hooks/useSellers";
 
 type SortKey = "featured" | "listings" | "response";
 
@@ -21,18 +29,20 @@ const SORT_LABELS: Record<SortKey, string> = {
   response: "بیشترین نرخ پاسخ",
 };
 
-// Page-level aggregates for the header band.
-const TOTAL_SELLERS = sellers.length;
-const VERIFIED_COUNT = sellers.filter((s) => s.verified).length;
-const TOTAL_LISTINGS = sellers.reduce((sum, s) => sum + s.totalListings, 0);
-const AVG_RESPONSE = Math.round(
-  sellers.reduce((sum, s) => sum + s.responseRate, 0) / (sellers.length || 1),
-);
-
 export default function SellersDirectory() {
   const [query, setQuery] = useState("");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [sort, setSort] = useState<SortKey>("featured");
+
+  const { sellers, loading, error } = useSellers();
+
+  // Page-level aggregates for the header band.
+  const totalSellers = sellers.length;
+  const verifiedCount = sellers.filter((s) => s.verified).length;
+  const totalListings = sellers.reduce((sum, s) => sum + s.totalListings, 0);
+  const avgResponse = Math.round(
+    sellers.reduce((sum, s) => sum + s.responseRate, 0) / (sellers.length || 1),
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -54,16 +64,55 @@ export default function SellersDirectory() {
       return [...result].sort((a, b) => b.responseRate - a.responseRate);
     }
     return result; // already verified-first then by listings from the data layer
-  }, [query, verifiedOnly, sort]);
+  }, [query, verifiedOnly, sort, sellers]);
+
+  // ── Loading state ──────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center gap-3 py-24">
+        <Loader2 size={24} className="animate-spin text-primary" />
+        <span className="text-sm text-muted-foreground vazir-matn">
+          در حال بارگذاری فروشندگان…
+        </span>
+      </div>
+    );
+  }
+
+  // ── Error state ────────────────────────────────────────────────────
+  if (error) {
+    return (
+      <div className="max-w-screen-2xl mx-auto px-4 lg:px-8 xl:px-10 py-16">
+        <div className="rounded-xl border border-danger/30 bg-danger/5 p-8 text-center vazir-matn">
+          <p className="text-sm text-danger mb-3">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="btn-secondary text-xs"
+          >
+            تلاش مجدد
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
       {/* Header band */}
       <div className="relative overflow-hidden bg-linear-to-br from-accent via-primary to-[#0a1c44]">
         <div className="absolute inset-0 pointer-events-none select-none">
-          <svg className="absolute inset-0 w-full h-full opacity-[0.08]" xmlns="http://www.w3.org/2000/svg">
+          <svg
+            className="absolute inset-0 w-full h-full opacity-[0.08]"
+            xmlns="http://www.w3.org/2000/svg"
+          >
             <defs>
-              <pattern id="sellers-dots" x="0" y="0" width="22" height="22" patternUnits="userSpaceOnUse">
+              <pattern
+                id="sellers-dots"
+                x="0"
+                y="0"
+                width="22"
+                height="22"
+                patternUnits="userSpaceOnUse"
+              >
                 <circle cx="1" cy="1" r="1" fill="white" />
               </pattern>
             </defs>
@@ -75,7 +124,9 @@ export default function SellersDirectory() {
         <div className="relative z-10 max-w-screen-2xl mx-auto px-4 lg:px-8 xl:px-10 py-12">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 mb-4">
             <Store size={13} className="text-white" />
-            <span className="text-xs font-600 text-white/90">شبکه فروشندگان زیرومارکت</span>
+            <span className="text-xs font-600 text-white/90">
+              شبکه فروشندگان زیرومارکت
+            </span>
           </div>
           <h1 className="text-3xl lg:text-4xl font-800 text-white leading-tight">
             نمایشگاه‌های تأییدشده خودروی صفر کیلومتر
@@ -88,18 +139,40 @@ export default function SellersDirectory() {
           {/* Aggregate stats */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-8 max-w-3xl">
             {[
-              { icon: <Store size={16} />, value: toFa(TOTAL_SELLERS), label: "فروشنده فعال" },
-              { icon: <BadgeCheck size={16} />, value: toFa(VERIFIED_COUNT), label: "تأییدشده" },
-              { icon: <ListChecks size={16} />, value: toFa(TOTAL_LISTINGS), label: "آگهی فعال" },
-              { icon: <TrendingUp size={16} />, value: `${toFa(AVG_RESPONSE)}٪`, label: "میانگین پاسخ" },
+              {
+                icon: <Store size={16} />,
+                value: toFa(totalSellers),
+                label: "فروشنده فعال",
+              },
+              {
+                icon: <BadgeCheck size={16} />,
+                value: toFa(verifiedCount),
+                label: "تأییدشده",
+              },
+              {
+                icon: <ListChecks size={16} />,
+                value: toFa(totalListings),
+                label: "آگهی فعال",
+              },
+              {
+                icon: <TrendingUp size={16} />,
+                value: `${toFa(avgResponse)}٪`,
+                label: "میانگین پاسخ",
+              },
             ].map((stat) => (
               <div
                 key={stat.label}
                 className="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-4 py-3"
               >
-                <div className="flex items-center gap-1.5 text-white/70 mb-1.5">{stat.icon}</div>
-                <div className="text-xl font-800 text-white font-mono-nums">{stat.value}</div>
-                <div className="text-2xs text-white/55 mt-0.5">{stat.label}</div>
+                <div className="flex items-center gap-1.5 text-white/70 mb-1.5">
+                  {stat.icon}
+                </div>
+                <div className="text-xl font-800 text-white font-mono-nums">
+                  {stat.value}
+                </div>
+                <div className="text-2xs text-white/55 mt-0.5">
+                  {stat.label}
+                </div>
               </div>
             ))}
           </div>
@@ -141,7 +214,11 @@ export default function SellersDirectory() {
           >
             فقط تأییدشده‌ها
           </button>
-          <Select dir="rtl" value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+          <Select
+            dir="rtl"
+            value={sort}
+            onValueChange={(v) => setSort(v as SortKey)}
+          >
             <SelectTrigger className="h-10 w-full lg:w-48 vazir-matn shrink-0">
               <SelectValue />
             </SelectTrigger>
@@ -163,7 +240,9 @@ export default function SellersDirectory() {
         {filtered.length === 0 ? (
           <div className="card-elevated flex flex-col items-center justify-center gap-2 py-16 text-center">
             <Search size={22} className="text-muted-foreground" />
-            <p className="text-sm font-600 text-foreground">فروشنده‌ای یافت نشد</p>
+            <p className="text-sm font-600 text-foreground">
+              فروشنده‌ای یافت نشد
+            </p>
             <p className="text-xs text-muted-foreground">
               عبارت جست‌وجو یا فیلتر را تغییر دهید.
             </p>

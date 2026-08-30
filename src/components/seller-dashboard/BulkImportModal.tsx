@@ -1,8 +1,9 @@
 "use client";
 
-import { Download, FileSpreadsheet, Upload, X } from "lucide-react";
+import { Download, FileSpreadsheet, Loader2, Upload, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { useUserInfo } from "@/context/UserInfoProvider";
 
 interface Props {
   onClose: () => void;
@@ -26,44 +27,82 @@ const steps = [
   },
 ];
 
-const TEMPLATE_COLUMNS = [
-  "برند",
-  "مدل",
-  "تریم",
-  "سال",
-  "رنگ",
-  "نوع بدنه",
-  "سوخت",
-  "گیربکس",
-  "شهر",
-  "قیمت (تومان)",
-  "وضعیت",
-];
-
 export default function BulkImportModal({ onClose }: Props) {
+  const { session } = useUserInfo();
   const [file, setFile] = useState<File | null>(null);
+  const [downloading, setDownloading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [errors, setErrors] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const downloadTemplate = () => {
-    // UTF-8 BOM so Excel reads the Persian headers correctly.
-    const csv = "﻿" + TEMPLATE_COLUMNS.join(",") + "\n";
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "zeromarket-template.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("قالب اکسل دانلود شد");
+  const downloadTemplate = async () => {
+    setDownloading(true);
+    try {
+      const fnUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-excel-template`;
+      const res = await fetch(fnUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+        },
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "Listings_Template.xlsx");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("قالب اکسل دانلود شد");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "خطا در دانلود فایل");
+    } finally {
+      setDownloading(false);
+    }
   };
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (!file) {
       toast.error("لطفاً ابتدا فایل اکسل تکمیل شده را انتخاب کنید");
       return;
     }
-    toast.success(`فایل «${file.name}» برای پردازش ارسال شد`);
-    onClose();
+
+    setUploading(true);
+    setErrors([]);
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const fnUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/import-listings`;
+      const res = await fetch(fnUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session?.access_token ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+        },
+        body: formData,
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) throw new Error(result.error ?? `HTTP ${res.status}`);
+
+      if (result.success) {
+        toast.success(result.message ?? "آگهی‌ها با موفقیت ثبت شدند");
+        onClose();
+      } else if (result.errors) {
+        setErrors(result.errors);
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "خطا در بارگذاری فایل");
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
   };
 
   return (
@@ -122,10 +161,15 @@ export default function BulkImportModal({ onClose }: Props) {
           {/* Download template */}
           <button
             onClick={downloadTemplate}
-            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg border border-primary/30 bg-primary/5 text-primary text-sm font-700 hover:bg-primary/10 transition-colors duration-150"
+            disabled={downloading}
+            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg border border-primary/30 bg-primary/5 text-primary text-sm font-700 hover:bg-primary/10 transition-colors duration-150 disabled:opacity-50"
           >
-            <Download size={15} />
-            دانلود قالب اکسل
+            {downloading ? (
+              <Loader2 size={15} className="animate-spin" />
+            ) : (
+              <Download size={15} />
+            )}
+            {downloading ? "در حال آماده‌سازی…" : "دانلود قالب اکسل"}
           </button>
 
           {/* Upload dropzone */}
@@ -158,14 +202,36 @@ export default function BulkImportModal({ onClose }: Props) {
           </div>
         </div>
 
+        {/* Validation errors */}
+        {errors.length > 0 && (
+          <div className="p-3 bg-danger/5 border border-danger/20 rounded-xl text-xs text-danger max-h-40 overflow-y-auto">
+            <p className="font-700 mb-1">
+              لطفاً خطاهای زیر را در فایل اصلاح کنید:
+            </p>
+            <ul className="list-disc pr-5 space-y-0.5">
+              {errors.map((err, i) => (
+                <li key={i}>{err}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {/* Footer */}
         <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-border">
           <button onClick={onClose} className="btn-secondary text-sm">
             انصراف
           </button>
-          <button onClick={handleUpload} className="btn-primary text-sm">
-            <Upload size={14} />
-            بارگذاری و افزودن
+          <button
+            onClick={handleUpload}
+            disabled={uploading || !file}
+            className="btn-primary text-sm disabled:opacity-50"
+          >
+            {uploading ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Upload size={14} />
+            )}
+            {uploading ? "در حال بارگذاری…" : "بارگذاری و افزودن"}
           </button>
         </div>
       </div>

@@ -2,12 +2,13 @@
 
 import { useAdmin } from "@/context/AdminProvider";
 import { useSession } from "@/context/SessionProvider";
+import { useUserInfo } from "@/context/UserInfoProvider";
 import { ShieldHalf } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-// Gate access to a managed owner's products: owner sees all, an admin only
-// their assigned users, guests none. Renders `children` when allowed.
+// Gate access to a product's edit page: owner sees all, an admin only their
+// assigned users, and the seller themselves can edit their own products.
 export default function ProductEditorGuard({
   ownerId,
   children,
@@ -17,15 +18,15 @@ export default function ProductEditorGuard({
 }) {
   const { role, adminId } = useSession();
   const { admins } = useAdmin();
+  const { user } = useUserInfo();
 
   const allowed =
     role === "owner" ||
     (role === "admin" &&
       Boolean(
-        admins
-          .find((a) => a.id === adminId)
-          ?.assignedUserIds.includes(ownerId),
-      ));
+        admins.find((a) => a.id === adminId)?.assignedUserIds.includes(ownerId),
+      )) ||
+    user?.id === ownerId;
 
   if (!allowed) {
     return (

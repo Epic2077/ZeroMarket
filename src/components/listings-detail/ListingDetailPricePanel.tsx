@@ -11,9 +11,11 @@ import {
   Info,
   Lock,
   Zap,
+  Loader2,
 } from "lucide-react";
 import { formatPrice } from "@/context/data";
 import { Listing } from "@/types/dataTypes";
+import { useMarketInsight } from "@/hooks/useMarketInsight";
 import StatusBadge from "../shared/StatusBadge";
 
 const DetailPriceTrendChart = dynamic(() => import("./DetailPriceTrending"), {
@@ -24,6 +26,7 @@ interface Props {
   listing: Listing;
   onRequestAuction: () => void;
   requestStatus: "none" | "pending" | "approved" | "declined" | "negotiable";
+  isOwner?: boolean;
 }
 
 const requestStatusConfig = {
@@ -54,18 +57,35 @@ export default function ListingDetailPricePanel({
   listing,
   onRequestAuction,
   requestStatus,
+  isOwner,
 }: Props) {
   const [insightExpanded, setInsightExpanded] = useState(false);
 
-  const priceAboveAvg = listing.price > listing.marketAvgBuy;
-  const pctDiff = Math.abs(listing.priceVsMarket);
+  // Live market data from car_market_insights; falls back to server props
+  const { market, loading: marketLoading } = useMarketInsight(
+    listing.brand,
+    listing.model,
+    listing.year,
+    listing.price,
+  );
+
+  const marketAvg = market?.marketAvgBuy ?? listing.marketAvgBuy;
+  const priceVsMarket = market?.priceVsMarket ?? listing.priceVsMarket;
+  const trend7d = market?.trend7d ?? listing.trend7d;
+  const hasMarket = market !== null || listing.priceVsMarket !== 0;
+
+  const priceAboveAvg = listing.price > marketAvg;
+  const pctDiff = Math.abs(priceVsMarket);
   const statusInfo = requestStatusConfig[requestStatus];
+  const isBuy = listing.listingType === "BUY";
 
   return (
     <div className="card-elevated p-5 flex flex-col gap-4 ">
       {/* Price */}
       <div>
-        <p className="section-label mb-1">قیمت آگهی</p>
+        <p className="section-label mb-1">
+          {isBuy ? "قیمت پیشنهادی خرید" : "قیمت آگهی"}
+        </p>
         <div className="text-price text-3xl text-foreground">
           {formatPrice(listing.price)}
         </div>
@@ -80,37 +100,45 @@ export default function ListingDetailPricePanel({
           <span className="text-xs font-600 text-muted-foreground">
             در مقابل میانگین بازار
           </span>
-          <span
-            className={`text-xs font-700 flex items-center gap-0.5 ${priceAboveAvg ? "text-danger" : "text-success"}`}
-          >
-            {priceAboveAvg ? (
-              <TrendingUp size={11} />
-            ) : (
-              <TrendingDown size={11} />
-            )}
-            {pctDiff}٪ {priceAboveAvg ? "بالاتر از" : "پایین‌تر از"} میانگین
-          </span>
+          {marketLoading ? (
+            <Loader2 size={12} className="animate-spin text-muted-foreground" />
+          ) : hasMarket ? (
+            <span
+              className={`text-xs font-700 flex items-center gap-0.5 ${priceAboveAvg ? "text-danger" : "text-success"}`}
+            >
+              {priceAboveAvg ? (
+                <TrendingUp size={11} />
+              ) : (
+                <TrendingDown size={11} />
+              )}
+              {pctDiff}٪ {priceAboveAvg ? "بالاتر از" : "پایین‌تر از"} میانگین
+            </span>
+          ) : (
+            <span className="text-xs text-muted-foreground">
+              داده‌ای موجود نیست
+            </span>
+          )}
         </div>
 
-        {/* Range bar */}
+        {/* Range bar — listing price positioned relative to market average */}
         <div className="relative h-2 bg-border rounded-full mb-2 overflow-hidden">
           <div
-            className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-success to-warning"
+            className="absolute left-0 top-0 h-full rounded-full bg-linear-to-r from-success to-warning"
             style={{ width: "100%", opacity: 0.3 }}
           />
-          {/* Marker */}
+          {/* Marker: center = market avg, offset by priceVsMarket % */}
           <div
             className="absolute top-1/2 mt-1.5 -translate-y-1/2 w-3 h-3 rounded-full bg-primary border-2 border-white shadow"
             style={{
-              left: `${Math.min(95, Math.max(5, ((listing.price - listing.marketAvgBuy) / (listing.marketAvgSell - listing.marketAvgBuy)) * 100))}%`,
+              left: `${Math.min(95, Math.max(5, 50 + priceVsMarket * 0.5))}%`,
               transform: "translate(-50%, -50%)",
             }}
           />
         </div>
 
         <div className="flex justify-between text-2xs text-muted-foreground font-mono">
-          <span>میانگین خرید: {formatPrice(listing.marketAvgBuy)}</span>
-          <span>میانگین فروش: {formatPrice(listing.marketAvgSell)}</span>
+          <span>میانگین بازار: {formatPrice(marketAvg)}</span>
+          <span>قیمت آگهی: {formatPrice(listing.price)}</span>
         </div>
       </div>
 
@@ -124,10 +152,10 @@ export default function ListingDetailPricePanel({
             <TrendingUp size={13} className="text-primary" />
             روند قیمت ۷ روزه
             <span
-              className={`font-700 ${listing.trend7d >= 0 ? "text-success" : "text-danger"}`}
+              className={`font-700 ${trend7d >= 0 ? "text-success" : "text-danger"}`}
             >
-              {listing.trend7d > 0 ? "+" : ""}
-              {listing.trend7d}٪
+              {trend7d > 0 ? "+" : ""}
+              {trend7d}٪
             </span>
           </div>
           {insightExpanded ? (
@@ -171,38 +199,47 @@ export default function ListingDetailPricePanel({
       )}
 
       {/* CTA */}
-      {requestStatus === "none" && listing.status === "active" && (
-        <button
-          onClick={onRequestAuction}
-          className="btn-primary w-full justify-center py-3 text-sm"
-        >
-          <Send size={15} />
-          ارسال درخواست خرید
-        </button>
-      )}
-
-      {listing.status !== "active" && requestStatus === "none" && (
+      {isOwner ? (
         <div className="flex items-center gap-2 p-3 bg-muted rounded-xl text-xs text-muted-foreground">
-          <Info size={13} className="flex-shrink-0" />
-          این آگهی در حال حاضر <StatusBadge status={listing.status} /> است —
-          درخواست‌ها متوقف شده‌اند.
+          <Info size={13} className="shrink-0" />
+          این آگهی متعلق به شماست — نمی‌توانید برای آگهی خود درخواست ارسال کنید.
         </div>
-      )}
+      ) : (
+        <>
+          {requestStatus === "none" && listing.status === "active" && (
+            <button
+              onClick={onRequestAuction}
+              className="btn-primary w-full justify-center py-3 text-sm"
+            >
+              <Send size={15} />
+              {isBuy ? "ارسال پیشنهاد فروش" : "ارسال درخواست خرید"}
+            </button>
+          )}
 
-      {requestStatus !== "none" &&
-        requestStatus !== "approved" &&
-        requestStatus !== "negotiable" && (
-          <button
-            onClick={onRequestAuction}
-            className="btn-secondary w-full justify-center text-sm"
-          >
-            ارسال درخواست جدید
-          </button>
-        )}
+          {listing.status !== "active" && requestStatus === "none" && (
+            <div className="flex items-center gap-2 p-3 bg-muted rounded-xl text-xs text-muted-foreground">
+              <Info size={13} className="shrink-0" />
+              این آگهی در حال حاضر <StatusBadge status={listing.status} /> است —
+              درخواست‌ها متوقف شده‌اند.
+            </div>
+          )}
+
+          {requestStatus !== "none" &&
+            requestStatus !== "approved" &&
+            requestStatus !== "negotiable" && (
+              <button
+                onClick={onRequestAuction}
+                className="btn-secondary w-full justify-center text-sm"
+              >
+                ارسال درخواست جدید
+              </button>
+            )}
+        </>
+      )}
 
       {/* Delivery note */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground border-t border-border pt-3">
-        <Zap size={12} className="text-success flex-shrink-0" />
+        <Zap size={12} className="text-success shrink-0" />
         {listing.deliveryDays === 0
           ? "موجود — آماده تحویل فوری"
           : `تحویل تخمینی: ${listing.deliveryDays} روز کاری پس از تأیید`}

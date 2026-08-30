@@ -7,6 +7,7 @@ import {
   Repeat2,
   Sparkles,
   Eye,
+  Link as LinkIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { BlogMediaPreview } from "./BlogMedia";
@@ -135,6 +136,25 @@ export default function BlogPostCard({ post, featured = false }: Props) {
                   <ArrowLeft size={13} className="rotate-180" />
                 </span>
               </div>
+
+              {(post.sourceName || post.sourceUrl) && (
+                <div className="flex items-center gap-2 pt-2 border-t border-border text-xs text-muted-foreground">
+                  <LinkIcon size={12} className="shrink-0" />
+                  <span className="font-700 text-foreground">منبع:</span>
+                  {post.sourceUrl ? (
+                    <a
+                      href={post.sourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline truncate max-w-[200px]"
+                    >
+                      {post.sourceName || post.sourceUrl}
+                    </a>
+                  ) : (
+                    <span className="text-foreground">{post.sourceName}</span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

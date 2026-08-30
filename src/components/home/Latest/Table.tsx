@@ -27,6 +27,8 @@ interface TableProps<TData> {
   renderSubRow?: (row: TData) => ReactNode;
   /** Optional mobile layout override to avoid horizontal scrolling. */
   renderMobileRow?: (row: TData) => ReactNode;
+  /** Optional per-row CSS class override (e.g. to highlight BUY rows). */
+  getRowClassName?: (row: TData) => string;
 }
 
 export default function LatestTable<TData>({
@@ -34,6 +36,7 @@ export default function LatestTable<TData>({
   data,
   renderSubRow,
   renderMobileRow,
+  getRowClassName,
 }: TableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [expanded, setExpanded] = useState<ExpandedState>({});
@@ -102,7 +105,9 @@ export default function LatestTable<TData>({
             {rows.length ? (
               rows.map((row) => (
                 <Fragment key={row.id}>
-                  <TableRow className="border-b border-border/50 transition-colors hover:bg-accent/10">
+                  <TableRow
+                    className={`border-b border-border/50 transition-colors hover:bg-accent/10 ${getRowClassName?.(row.original) ?? ""}`}
+                  >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell
                         key={cell.id}

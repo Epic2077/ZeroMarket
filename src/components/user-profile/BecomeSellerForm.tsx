@@ -21,6 +21,8 @@ import {
   cityOptions,
   sellerBenefits,
 } from "@/context/userProfile";
+import { supabase } from "@/lib/supabase/client";
+import { useUserInfo } from "@/context/UserInfoProvider";
 import { optionalUrl, requiredText } from "@/lib/validation";
 import type { SellerApplicationStatus } from "@/types/user";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,7 +34,7 @@ import { z } from "zod";
 
 interface Props {
   status: SellerApplicationStatus;
-  onSubmitted: () => void;
+  onSubmitted?: () => void;
 }
 
 const sellerApplicationSchema = z.object({
@@ -51,6 +53,8 @@ const sellerApplicationSchema = z.object({
 type SellerApplicationValues = z.infer<typeof sellerApplicationSchema>;
 
 export default function BecomeSellerForm({ status, onSubmitted }: Props) {
+  const { user, refreshProfile } = useUserInfo();
+
   const {
     register,
     handleSubmit,
@@ -70,14 +74,36 @@ export default function BecomeSellerForm({ status, onSubmitted }: Props) {
     },
   });
 
-  const onSubmit = handleSubmit(async () => {
-    await new Promise((r) => setTimeout(r, 600));
-    toast.success("درخواست فروشندگی شما ثبت شد و در حال بررسی است");
-    onSubmitted();
+  const onSubmit = handleSubmit(async (data) => {
+    if (!user) {
+      toast.error("ابتدا وارد حساب کاربری خود شوید");
+      return;
+    }
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        seller_application_status: "PENDING",
+        // Optionally store the submitted business info as well
+        // business_name: data.businessName,
+        // business_type: data.businessType,
+        // phone: data.phone || null,
+        // city: data.city || null,
+      })
+      .eq("id", user.id);
+
+    if (error) {
+      toast.error("خطا در ثبت درخواست. لطفاً دوباره تلاش کنید.");
+      return;
+    }
+
+    await refreshProfile();
+    toast.success("درخواست تایید شدن شما ثبت شد و در حال بررسی است");
+    onSubmitted?.();
   });
 
   // ---- Application already submitted -------------------------------------
-  if (status === "pending") {
+  if (status === "PENDING") {
     return (
       <div className="card-elevated p-8 flex flex-col items-center text-center gap-3">
         <div className="w-14 h-14 rounded-2xl bg-warning/10 flex items-center justify-center">
@@ -94,7 +120,7 @@ export default function BecomeSellerForm({ status, onSubmitted }: Props) {
     );
   }
 
-  if (status === "approved") {
+  if (status === "APPROVED") {
     return (
       <div className="card-elevated p-8 flex flex-col items-center text-center gap-3">
         <div className="w-14 h-14 rounded-2xl bg-success/10 flex items-center justify-center">
@@ -110,6 +136,23 @@ export default function BecomeSellerForm({ status, onSubmitted }: Props) {
           <Store size={14} />
           ورود به داشبورد فروشنده
         </Link>
+      </div>
+    );
+  }
+
+  if (status === "REJECTED") {
+    return (
+      <div className="card-elevated p-8 flex flex-col items-center text-center gap-3">
+        <div className="w-14 h-14 rounded-2xl bg-destructive/10 flex items-center justify-center">
+          <Clock size={26} className="text-destructive" />
+        </div>
+        <h2 className="text-lg font-800 text-foreground">
+          متاسفانه درخواست شما رد شد
+        </h2>
+        <p className="text-sm text-muted-foreground max-w-md">
+          اطلاعات کسب‌وکار شما مورد تایید کارشناسان زیرومارکت قرار نگرفت. لطفاً
+          اطلاعات خود را بررسی و اصلاح کنید و دوباره درخواست دهید.
+        </p>
       </div>
     );
   }
