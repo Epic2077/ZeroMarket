@@ -50,18 +50,25 @@ export async function fetchTickets(
   // Fetch profile names separately (avoids RLS issues with join).
   // Only admins get email — regular users only see names.
   const userIds = [...new Set(rows.map((r) => r.user_id))];
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select(isAdmin ? "id, full_name, email" : "id, full_name")
-    .in("id", userIds);
   interface ProfileMapEntry {
     id: string;
     full_name: string;
     email?: string;
   }
-  const profileMap = new Map<string, ProfileMapEntry>(
-    (profiles ?? []).map((p: ProfileMapEntry) => [p.id, p]),
-  );
+
+  let profileMap = new Map<string, ProfileMapEntry>();
+  if (userIds.length > 0) {
+    const { data: profiles, error: profileError } = await supabase
+      .from("profiles")
+      .select(isAdmin ? "id, full_name, email" : "id, full_name")
+      .in("id", userIds);
+
+    if (!profileError && profiles) {
+      profileMap = new Map<string, ProfileMapEntry>(
+        (profiles as ProfileMapEntry[]).map((p) => [p.id, p]),
+      );
+    }
+  }
 
   return rows.map((row) => ({
     id: row.id,
@@ -121,18 +128,25 @@ export async function fetchTicketMessages(
 
   const rows = (data ?? []) as any[];
   const senderIds = [...new Set(rows.map((r) => r.sender_id))];
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id, full_name, role")
-    .in("id", senderIds);
   interface ProfileMapEntry2 {
     id: string;
     full_name: string;
     role: string;
   }
-  const profileMap = new Map<string, ProfileMapEntry2>(
-    (profiles ?? []).map((p: ProfileMapEntry2) => [p.id, p]),
-  );
+
+  let profileMap = new Map<string, ProfileMapEntry2>();
+  if (senderIds.length > 0) {
+    const { data: profiles, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, full_name, role")
+      .in("id", senderIds);
+
+    if (!profileError && profiles) {
+      profileMap = new Map<string, ProfileMapEntry2>(
+        (profiles as ProfileMapEntry2[]).map((p) => [p.id, p]),
+      );
+    }
+  }
 
   return rows.map((row) => ({
     id: row.id,
