@@ -113,7 +113,7 @@ export default function BecomeSellerForm({ status, onSubmitted }: Props) {
           درخواست شما در حال بررسی است
         </h2>
         <p className="text-sm text-muted-foreground max-w-md">
-          کارشناسان زیرومارکت اطلاعات کسب‌وکار شما را بررسی می‌کنند. نتیجه طی ۲۴
+          کارشناسان خودروجو اطلاعات کسب‌وکار شما را بررسی می‌کنند. نتیجه طی ۲۴
           تا ۴۸ ساعت آینده از طریق ایمیل به شما اطلاع داده می‌شود.
         </p>
       </div>
@@ -150,7 +150,7 @@ export default function BecomeSellerForm({ status, onSubmitted }: Props) {
           متاسفانه درخواست شما رد شد
         </h2>
         <p className="text-sm text-muted-foreground max-w-md">
-          اطلاعات کسب‌وکار شما مورد تایید کارشناسان زیرومارکت قرار نگرفت. لطفاً
+          اطلاعات کسب‌وکار شما مورد تایید کارشناسان خودروجو قرار نگرفت. لطفاً
           اطلاعات خود را بررسی و اصلاح کنید و دوباره درخواست دهید.
         </p>
       </div>
@@ -164,7 +164,7 @@ export default function BecomeSellerForm({ status, onSubmitted }: Props) {
       <div className="rounded-2xl bg-foreground p-6 text-white">
         <div className="flex items-center gap-2 mb-4">
           <Store size={18} className="text-accent" />
-          <h2 className="text-base font-800">فروشنده زیرومارکت شوید</h2>
+          <h2 className="text-base font-800">فروشنده خودروجو شوید</h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {sellerBenefits.map((b) => {
@@ -331,7 +331,7 @@ export default function BecomeSellerForm({ status, onSubmitted }: Props) {
                 <span className="text-foreground font-600">
                   قوانین و مقررات فروشندگان
                 </span>{" "}
-                زیرومارکت را می‌پذیرم و صحت اطلاعات واردشده را تأیید می‌کنم.
+                خودروجو را می‌پذیرم و صحت اطلاعات واردشده را تأیید می‌کنم.
               </span>
             </label>
             <FieldError>{errors.agreed?.message}</FieldError>

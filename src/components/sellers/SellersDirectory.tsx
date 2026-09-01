@@ -125,7 +125,7 @@ export default function SellersDirectory() {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 mb-4">
             <Store size={13} className="text-white" />
             <span className="text-xs font-600 text-white/90">
-              شبکه فروشندگان زیرومارکت
+              شبکه فروشندگان خودروجو
             </span>
           </div>
           <h1 className="text-3xl lg:text-4xl font-800 text-white leading-tight">

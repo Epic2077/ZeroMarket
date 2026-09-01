@@ -1,10 +1,12 @@
 <!-- BEGIN:nextjs-agent-rules -->
+
 # This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
+
 <!-- END:nextjs-agent-rules -->
 
-# ZeroMarket (زیرومارکت)
+# ZeroMarket (خودروجو)
 
 ZeroMarket is a marketplace for **brand-new, zero-kilometer factory cars** in Iran. Buyers browse structured listings from verified dealers, compare against live market price insights, and submit purchase/negotiation requests; sellers manage listings and incoming requests from a dashboard.
 
@@ -57,15 +59,15 @@ Tokens are defined in [`src/app/globals.css`](src/app/globals.css) as CSS variab
 
 ### Color tokens (light theme; dark theme is currently commented out)
 
-| Token | Value | Use |
-|-------|-------|-----|
-| `primary` | `#1b4fd8` | brand blue, primary actions |
-| `accent` | `#0ea5e9` | sky accent, highlights |
-| `success` | `#10b981` | positive / approved |
-| `warning` | `#f59e0b` | caution |
-| `danger` | `#ef4444` | destructive / rejected |
-| `negotiable` | `#8b5cf6` | "negotiable" state (violet) |
-| `background` `#f8fafc`, `foreground` `#0f172a`, `card`, `muted`, `border`, `secondary` | | surfaces & text |
+| Token                                                                                  | Value     | Use                         |
+| -------------------------------------------------------------------------------------- | --------- | --------------------------- |
+| `primary`                                                                              | `#1b4fd8` | brand blue, primary actions |
+| `accent`                                                                               | `#0ea5e9` | sky accent, highlights      |
+| `success`                                                                              | `#10b981` | positive / approved         |
+| `warning`                                                                              | `#f59e0b` | caution                     |
+| `danger`                                                                               | `#ef4444` | destructive / rejected      |
+| `negotiable`                                                                           | `#8b5cf6` | "negotiable" state (violet) |
+| `background` `#f8fafc`, `foreground` `#0f172a`, `card`, `muted`, `border`, `secondary` |           | surfaces & text             |
 
 Reference as Tailwind classes: `bg-primary`, `text-accent`, `border-success/25`, `bg-danger/10`, `text-muted-foreground`, etc.
 
