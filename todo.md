@@ -17,7 +17,7 @@ first backend pass, `✅` already done.
   - Remove hardcoded owner/admin viewer defaults and hardcoded ids.
   - Make public, buyer, seller, admin, and owner screens consume the same session API so backend permissions map cleanly later.
 - [p0] Fix route drift and navigation holes.
-  - Replace `/listings-marketplace` and `#` placeholders with shared route constants.
+  - Replace `/market` and `#` placeholders with shared route constants.
   - Standardize the dashboard and auth route names so future redirects and protected routes do not have to support legacy paths.
 - [p0] Centralize labels, taxonomy, and filter vocabulary.
   - Merge overlapping brand/body/city/fuel/seller label maps into one shared vocabulary layer or a thin adapter on top of it.

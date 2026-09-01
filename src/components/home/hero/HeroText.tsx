@@ -10,9 +10,9 @@ export default function HeroText() {
         </span>
       </div>
       <h1 className=" font-light text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-800 text-white leading-tight tracking-tight ">
-        خودروی نو بخر یا بفروش
-        <br />
         <span className="text-accent font-bold">مثل یک حرفه‌ای</span>
+        <br />
+        خودروی نو بخر یا بفروش
       </h1>
       <p className="text-sm md:text-base sm:text-lg text-white/70 mb-4 max-w-xl leading-relaxed">
         آگهی‌های ساختارمند، فروشندگان تأییدشده، تحلیل قیمت لحظه‌ای — تنها پلتفرم

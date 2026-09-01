@@ -2,6 +2,7 @@ import ListingDetailContent from "@/components/listings-detail/ListingDetailCont
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
+import { Metadata } from "next";
 import {
   getMarketInsight,
   listingRowToListing,
@@ -12,6 +13,7 @@ import {
   sellerRowToDisplayFields,
   type SellerRow,
 } from "@/lib/supabase/sellers";
+import { generateListingMetadata } from "@/lib/shareUtils";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -31,6 +33,62 @@ function createSupabaseClient() {
       setAll: () => {},
     },
   });
+}
+
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = createSupabaseClient();
+
+  if (!supabase) {
+    return {
+      title: "خودروجو",
+    };
+  }
+
+  const { data: listingData } = await supabase
+    .from("listings")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (!listingData) {
+    return {
+      title: "خودروجو - آگهی یافت نشد",
+    };
+  }
+
+  const listingRow = listingData as ListingRow;
+
+  // Fetch seller data
+  const { data: sellerData } = await supabase
+    .from("sellers")
+    .select("*")
+    .eq("id", listingRow.seller_id)
+    .single();
+
+  const { data: sellerListings } = await supabase
+    .from("listings")
+    .select("seller_id, brand, price, status")
+    .eq("seller_id", listingRow.seller_id);
+
+  const sellerStats = aggregateSellerListingStats(
+    (sellerListings ?? []) as Array<{
+      seller_id: string;
+      brand: string;
+      price: number;
+      status: string;
+    }>,
+  ).get(listingRow.seller_id);
+
+  const seller = sellerData
+    ? sellerRowToDisplayFields(sellerData as SellerRow, sellerStats)
+    : undefined;
+
+  const listing = listingRowToListing(listingRow, seller, undefined);
+
+  return generateListingMetadata(listing);
 }
 
 export default async function SinglePage({ params }: PageProps) {

@@ -51,21 +51,22 @@ export default async function HomeCTA() {
             آماده خرید یا فروش خودروی صفرکیلومتر هستید؟
           </h2>
           <p className="text-white/70 text-sm leading-relaxed">
-            به {toFa(verifiedSellers)}+ فروشنده تأییدشده و بیش از {toFa(activeListings)}+ خریدار در تنها پلتفرم
-            تخصصی خودروهای صفرکیلومتر بپیوندید.
+            به {toFa(verifiedSellers)}+ فروشنده تأییدشده و بیش از{" "}
+            {toFa(activeListings)}+ خریدار در تنها پلتفرم تخصصی خودروهای
+            صفرکیلومتر بپیوندید.
           </p>
         </div>
 
         <div className="relative z-10 flex flex-col sm:flex-row gap-3 shrink-0">
           <Link
-            href="#register"
+            href="/dashboard/seller/products/new"
             className="flex items-center gap-2 px-5 py-3 bg-white text-primary font-700 text-sm rounded-xl hover:bg-white/90 transition-colors duration-150"
           >
             <PlusCircle size={15} />
             ثبت خودروی شما
           </Link>
           <Link
-            href="/listings-marketplace"
+            href="/market"
             className="flex items-center gap-2 px-5 py-3 bg-white/10 border border-white/25 text-white font-700 text-sm rounded-xl hover:bg-white/20 transition-colors duration-150"
           >
             مرور آگهی‌ها
