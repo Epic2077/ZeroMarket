@@ -15,7 +15,7 @@ export default async function HowItWorks() {
           <div className="text-center mb-10">
             <p className="section-label mb-2">فرآیند ساده</p>
             <h2 className="text-2xl font-700 text-foreground">
-              زیرومارکت چطور کار می‌کند؟
+              خودروجو چطور کار می‌کند؟
             </h2>
             <p className="text-sm text-muted-foreground mt-2 max-w-lg mx-auto">
               از مرور تا معامله — کل جریان تراکنش ساختارمند، سریع و شفاف است.

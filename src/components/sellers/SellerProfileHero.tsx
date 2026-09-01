@@ -126,10 +126,10 @@ export default function SellerProfileHero({ seller }: Props) {
             <ShieldCheck size={15} className="text-success shrink-0" />
             <div>
               <div className="text-xs font-700 text-success">
-                فروشنده تأییدشده زیرومارکت
+                فروشنده تأییدشده خودروجو
               </div>
               <div className="text-2xs text-muted-foreground">
-                هویت احراز شده · آگهی‌ها توسط زیرومارکت بررسی شده‌اند.
+                هویت احراز شده · آگهی‌ها توسط خودروجو بررسی شده‌اند.
               </div>
             </div>
           </div>

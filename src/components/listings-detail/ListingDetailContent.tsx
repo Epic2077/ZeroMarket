@@ -224,7 +224,7 @@ export default function ListingDetailContent({ listing }: Props) {
           {listing.sellerVerified && (
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <VerifiedBadge size="sm" />
-              <span>هویت فروشنده توسط زیرومارکت تأیید شده</span>
+              <span>هویت فروشنده توسط خودروجو تأیید شده</span>
             </div>
           )}
           <div className="w-px h-3 bg-border hidden sm:block" />
