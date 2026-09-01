@@ -23,7 +23,7 @@ export default function BlogShell({
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-6">
         <div className="space-y-2">
-          <span className="section-label">وبلاگ زیرومارکت</span>
+          <span className="section-label">وبلاگ خودروجو</span>
           <div>
             <h1 className="text-2xl sm:text-3xl font-800 text-foreground">
               {title}

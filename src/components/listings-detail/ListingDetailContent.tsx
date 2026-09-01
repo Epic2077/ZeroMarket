@@ -19,6 +19,7 @@ import ListingDetailSimilar from "./ListingDetailSimilar";
 import ListingDetailRelated from "./ListingDetailRelated";
 import ListingAuctionModal from "./ListingAuctionModal";
 import ReportListingModal from "./ReportListingModal";
+import ShareListingModal from "./ShareListingModal";
 
 import {
   ChevronRight,
@@ -51,6 +52,7 @@ export default function ListingDetailContent({ listing }: Props) {
   const isOwner = Boolean(user?.id && user.id === listing.seller_id);
   const [auctionOpen, setAuctionOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [requestStatus, setRequestStatus] = useState<RequestStatus>("none");
 
   // ── Private note (visible to admin, owner, and the seller) ──────────
@@ -99,7 +101,7 @@ export default function ListingDetailContent({ listing }: Props) {
           </Link>
           <ChevronRight size={12} className="rotate-180" />
           <Link
-            href="/listings-marketplace"
+            href="/market"
             className="hover:text-foreground transition-colors duration-150"
           >
             بازار خودرو
@@ -164,7 +166,7 @@ export default function ListingDetailContent({ listing }: Props) {
               userId={`usr-${sellerSlug(listing.sellerName)}`}
             />
             <Link
-              href="/listings-marketplace"
+              href="/market"
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-600 text-muted-foreground border border-border rounded-lg hover:bg-muted transition-colors duration-150"
             >
               <ArrowLeft size={13} className="rotate-180" />
@@ -172,6 +174,7 @@ export default function ListingDetailContent({ listing }: Props) {
             </Link>
             <SaveListingButton listingId={listing.id} />
             <button
+              onClick={() => setShareOpen(true)}
               className="p-2 rounded-lg border border-border text-muted-foreground hover:bg-muted transition-colors duration-150"
               title="اشتراک‌گذاری این آگهی"
             >
@@ -224,7 +227,7 @@ export default function ListingDetailContent({ listing }: Props) {
           {listing.sellerVerified && (
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <VerifiedBadge size="sm" />
-              <span>هویت فروشنده توسط زیرومارکت تأیید شده</span>
+              <span>هویت فروشنده توسط خودروجو تأیید شده</span>
             </div>
           )}
           <div className="w-px h-3 bg-border hidden sm:block" />
@@ -302,6 +305,13 @@ export default function ListingDetailContent({ listing }: Props) {
         <ReportListingModal
           listing={listing}
           onClose={() => setReportOpen(false)}
+        />
+      )}
+      {/* Share modal */}
+      {shareOpen && (
+        <ShareListingModal
+          listing={listing}
+          onClose={() => setShareOpen(false)}
         />
       )}
     </>

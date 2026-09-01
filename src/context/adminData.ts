@@ -99,7 +99,7 @@ export const initialAdmins: AdminAccount[] = [
   {
     id: "adm-roya",
     name: "رؤیا کاظمی",
-    email: "roya.kazemi@zeromarket.ir",
+    email: "roya.kazemi@KhodroJu.ir",
     avatar: "رک",
     assignedUserIds: [
       "usr-nima-asadi",
@@ -110,7 +110,7 @@ export const initialAdmins: AdminAccount[] = [
   {
     id: "adm-hesam",
     name: "حسام رفیعی",
-    email: "hesam.rafiei@zeromarket.ir",
+    email: "hesam.rafiei@KhodroJu.ir",
     avatar: "حر",
     assignedUserIds: ["usr-sara-mohammadi", "usr-parsian-auto"],
   },

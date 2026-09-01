@@ -86,7 +86,7 @@ export default function ListingDetailSeller({ listing }: Props) {
               </div>
             )}
             <div className="text-2xs text-muted-foreground">
-              هویت تأیید شده · آگهی‌ها توسط زیرومارکت بررسی شده
+              هویت تأیید شده · آگهی‌ها توسط خودروجو بررسی شده
             </div>
           </div>
         </div>

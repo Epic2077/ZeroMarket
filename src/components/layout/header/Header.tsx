@@ -15,14 +15,11 @@ import { Button } from "@/components/ui/button";
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-card border-b border-border h-16 shadow-card vazir-matn">
+    <div className="fixed top-0 left-0 right-0 z-20 bg-card border-b border-border h-16 shadow-card vazir-matn">
       <div className="max-w-screen-2xl mx-auto px-4 lg:px-8 xl:px-10 h-full flex items-center justify-between gap-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 shrink-0">
-          <Logo size={32} />
-          <span className="font-extrabold text-lg tracking-tight text-foreground sm:block">
-            زیرو<span className="text-primary">مارکت</span>
-          </span>
+          <Logo size={150} />
         </Link>
 
         {/* Navigation Links */}

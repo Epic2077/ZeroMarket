@@ -65,7 +65,7 @@ export default function BulkImportProductsModal({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "zeromarket-products-template.csv";
+    a.download = "KhodroJu-products-template.csv";
     a.click();
     URL.revokeObjectURL(url);
     toast.success("قالب اکسل دانلود شد");

@@ -99,7 +99,7 @@ function AddAdminForm() {
           dir="ltr"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="admin@zeromarket.ir"
+          placeholder="admin@KhodroJu.ir"
           className="w-full h-9 rounded-lg border border-border bg-card px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
       </div>
