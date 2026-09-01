@@ -13,7 +13,7 @@ import {
 export function BlogHomePage() {
   return (
     <BlogShell
-      title="وبلاگ، تحلیل و خبرهای ZeroMarket"
+      title="وبلاگ، تحلیل و خبرهای KhodroJu"
       description="فیدی فشرده و شبیه شبکه‌های اجتماعی برای خبرها، تحلیل‌های بازار، و نوشته‌های کوتاه درباره خرید خودروهای صفرکیلومتر."
       rightRail={<BlogRightRail />}
       leftRail={<BlogLeftRail />}

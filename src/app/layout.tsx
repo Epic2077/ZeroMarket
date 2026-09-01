@@ -30,8 +30,8 @@ const dynaPuff = DynaPuff({
 // });
 
 export const metadata: Metadata = {
-  title: "ZeroMarket",
-  description: "بازار خودروهای صفرکیلومتر و وبلاگ تحلیل ZeroMarket",
+  title: "KhodroJu",
+  description: "بازار خودروهای صفرکیلومتر و وبلاگ تحلیل KhodroJu",
 };
 
 export default function RootLayout({

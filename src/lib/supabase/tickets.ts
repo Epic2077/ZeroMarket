@@ -50,11 +50,16 @@ export async function fetchTickets(
   // Fetch profile names separately (avoids RLS issues with join).
   // Only admins get email — regular users only see names.
   const userIds = [...new Set(rows.map((r) => r.user_id))];
-  const { data: profiles } = await supabase
+  const { data: profilesRaw } = await supabase
     .from("profiles")
     .select(isAdmin ? "id, full_name, email" : "id, full_name")
     .in("id", userIds);
-  const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
+  
+  type ProfileData = { id: string; full_name?: string; email?: string };
+  const profiles = (profilesRaw as unknown as ProfileData[] | null) ?? [];
+  const profileMap = new Map<string, ProfileData>(
+    profiles.map((p) => [p.id, p])
+  );
 
   return rows.map((row) => ({
     id: row.id,
@@ -114,11 +119,16 @@ export async function fetchTicketMessages(
 
   const rows = (data ?? []) as any[];
   const senderIds = [...new Set(rows.map((r) => r.sender_id))];
-  const { data: profiles } = await supabase
+  const { data: profilesRaw } = await supabase
     .from("profiles")
     .select("id, full_name, role")
     .in("id", senderIds);
-  const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
+  
+  type ProfileData = { id: string; full_name?: string; role?: string };
+  const profiles = (profilesRaw as unknown as ProfileData[] | null) ?? [];
+  const profileMap = new Map<string, ProfileData>(
+    profiles.map((p) => [p.id, p])
+  );
 
   return rows.map((row) => ({
     id: row.id,
@@ -236,7 +246,7 @@ export function subscribeToTicketMessages(
         table: "ticket_messages",
         filter: `ticket_id=eq.${ticketId}`,
       },
-      async (payload) => {
+      async (payload: { new: unknown; old?: unknown }) => {
         const raw = payload.new as any;
         const { data: profile } = await supabase
           .from("profiles")

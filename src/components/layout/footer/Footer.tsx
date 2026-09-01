@@ -41,11 +41,9 @@ export default function Footer() {
             <p className="section-label text-slate-500 mb-3">بازار خودرو</p>
             <div className="flex flex-col gap-2">
               {[
-                { label: "مرور آگهی‌ها", href: "/listings-marketplace" },
-                { label: "تحلیل قیمت", href: "#price-insights" },
-                { label: "فروشندگان تأییدشده", href: "#sellers" },
-                { label: "تازه‌واردها", href: "/listings-marketplace" },
-                { label: "برندهای برتر", href: "/listings-marketplace" },
+                { label: "مرور آگهی‌ها", href: "/market" },
+                { label: "تحلیل قیمت", href: "/market/analytics" },
+                { label: "فروشندگان تأییدشده", href: "/sellers" },
               ]?.map((item) => (
                 <Link
                   key={`footer-mkt-${item?.label}`}
@@ -63,11 +61,9 @@ export default function Footer() {
             <p className="section-label text-slate-500 mb-3">برای فروشندگان</p>
             <div className="flex flex-col gap-2">
               {[
-                { label: "ثبت آگهی", href: "#register" },
-                { label: "ورود گروهی (اکسل)", href: "#" },
-                { label: "داشبورد فروشنده", href: "/seller-dashboard" },
+                { label: "ثبت آگهی", href: "/dashboard/seller/products/new" },
+                { label: "داشبورد فروشنده", href: "/dashboard/seller" },
                 { label: "دریافت تأییدیه", href: "/user-profile" },
-                { label: "ابزار قیمت‌گذاری", href: "#" },
               ]?.map((item) => (
                 <Link
                   key={`footer-sell-${item?.label}`}
@@ -84,13 +80,7 @@ export default function Footer() {
           <div>
             <p className="section-label text-slate-500 mb-3">شرکت</p>
             <div className="flex flex-col gap-2">
-              {[
-                { label: "درباره خودروجو", href: "#" },
-                { label: "اعتماد و امنیت", href: "#" },
-                { label: "مرکز راهنمایی", href: "#" },
-                { label: "پنل مالک", href: "/dashboard/owner" },
-                { label: "پنل مدیر", href: "/dashboard/admin" },
-              ]?.map((item) => (
+              {[{ label: "تماس با خودروجو", href: "/contact" }]?.map((item) => (
                 <Link
                   key={`footer-co-${item?.label}`}
                   href={item?.href}
