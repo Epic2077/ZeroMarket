@@ -163,8 +163,13 @@ export default function ShareListingModal({ listing, onClose }: Props) {
                 <ol className="text-xs text-muted-foreground mt-2 pr-4 space-y-1">
                   <li>• روی فایل کلیک راست کنید</li>
                   <li>• &quot;ویژگی‌ها&quot; را انتخاب کنید</li>
-                  <li>• اگر گزینه &quot;Unblock&quot; وجود داشت، آن را تیک کنید</li>
-                  <li>• یا با کلیک راست بر روی تصویر، &quot;Open with&quot; را انتخاب کنید</li>
+                  <li>
+                    • اگر گزینه &quot;Unblock&quot; وجود داشت، آن را تیک کنید
+                  </li>
+                  <li>
+                    • یا با کلیک راست بر روی تصویر، &quot;Open with&quot; را
+                    انتخاب کنید
+                  </li>
                 </ol>
               </div>
 

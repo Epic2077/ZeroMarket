@@ -39,8 +39,7 @@ export default function ListingShareCard({ listing, forwardRef }: Props) {
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        fontFamily:
-          '"Segoe UI", "Tahoma", "Arial", sans-serif',
+        fontFamily: '"Segoe UI", "Tahoma", "Arial", sans-serif',
         boxSizing: "border-box",
         color: "#0f172a",
         border: "2px solid #e2e8f0",
