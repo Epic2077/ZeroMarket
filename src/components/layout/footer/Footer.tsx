@@ -85,7 +85,7 @@ export default function Footer() {
             <p className="section-label text-slate-500 mb-3">شرکت</p>
             <div className="flex flex-col gap-2">
               {[
-                { label: "درباره زیرومارکت", href: "#" },
+                { label: "درباره خودروجو", href: "#" },
                 { label: "اعتماد و امنیت", href: "#" },
                 { label: "مرکز راهنمایی", href: "#" },
                 { label: "پنل مالک", href: "/dashboard/owner" },
@@ -105,7 +105,7 @@ export default function Footer() {
 
         <div className="pt-6 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-slate-500">
-            © ۱۴۰۵ زیرومارکت. تمامی حقوق محفوظ است. فقط خودروهای صفرکیلومتر
+            © ۱۴۰۵ خودروجو. تمامی حقوق محفوظ است. فقط خودروهای صفرکیلومتر
             کارخانه.
           </p>
           <div className="flex items-center gap-1 text-xs text-slate-500">

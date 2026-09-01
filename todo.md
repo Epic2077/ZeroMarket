@@ -1,6 +1,6 @@
 # ZeroMarket — Project TODO
 
-Working backlog for ZeroMarket (زیرومارکت). The app is still a front-end prototype
+Working backlog for ZeroMarket (خودروجو). The app is still a front-end prototype
 with mock data in `src/context/`, so this list focuses on what should be cleaned up
 before the backend is introduced.
 
