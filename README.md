@@ -1,4 +1,4 @@
-# ZeroMarket · خودروجو
+# KhodroJu · خودروجو
 
 A marketplace for **brand-new, zero-kilometer factory cars** in Iran. Buyers browse
 structured listings from verified dealers, compare them against live market-price
@@ -20,7 +20,7 @@ and right-to-left**.
   <img alt="Lucide" src="https://img.shields.io/badge/Lucide-icons-F56565?logo=lucide&logoColor=white">
 </p>
 
-> **Note** — ZeroMarket is currently a front-end prototype. Every screen runs on mock
+> **Note** — KhodroJu is currently a front-end prototype. Every screen runs on mock
 > data, so actions like saving a car, sending an offer, or signing in show the intended
 > flow (with on-screen confirmations) but don't yet persist to a server.
 
@@ -29,7 +29,7 @@ and right-to-left**.
 ## How to use the website
 
 This is a guided tour of what each part of the site does and how the typical journeys
-flow. It describes **using** ZeroMarket — not installing it.
+flow. It describes **using** KhodroJu — not installing it.
 
 ### The two journeys at a glance
 

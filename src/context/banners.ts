@@ -10,18 +10,50 @@ export interface BannerPreset {
 }
 
 export const bannerPresets: BannerPreset[] = [
-  { id: "ocean", label: "اقیانوس", gradient: "linear-gradient(135deg,#0ea5e9,#1b4fd8)" },
-  { id: "emerald", label: "زمرد", gradient: "linear-gradient(135deg,#10b981,#0ea5e9)" },
-  { id: "violet", label: "بنفش", gradient: "linear-gradient(135deg,#8b5cf6,#1b4fd8)" },
-  { id: "sunset", label: "غروب", gradient: "linear-gradient(135deg,#f59e0b,#ef4444)" },
-  { id: "rose", label: "ارغوانی", gradient: "linear-gradient(135deg,#ec4899,#8b5cf6)" },
-  { id: "gold", label: "طلایی", gradient: "linear-gradient(135deg,#f59e0b,#b45309)" },
-  { id: "teal", label: "فیروزه‌ای", gradient: "linear-gradient(135deg,#14b8a6,#0f766e)" },
-  { id: "graphite", label: "گرافیت", gradient: "linear-gradient(135deg,#334155,#0f172a)" },
+  {
+    id: "ocean",
+    label: "اقیانوس",
+    gradient: "linear-gradient(135deg,#0ea5e9,#1b4fd8)",
+  },
+  {
+    id: "emerald",
+    label: "زمرد",
+    gradient: "linear-gradient(135deg,#10b981,#0ea5e9)",
+  },
+  {
+    id: "violet",
+    label: "بنفش",
+    gradient: "linear-gradient(135deg,#8b5cf6,#1b4fd8)",
+  },
+  {
+    id: "sunset",
+    label: "غروب",
+    gradient: "linear-gradient(135deg,#f59e0b,#ef4444)",
+  },
+  {
+    id: "rose",
+    label: "ارغوانی",
+    gradient: "linear-gradient(135deg,#ec4899,#8b5cf6)",
+  },
+  {
+    id: "gold",
+    label: "طلایی",
+    gradient: "linear-gradient(135deg,#f59e0b,#b45309)",
+  },
+  {
+    id: "teal",
+    label: "فیروزه‌ای",
+    gradient: "linear-gradient(135deg,#14b8a6,#0f766e)",
+  },
+  {
+    id: "graphite",
+    label: "گرافیت",
+    gradient: "linear-gradient(135deg,#334155,#0f172a)",
+  },
 ];
 
 // localStorage key for the slug → bannerId map.
-export const BANNER_STORAGE_KEY = "zeromarket:seller-banners";
+export const BANNER_STORAGE_KEY = "KhodroJu:seller-banners";
 
 // The seller identity the profile-settings editor manages (mock "self"; matches
 // the seller dashboard's CURRENT_SELLER_ID → "usr-aria-motors").

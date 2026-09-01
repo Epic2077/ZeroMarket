@@ -6,9 +6,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 <!-- END:nextjs-agent-rules -->
 
-# ZeroMarket (خودروجو)
+# KhodroJu (خودروجو)
 
-ZeroMarket is a marketplace for **brand-new, zero-kilometer factory cars** in Iran. Buyers browse structured listings from verified dealers, compare against live market price insights, and submit purchase/negotiation requests; sellers manage listings and incoming requests from a dashboard.
+KhodroJu is a marketplace for **brand-new, zero-kilometer factory cars** in Iran. Buyers browse structured listings from verified dealers, compare against live market price insights, and submit purchase/negotiation requests; sellers manage listings and incoming requests from a dashboard.
 
 The entire UI is **Persian (Farsi) and right-to-left**. Almost every top-level container sets `dir="rtl"`. This is a front-end-only project today — all data is mock data in `src/context/`; there is no backend or database.
 

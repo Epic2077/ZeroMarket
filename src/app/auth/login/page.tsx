@@ -21,7 +21,7 @@ export default function LoginPage() {
 
           <div>
             <h2 className="font-dyna text-3xl text-white font-700 tracking-tight">
-              ZeroMarket
+              KhodroJu
             </h2>
             <p className="mt-2 text-sm text-white/70 leading-relaxed max-w-xs">
               بازار خودروهای صفرکیلومتر — شفاف، سریع و مطمئن.
@@ -63,7 +63,7 @@ export default function LoginPage() {
             <Logo size="small" />
           </div>
           <span className="font-dyna text-lg text-foreground font-700">
-            ZeroMarket
+            KhodroJu
           </span>
         </Link>
 

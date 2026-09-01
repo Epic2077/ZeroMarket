@@ -15,7 +15,7 @@ export default function VerifiedBadge({
 
   return (
     <span
-      title="Verified Seller — Identity confirmed by ZeroMarket"
+      title="Verified Seller — Identity confirmed by KhodroJu"
       aria-label="Verified seller"
       {...rest}
     >
