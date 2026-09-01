@@ -50,7 +50,7 @@ export async function fetchTickets(
   // Fetch profile names separately (avoids RLS issues with join).
   // Only admins get email — regular users only see names.
   const userIds = [...new Set(rows.map((r) => r.user_id))];
-  const { data: profilesRaw } = await supabase
+  const { data: profiles } = await supabase
     .from("profiles")
     .select(isAdmin ? "id, full_name, email" : "id, full_name")
     .in("id", userIds);
@@ -114,7 +114,7 @@ export async function fetchTicketMessages(
 
   const rows = (data ?? []) as any[];
   const senderIds = [...new Set(rows.map((r) => r.sender_id))];
-  const { data: profilesRaw } = await supabase
+  const { data: profiles } = await supabase
     .from("profiles")
     .select("id, full_name, role")
     .in("id", senderIds);
