@@ -18,8 +18,8 @@ export function getListingShareUrl(listingId: string): string {
 export function generateListingMetadata(listing: Listing) {
   const title = `${listing.brand} ${listing.model} ${listing.year}`;
   const description = `${listing.trim} • صفرکیلومتر • ${formatPrice(listing.price)} • ${listing.city}`;
-  const url = `${process.env.NEXT_PUBLIC_SITE_URL || "https://zeromarket.ir"}/market/listings/${listing.id}`;
-  const imageUrl = `${process.env.NEXT_PUBLIC_SITE_URL || "https://zeromarket.ir"}/og-default.jpg`;
+  const url = `${process.env.NEXT_PUBLIC_SITE_URL || "https://khodroju.ir"}/market/listings/${listing.id}`;
+  const imageUrl = `${process.env.NEXT_PUBLIC_SITE_URL || "https://khodroju.ir"}/og-default.jpg`;
 
   return {
     title,
