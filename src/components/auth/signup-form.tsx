@@ -212,7 +212,7 @@ export function SignupForm({
               <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
                 یا
               </FieldSeparator>
-              <Field className="grid grid-cols-3 gap-4">
+              {/* <Field className="grid grid-cols-3 gap-4">
                 <Button variant="outline" type="button">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                     <path
@@ -239,8 +239,8 @@ export function SignupForm({
                     />
                   </svg>
                   <span className="sr-only">Sign up with Meta</span>
-                </Button>
-              </Field>
+                </Button> */}
+              {/* </Field> */}
             </FieldGroup>
           </form>
         </CardContent>
