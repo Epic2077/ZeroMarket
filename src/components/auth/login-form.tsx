@@ -80,7 +80,7 @@ export function LoginForm({
         <CardContent>
           <form onSubmit={onSubmit} noValidate>
             <FieldGroup>
-              <Field>
+              {/* <Field>
                 <Button
                   variant="outline"
                   type="button"
@@ -115,7 +115,7 @@ export function LoginForm({
                   </svg>
                   ورود با گوگل
                 </Button>
-              </Field>
+              </Field> */}
               <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
                 یا
               </FieldSeparator>

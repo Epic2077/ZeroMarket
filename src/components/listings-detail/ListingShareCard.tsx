@@ -362,7 +362,7 @@ export default function ListingShareCard({ listing, forwardRef }: Props) {
             wordSpacing: "normal",
           }}
         >
-          zeromarket.ir
+          khodroju.ir
         </p>
       </div>
     </div>
