@@ -14,6 +14,11 @@ const nextConfig: NextConfig = {
         port: "8000",
         pathname: "/storage/v1/object/public/**",
       },
+      {
+        protocol: "https",
+        hostname: "clickcars.ir",
+        pathname: "/storage/v1/object/public/**",
+      },
     ],
   },
 };
