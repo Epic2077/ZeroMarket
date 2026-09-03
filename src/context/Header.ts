@@ -1,4 +1,5 @@
 export const navLinks = [
+  { label: "خانه", href: "/" },
   { label: "بازار خودرو", href: "/market" },
   { label: "تحلیل بازار", href: "/market/analytics" },
   { label: "نحوه کارکرد", href: "/#how-it-works" },
