@@ -44,11 +44,12 @@ export interface ListingsFilter {
   brand?: string;
   sellerId?: string;
   search?: string;
+  includeDeleted?: boolean;
 }
 
 // ── Fetchers ──────────────────────────────────────────────────────────
 
-/** Fetch all listings, optionally filtered. */
+/** Fetch all listings, optionally filtered. By default excludes soft-deleted items. */
 export async function fetchListings(
   filter?: ListingsFilter,
 ): Promise<ListingRow[]> {
@@ -76,6 +77,11 @@ export async function fetchListings(
     );
   }
 
+  // Exclude soft-deleted items by default
+  if (!filter?.includeDeleted) {
+    query = query.is("deleted_at", null);
+  }
+
   const { data, error } = await query.order("created_at", {
     ascending: false,
   });
@@ -95,13 +101,18 @@ export async function fetchActiveListingsCount(): Promise<number> {
   return count ?? 0;
 }
 
-/** Fetch a single listing by id. */
-export async function fetchListingById(id: string): Promise<ListingRow | null> {
-  const { data, error } = await supabase
-    .from("listings")
-    .select("*")
-    .eq("id", id)
-    .single();
+/** Fetch a single listing by id. By default excludes soft-deleted items. */
+export async function fetchListingById(
+  id: string,
+  includeDeleted = false,
+): Promise<ListingRow | null> {
+  let query = supabase.from("listings").select("*").eq("id", id);
+
+  if (!includeDeleted) {
+    query = query.is("deleted_at", null);
+  }
+
+  const { data, error } = await query.single();
 
   if (error) {
     if (error.code === "PGRST116") return null; // not found
@@ -110,11 +121,30 @@ export async function fetchListingById(id: string): Promise<ListingRow | null> {
   return data as ListingRow;
 }
 
-/** Fetch listings for a specific seller. */
+/** Fetch listings for a specific seller. By default excludes soft-deleted items. */
 export async function fetchListingsBySeller(
   sellerId: string,
+  includeDeleted = false,
 ): Promise<ListingRow[]> {
-  return fetchListings({ sellerId: sellerId });
+  return fetchListings({ sellerId: sellerId, includeDeleted });
+}
+
+/** Soft-delete a listing by setting deleted_at to now. */
+export async function softDeleteListing(id: string): Promise<{ error: any }> {
+  const { error } = await supabase
+    .from("listings")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", id);
+  return { error };
+}
+
+/** Restore a soft-deleted listing by setting deleted_at to null. */
+export async function restoreListing(id: string): Promise<{ error: any }> {
+  const { error } = await supabase
+    .from("listings")
+    .update({ deleted_at: null })
+    .eq("id", id);
+  return { error };
 }
 
 // ── Duplicate check ─────────────────────────────────────────────────

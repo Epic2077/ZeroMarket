@@ -11,10 +11,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="lg:col-span-1">
             <div className="flex items-center gap-2 mb-3">
-              <Logo size={28} />
-              <span className="font-extrabold text-lg tracking-tight">
-                زیرو<span className="text-accent">مارکت</span>
-              </span>
+              <Logo size={150} className="filter: invert" />
             </div>
             <p className="text-sm text-slate-400 leading-relaxed mb-4">
               تنها بازار تخصصی خرید و فروش خودروهای صفرکیلومتر کارخانه‌ای با

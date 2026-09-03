@@ -3,14 +3,16 @@
 import LatestTable from "@/components/home/Latest/Table";
 import { useUserInfo } from "@/context/UserInfoProvider";
 import { useSellerListings } from "@/hooks/useListings";
-import { listingRowToListing } from "@/lib/supabase/listings";
+import {
+  listingRowToListing,
+  softDeleteListing,
+} from "@/lib/supabase/listings";
 import type { Listing } from "@/types/dataTypes";
 import {
   fetchSellerRequests,
   type BuyRequestRow,
 } from "@/lib/supabase/buyRequests";
 import { getSellerListingColumns } from "@/context/sellerListings";
-import { supabase } from "@/lib/supabase/client";
 import ConfirmDialog from "@/components/management/ConfirmDialog";
 import { toast } from "sonner";
 import { Handshake, Loader2, PlusCircle } from "lucide-react";
@@ -34,10 +36,7 @@ export default function ListingsTab() {
 
   const handleDelete = useCallback(async (listing: Listing) => {
     setDeleting(true);
-    const { error } = await supabase
-      .from("listings")
-      .delete()
-      .eq("id", listing.id);
+    const { error } = await softDeleteListing(listing.id);
     setDeleting(false);
     setDeleteTarget(null);
 
