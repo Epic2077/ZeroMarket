@@ -4,7 +4,10 @@ import StatusBadge from "@/components/shared/StatusBadge";
 import { brandModelLabel, cityLabel } from "@/context/carLabels";
 import { formatPrice } from "@/context/data";
 import { useListings } from "@/hooks/useListings";
-import { listingRowToListing } from "@/lib/supabase/listings";
+import {
+  listingRowToListing,
+  softDeleteListing,
+} from "@/lib/supabase/listings";
 import { supabase } from "@/lib/supabase/client";
 import type { PlatformUser, ProductInput } from "@/types/admin";
 import type { Listing } from "@/types/dataTypes";
@@ -29,7 +32,7 @@ interface Props {
 }
 
 export default function ProductsManager({ user }: Props) {
-  const { listings: rawListings } = useListings();
+  const { listings: rawListings } = useListings({ includeDeleted: true });
   const products = rawListings
     .filter((r) => r.seller_id === user.id)
     .map((r) => listingRowToListing(r));
@@ -109,67 +112,82 @@ export default function ProductsManager({ user }: Props) {
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          {products.map((p) => (
-            <div
-              key={p.id}
-              className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2.5"
-            >
-              <div className="min-w-0">
-                <div className="text-sm font-600 text-foreground truncate">
-                  {brandModelLabel(p)} · {p.trim}
+          {products.map((p) => {
+            const isDeleted = !!p.deletedAt;
+            return (
+              <div
+                key={p.id}
+                className={`flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2.5 transition-opacity duration-150 ${
+                  isDeleted ? "opacity-60" : ""
+                }`}
+              >
+                <div className="min-w-0">
+                  <div className="text-sm font-600 text-foreground truncate">
+                    {brandModelLabel(p)} · {p.trim}
+                  </div>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-price text-xs text-foreground">
+                      {formatPrice(p.price)} تومان
+                    </span>
+                    <span className="text-2xs text-muted-foreground">
+                      {cityLabel(p.city)}
+                    </span>
+                    {isDeleted && p.deletedAt && (
+                      <span className="text-2xs text-muted-foreground">
+                        حذف شده در{" "}
+                        {new Date(p.deletedAt).toLocaleDateString("fa-IR", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-price text-xs text-foreground">
-                    {formatPrice(p.price)} تومان
-                  </span>
-                  <span className="text-2xs text-muted-foreground">
-                    {cityLabel(p.city)}
-                  </span>
+                <div className="flex items-center gap-2 shrink-0">
+                  {isDeleted ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-danger/10 text-danger text-2xs font-700 border border-danger/20">
+                      حذف شده
+                    </span>
+                  ) : (
+                    <StatusBadge status={p.status} />
+                  )}
+                  <Link
+                    href={`/market/listings/${p.id}`}
+                    aria-label="مشاهده محصول"
+                    title="مشاهده"
+                    className="flex items-center justify-center w-8 h-8 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors duration-150"
+                  >
+                    <Eye size={14} />
+                  </Link>
+                  <Link
+                    href={`/dashboard/manage/products/${p.id}`}
+                    aria-label="ویرایش محصول"
+                    title="ویرایش"
+                    className="flex items-center justify-center w-8 h-8 rounded-lg border border-border text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors duration-150"
+                  >
+                    <Pencil size={14} />
+                  </Link>
+                  <button
+                    onClick={() => setPendingSale(p)}
+                    aria-label="ثبت معامله"
+                    title="ثبت معامله"
+                    className="flex items-center justify-center w-8 h-8 rounded-lg border border-border text-muted-foreground hover:text-success hover:border-success/40 transition-colors duration-150"
+                  >
+                    <ShoppingCart size={14} />
+                  </button>
+                  <button
+                    onClick={() => setPendingDelete(p)}
+                    aria-label="حذف محصول"
+                    title="حذف"
+                    className="flex items-center justify-center w-8 h-8 rounded-lg border border-border text-muted-foreground hover:text-danger hover:border-danger/40 transition-colors duration-150"
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                {p.deletedAt ? (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-muted text-muted-foreground text-2xs font-700">
-                    حذف شده
-                  </span>
-                ) : (
-                  <StatusBadge status={p.status} />
-                )}
-                <Link
-                  href={`/market/listings/${p.id}`}
-                  aria-label="مشاهده محصول"
-                  title="مشاهده"
-                  className="flex items-center justify-center w-8 h-8 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors duration-150"
-                >
-                  <Eye size={14} />
-                </Link>
-                <Link
-                  href={`/dashboard/manage/products/${p.id}`}
-                  aria-label="ویرایش محصول"
-                  title="ویرایش"
-                  className="flex items-center justify-center w-8 h-8 rounded-lg border border-border text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors duration-150"
-                >
-                  <Pencil size={14} />
-                </Link>
-                <button
-                  onClick={() => setPendingSale(p)}
-                  aria-label="ثبت معامله"
-                  title="ثبت معامله"
-                  className="flex items-center justify-center w-8 h-8 rounded-lg border border-border text-muted-foreground hover:text-success hover:border-success/40 transition-colors duration-150"
-                >
-                  <ShoppingCart size={14} />
-                </button>
-                <button
-                  onClick={() => setPendingDelete(p)}
-                  aria-label="حذف محصول"
-                  title="حذف"
-                  className="flex items-center justify-center w-8 h-8 rounded-lg border border-border text-muted-foreground hover:text-danger hover:border-danger/40 transition-colors duration-150"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -188,7 +206,11 @@ export default function ProductsManager({ user }: Props) {
           description={`«${brandModelLabel(pendingDelete)} ${pendingDelete.trim}» از دید عموم حذف می‌شود و فقط برای مدیران قابل مشاهده می‌ماند.`}
           confirmLabel="حذف"
           onConfirm={async () => {
-            await supabase.from("listings").delete().eq("id", pendingDelete.id);
+            const { error } = await softDeleteListing(pendingDelete.id);
+            if (error) {
+              toast.error(error.message);
+              return;
+            }
             setPendingDelete(null);
             toast.success("محصول حذف شد");
           }}

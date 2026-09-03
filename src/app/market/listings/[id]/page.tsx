@@ -51,6 +51,7 @@ export async function generateMetadata({
     .from("listings")
     .select("*")
     .eq("id", id)
+    .is("deleted_at", null)
     .single();
 
   if (!listingData) {
@@ -108,6 +109,7 @@ export default async function SinglePage({ params }: PageProps) {
     .from("listings")
     .select("*")
     .eq("id", id)
+    .is("deleted_at", null)
     .single();
 
   if (listingError || !listingData) notFound();
