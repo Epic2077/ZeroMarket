@@ -1,174 +1,57 @@
 "use client";
 
 import ListingTable from "@/components/home/Latest/ListingTable";
-import {
-  activeFilterCount,
-  applyFilters,
-  type SelectOption,
-} from "@/context/marketFilters";
-import { FilterState } from "@/types/marketplace";
 import { SlidersHorizontal, X } from "lucide-react";
-import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import MarketplaceFilters from "./MarketPlaceFilters";
 import MarketplaceSidebar from "./MarketPlaceSidebar";
-import { useListings } from "@/hooks/useListings";
-import { useTaxonomyOptions } from "@/hooks/useTaxonomyOptions";
-import { listingRowToListing } from "@/lib/supabase/listings";
-import {
-  fetchMarketPriceMap,
-  computePriceVsMarket,
-} from "@/lib/supabase/marketInsights";
+import { FilterState } from "@/types/marketplace";
+import { SelectOption } from "@/context/marketFilters";
 
-const defaultFilters: FilterState = {
-  search: "",
-  brand: "",
-  bodyType: "",
-  city: "",
-  fuelType: "",
-  priceMin: "",
-  priceMax: "",
-  verifiedOnly: false,
-  status: "",
-  listingType: "",
-  sortBy: "listedDate",
-  sortDir: "desc",
-};
+interface MarketplaceData {
+  listings: any[];
+  totalCount: number;
+  taxonomy: any;
+  filters: FilterState;
+  activeCount: number;
+}
 
-export default function MarketplaceContent() {
-  const searchParams = useSearchParams();
-  const [filters, setFilters] = useState<FilterState>(() => ({
-    ...defaultFilters,
-    brand: searchParams.get("brand") ?? "",
-    city: searchParams.get("city") ?? "",
-  }));
+interface MarketplaceContentProps {
+  filters: FilterState;
+  onUpdate: <K extends keyof FilterState>(key: K, value: FilterState[K]) => void;
+  onReset: () => void;
+}
+
+export default function MarketplaceContent({
+  filters,
+  onUpdate,
+  onReset,
+}: MarketplaceContentProps) {
+  // This component is a placeholder - the actual content is rendered by MarketplaceContentWithData
+  // which receives data as props from the server component wrapper
+  return null;
+}
+
+// The actual content component that receives data from server
+interface MarketplaceContentDataProps extends MarketplaceContentProps {
+  data: MarketplaceData;
+}
+
+export function MarketplaceContentWithData({
+  data,
+  filters,
+  onUpdate,
+  onReset,
+}: MarketplaceContentDataProps) {
+  const { listings, totalCount, taxonomy, activeCount } = data;
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
 
-  const { listings: rawListings, loading, error } = useListings();
-  const { values: taxonomyValues, loading: taxLoading } = useTaxonomyOptions();
-  const [marketMap, setMarketMap] = useState<Map<string, number>>(new Map());
-
-  useEffect(() => {
-    if (!rawListings.length) return;
-    fetchMarketPriceMap(rawListings)
-      .then(setMarketMap)
-      .catch(() => {});
-  }, [rawListings]);
-
   // Taxonomy-driven filter options
-  const brandOptions: SelectOption[] = useMemo(
-    () => taxonomyValues("BRAND").map((v) => ({ value: v, label: v })),
-    [taxonomyValues],
-  );
-  const bodyTypeOptions: SelectOption[] = useMemo(
-    () => taxonomyValues("BODY_TYPE").map((v) => ({ value: v, label: v })),
-    [taxonomyValues],
-  );
-  const cityOptions: SelectOption[] = useMemo(
-    () => taxonomyValues("CITY").map((v) => ({ value: v, label: v })),
-    [taxonomyValues],
-  );
-  const fuelTypeOptions: SelectOption[] = useMemo(
-    () => taxonomyValues("FUEL_TYPE").map((v) => ({ value: v, label: v })),
-    [taxonomyValues],
-  );
-
-  // Convert Supabase rows → frontend Listing shape with market data
-  const allListings = useMemo(
-    () =>
-      rawListings.map((row) => {
-        const l = listingRowToListing(row);
-        const key = `${l.brand}|${l.model}|${l.year}`;
-        const marketAvg = marketMap.get(key);
-        return {
-          ...l,
-          priceVsMarket: marketAvg
-            ? computePriceVsMarket(l.price, marketAvg)
-            : 0,
-          marketAvgBuy: marketAvg ?? l.price,
-          marketAvgSell: marketAvg ?? l.price,
-        };
-      }),
-    [rawListings, marketMap],
-  );
-
-  const updateFilter = <K extends keyof FilterState>(
-    key: K,
-    value: FilterState[K],
-  ) => setFilters((prev) => ({ ...prev, [key]: value }));
-
-  const resetFilters = () => setFilters(defaultFilters);
-
-  const filtered = useMemo(
-    () => applyFilters(allListings, filters),
-    [allListings, filters],
-  );
-  const activeCount = activeFilterCount(filters);
-
-  const isReady = !loading && !taxLoading;
-
-  // ── Loading skeleton ────────────────────────────────────────────────
-  if (!isReady) {
-    return (
-      <section
-        className="max-w-screen-2xl mx-auto px-4 lg:px-8 xl:px-10 py-6 vazir-matn"
-        dir="rtl"
-      >
-        {/* Header skeleton */}
-        <div className="flex items-center justify-between mb-4 animate-pulse">
-          <div className="space-y-2">
-            <div className="h-7 w-48 bg-muted rounded-lg" />
-            <div className="h-4 w-32 bg-muted rounded-lg" />
-          </div>
-          <div className="h-9 w-28 bg-muted rounded-lg" />
-        </div>
-
-        {/* Filter bar skeleton */}
-        <div className="sticky-filters -mx-4 lg:-mx-8 xl:-mx-10 px-4 lg:px-8 xl:px-10 py-3 mb-6">
-          <div className="flex flex-wrap items-center gap-2 animate-pulse">
-            <div className="h-8 w-52 bg-muted rounded-lg" />
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-8 w-28 bg-muted rounded-lg" />
-            ))}
-            <div className="h-8 w-36 bg-muted rounded-lg" />
-          </div>
-        </div>
-
-        {/* Table skeleton */}
-        <div className="flex items-start gap-5">
-          <div className="min-w-0 flex-1 animate-pulse space-y-2">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-14 bg-muted rounded-xl" />
-            ))}
-          </div>
-          <aside className="hidden xl:block w-72 shrink-0 animate-pulse">
-            <div className="h-80 bg-muted rounded-xl" />
-          </aside>
-        </div>
-      </section>
-    );
-  }
-
-  // ── Error state ────────────────────────────────────────────────────
-  if (error) {
-    return (
-      <section
-        className="max-w-screen-2xl mx-auto px-4 lg:px-8 xl:px-10 py-16 vazir-matn"
-        dir="rtl"
-      >
-        <div className="rounded-xl border border-danger/30 bg-danger/5 p-8 text-center">
-          <p className="text-sm text-danger mb-3">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="btn-secondary text-xs"
-          >
-            تلاش مجدد
-          </button>
-        </div>
-      </section>
-    );
-  }
+  const brandOptions: SelectOption[] = (taxonomy.BRAND ?? []).map((v: string) => ({ value: v, label: v }));
+  const bodyTypeOptions: SelectOption[] = (taxonomy.BODY_TYPE ?? []).map((v: string) => ({ value: v, label: v }));
+  const cityOptions: SelectOption[] = (taxonomy.CITY ?? []).map((v: string) => ({ value: v, label: v }));
+  const fuelTypeOptions: SelectOption[] = (taxonomy.FUEL_TYPE ?? []).map((v: string) => ({ value: v, label: v }));
 
   return (
     <section
@@ -182,20 +65,11 @@ export default function MarketplaceContent() {
             بازار خودروهای صفرکیلومتر
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {filtered.length.toLocaleString("fa-IR")} آگهی موجود
+            {totalCount.toLocaleString("fa-IR")} آگهی موجود
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Analytics page link */}
-          {/* <Link
-            href="/market/analytics"
-            className="hidden sm:flex items-center gap-2 px-3 py-2 text-sm font-600 text-primary bg-primary/8 border border-primary/20 rounded-lg hover:bg-primary/15 transition-colors duration-150"
-          >
-            <BarChart3 size={15} />
-            تحلیل بازار
-          </Link> */}
-
           {/* Desktop toggle */}
           <button
             onClick={() => setSidebarOpen((open) => !open)}
@@ -222,10 +96,10 @@ export default function MarketplaceContent() {
       <div className="sticky-filters -mx-4 lg:-mx-8 xl:-mx-10 px-4 lg:px-8 xl:px-10 py-3 mb-6">
         <MarketplaceFilters
           filters={filters}
-          onUpdate={updateFilter}
-          onReset={resetFilters}
+          onUpdate={onUpdate}
+          onReset={onReset}
           activeCount={activeCount}
-          totalResults={filtered.length}
+          totalResults={totalCount}
           brandOptions={brandOptions}
           bodyTypeOptions={bodyTypeOptions}
           cityOptions={cityOptions}
@@ -236,12 +110,12 @@ export default function MarketplaceContent() {
       {/* Body */}
       <div className="flex items-start gap-5">
         <div className="min-w-0 flex-1">
-          <ListingTable data={filtered} />
+          <ListingTable data={listings} />
         </div>
 
         {sidebarOpen && (
           <aside className="hidden xl:block w-72 shrink-0">
-            <MarketplaceSidebar listings={filtered} />
+            <MarketplaceSidebar listings={listings} />
           </aside>
         )}
       </div>
@@ -266,7 +140,7 @@ export default function MarketplaceContent() {
                   تحلیل‌های بازار
                 </h2>
                 <p className="text-2xs text-muted-foreground mt-0.5">
-                  {filtered.length.toLocaleString("fa-IR")} آگهی در نتایج فعلی
+                  {totalCount.toLocaleString("fa-IR")} آگهی در نتایج فعلی
                 </p>
               </div>
               <button
@@ -279,7 +153,7 @@ export default function MarketplaceContent() {
             </div>
 
             <div className="p-4 max-h-[75vh] overflow-auto">
-              <MarketplaceSidebar listings={filtered} />
+              <MarketplaceSidebar listings={listings} />
             </div>
           </div>
         </div>

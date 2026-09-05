@@ -3,42 +3,48 @@
 import { brandModelLabel, colorLabel, toFa } from "@/context/carLabels";
 import { formatPrice } from "@/context/data";
 import { brandLogoStyle } from "@/context/latestTable";
-import { useListings } from "@/hooks/useListings";
-import { listingRowToListing } from "@/lib/supabase/listings";
-import {
-  fetchMarketPriceMap,
-  computePriceVsMarket,
-} from "@/lib/supabase/marketInsights";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
 
-export default function HeroStatsPanel() {
-  const { listings: rawListings } = useListings();
-  const [marketMap, setMarketMap] = useState<Map<string, number>>(new Map());
+interface ListingWithMarket {
+  id: string;
+  brand: string;
+  model: string;
+  trim: string;
+  year: number;
+  color: string;
+  colorHex: string;
+  engine: string;
+  transmission: string;
+  fuelType: string;
+  bodyType: string;
+  city: string;
+  deliveryDays: number;
+  sellerName: string;
+  sellerVerified: boolean;
+  sellerResponseRate: number;
+  sellerMemberSince: string;
+  sellerActiveListings: number;
+  sellerAvatar: string | null;
+  price: number;
+  priceUnit: string;
+  status: string;
+  listedDate: string;
+  factoryOptions: string[];
+  marketAvgBuy: number;
+  marketAvgSell: number;
+  priceVsMarket: number;
+  trend7d: number;
+  listingType: "SELL" | "BUY";
+  deletedAt: string | null;
+}
 
-  useEffect(() => {
-    if (!rawListings.length) return;
-    fetchMarketPriceMap(rawListings)
-      .then(setMarketMap)
-      .catch(() => {});
-  }, [rawListings]);
+interface HeroStatsPanelProps {
+  listings: ListingWithMarket[];
+}
 
-  const recent = useMemo(
-    () =>
-      rawListings.slice(0, 5).map((row) => {
-        const l = listingRowToListing(row);
-        const key = `${l.brand}|${l.model}|${l.year}`;
-        const marketAvg = marketMap.get(key);
-        return {
-          ...l,
-          priceVsMarket: marketAvg
-            ? computePriceVsMarket(l.price, marketAvg)
-            : 0,
-        };
-      }),
-    [rawListings, marketMap],
-  );
+export default function HeroStatsPanel({ listings }: HeroStatsPanelProps) {
+  const recent = listings.slice(0, 5);
 
   return (
     <div className="w-full max-w-95 bg-card rounded-2xl shadow-2xl shadow-black/30 ring-1 ring-black/5 overflow-hidden vazir-matn">
@@ -52,7 +58,7 @@ export default function HeroStatsPanel() {
           <span className="text-sm font-700 text-foreground">بازار زنده</span>
         </div>
         <span className="text-xs text-muted-foreground font-mono-nums">
-          {toFa(rawListings.length)} آگهی فعال
+          {toFa(listings.length)} آگهی فعال
         </span>
       </div>
 

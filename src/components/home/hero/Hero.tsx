@@ -3,7 +3,46 @@ import HeroLabels from "./Labels";
 import HeroStatsPanel from "./HeroStatsPanel";
 import HeroText from "./HeroText";
 
-export default function Hero() {
+interface HeroProps {
+  taxonomy: {
+    BRAND: string[];
+    CITY: string[];
+  };
+  listings: {
+    id: string;
+    brand: string;
+    model: string;
+    trim: string;
+    year: number;
+    color: string;
+    colorHex: string;
+    engine: string;
+    transmission: string;
+    fuelType: string;
+    bodyType: string;
+    city: string;
+    deliveryDays: number;
+    sellerName: string;
+    sellerVerified: boolean;
+    sellerResponseRate: number;
+    sellerMemberSince: string;
+    sellerActiveListings: number;
+    sellerAvatar: string | null;
+    price: number;
+    priceUnit: string;
+    status: string;
+    listedDate: string;
+    factoryOptions: string[];
+    marketAvgBuy: number;
+    marketAvgSell: number;
+    priceVsMarket: number;
+    trend7d: number;
+    listingType: "SELL" | "BUY";
+    deletedAt: string | null;
+  }[];
+}
+
+export default function Hero({ taxonomy, listings }: HeroProps) {
   return (
     <div className="relative w-full min-h-160 bg-linear-to-br from-accent via-primary to-[#060f28] overflow-hidden flex items-center px-4 py-16 sm:px-6 md:px-9.5">
       {/* Background decorations */}
@@ -27,11 +66,11 @@ export default function Hero() {
       >
         <div className="w-full md:w-[55%]">
           <HeroText />
-          <HeroFilter />
+          <HeroFilter taxonomy={taxonomy} />
           <HeroLabels />
         </div>
         <div className="hidden md:flex md:w-[40%] justify-center">
-          <HeroStatsPanel />
+          <HeroStatsPanel listings={listings} />
         </div>
       </div>
     </div>

@@ -10,20 +10,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useTaxonomyOptions } from "@/hooks/useTaxonomyOptions";
 import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
-export default function HeroFilter() {
+interface TaxonomyOptions {
+  BRAND: string[];
+  CITY: string[];
+}
+
+interface HeroFilterProps {
+  taxonomy: TaxonomyOptions;
+}
+
+export default function HeroFilter({ taxonomy }: HeroFilterProps) {
   const router = useRouter();
-  const { values, loading } = useTaxonomyOptions();
+  const brandOptions = taxonomy.BRAND ?? [];
+  const cityOptions = taxonomy.CITY ?? [];
 
   const [brand, setBrand] = useState("");
   const [city, setCity] = useState("");
-
-  const brandOptions = useMemo(() => values("BRAND"), [values]);
-  const cityOptions = useMemo(() => values("CITY"), [values]);
 
   const handleSearch = () => {
     const params = new URLSearchParams();
@@ -32,19 +38,6 @@ export default function HeroFilter() {
     const query = params.toString();
     router.push(query ? `/market?${query}` : "/market");
   };
-
-  if (loading) {
-    return (
-      <div
-        dir="rtl"
-        className="flex gap-3 px-3 py-2.5 items-center bg-secondary rounded-[15px] mt-5 w-full sm:w-max animate-pulse"
-      >
-        <div className="h-9.25 w-full sm:w-58 bg-muted rounded-lg" />
-        <div className="h-9.25 w-full sm:w-53.25 bg-muted rounded-lg" />
-        <div className="h-9.25 w-full sm:w-33.25 bg-muted rounded-lg" />
-      </div>
-    );
-  }
 
   return (
     <div
