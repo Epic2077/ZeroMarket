@@ -9,6 +9,7 @@ const AUTH_REQUIRED_PREFIXES = [
   "/dashboard",
   "/user-profile",
   "/market/listings",
+  "/contact",
 ];
 const SUSPENDED_SAFE_PAGES = [
   "/suspended",
