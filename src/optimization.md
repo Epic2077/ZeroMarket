@@ -23,6 +23,7 @@ Home Page (src/app/page.tsx)
 - Server Component fetching paginated sellers (20 per page)
 - Server-side search/filter/sort via query params
 - Client component only for instant filter UI (debounced navigation)
+
   Phase 2: Caching Strategy
   Data Cache Strategy
   Listings (home/market) fetch(..., { next: { revalidate: 60, tags: ['listings'] } })
@@ -31,6 +32,7 @@ Home Page (src/app/page.tsx)
   Market insights fetch(..., { next: { revalidate: 300 } })
   Listing detail fetch(..., { next: { revalidate: 60 } })
   Use revalidateTag('listings') on mutations (create/update/delete).
+
   Phase 3: Image Optimization
   next.config.ts - Add:
   images: {
@@ -39,12 +41,14 @@ Home Page (src/app/page.tsx)
   formats: ['image/avif', 'image/webp'],
   }
   All <Image> components - Add sizes, priority for above-fold, loading="lazy" for below.
+
   Phase 4: Bundle Size Reduction
   Component Action
   Charts (InsightChart, MarketAnalytics, PriceScatter) dynamic(() => import(...), { ssr: false })
   Modals (ShareListingModal, ReportListingModal, BulkImportModal) Dynamic import
   Heavy UI (MarketPlaceFilters, MarketplaceSidebar) Move filtering logic to server, keep only UI client
   useListings/useSellers hooks Delete - replace with server data + useSearchParams for filters
+
   Phase 5: Accessibility (88 → 100)
 
 1. Semantic HTML: <main>, <section>, <article> properly nested
@@ -53,7 +57,9 @@ Home Page (src/app/page.tsx)
 4. Color contrast: Verify all text meets WCAG AA (4.5:1)
 5. Keyboard nav: All interactive elements reachable, visible focus rings
 6. Headings: Proper h1-h6 hierarchy (no skipped levels)
+
    Phase 6: Best Practices (98 → 100)
+
 7. Error boundaries per feature section
 8. Security headers via next.config.ts:
    async headers() {
@@ -64,6 +70,7 @@ Home Page (src/app/page.tsx)
    ]}]
    }
 9. Remove unused deps: @heroicons/react, html2canvas (if unused)
+
    Phase 7: SEO (Maintain 100)
 
 - Already good: generateMetadata on listing detail
