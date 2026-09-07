@@ -22,6 +22,9 @@ export const brandFa: Record<string, string> = {
 export const bodyTypeFa: Record<string, string> = {
   Sedan: "سدان",
   SUV: "شاسی‌بلند",
+  Hatchback: "هاچ‌بک",
+  Coupe: "کوپه",
+  Van: "ون",
 };
 
 export const cityFa: Record<string, string> = {

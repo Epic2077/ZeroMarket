@@ -4,7 +4,10 @@ import { cookies } from "next/headers";
 import { fetchListings } from "@/lib/supabase/listings";
 import { fetchAllTaxonomy } from "@/lib/supabase/taxonomy";
 import { listingRowToListing } from "@/lib/supabase/listings";
-import { fetchMarketPriceMap, computePriceVsMarket } from "@/lib/supabase/marketInsights";
+import {
+  fetchMarketPriceMap,
+  computePriceVsMarket,
+} from "@/lib/supabase/marketInsights";
 import { FilterState } from "@/types/marketplace";
 import MarketplaceClient from "@/components/market/MarketplaceClient";
 
@@ -24,41 +27,20 @@ function createSupabaseClient() {
   });
 }
 
-// Server-side filter application
-function applyFiltersServer(listings: any[], filters: FilterState) {
-  const search = filters.search.trim().toLowerCase();
-  const min = parseFloat(filters.priceMin);
-  const max = parseFloat(filters.priceMax);
-  const BILLION = 1_000_000_000;
-
-  return listings.filter((l) => {
-    if (search) {
-      const haystack = `${l.brand} ${l.model} ${l.trim} ${l.sellerName}`.toLowerCase();
-      if (!haystack.includes(search)) return false;
-    }
-    if (filters.brand && l.brand !== filters.brand) return false;
-    if (filters.bodyType && l.bodyType !== filters.bodyType) return false;
-    if (filters.city && l.city !== filters.city) return false;
-    if (filters.fuelType && l.fuelType !== filters.fuelType) return false;
-    if (filters.status && l.status !== filters.status) return false;
-    if (filters.listingType && l.listingType !== filters.listingType) return false;
-    if (filters.verifiedOnly && !l.sellerVerified) return false;
-    if (!Number.isNaN(min) && l.price < min * BILLION) return false;
-    if (!Number.isNaN(max) && l.price > max * BILLION) return false;
-    return true;
-  });
-}
-
 // Sort listings
-function sortListings(listings: any[], sortBy: string, sortDir: "asc" | "desc") {
+function sortListings(
+  listings: any[],
+  sortBy: string,
+  sortDir: "asc" | "desc",
+) {
   const multiplier = sortDir === "asc" ? 1 : -1;
   return [...listings].sort((a, b) => {
     let aVal: any = a[sortBy];
     let bVal: any = b[sortBy];
-    
+
     if (typeof aVal === "string") aVal = aVal.toLowerCase();
     if (typeof bVal === "string") bVal = bVal.toLowerCase();
-    
+
     if (aVal < bVal) return -1 * multiplier;
     if (aVal > bVal) return 1 * multiplier;
     return 0;
@@ -73,7 +55,9 @@ interface MarketplaceData {
   activeCount: number;
 }
 
-async function getMarketplaceData(searchParams: Promise<{ [key: string]: string | string[] | undefined }>): Promise<MarketplaceData> {
+async function getMarketplaceData(
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>,
+): Promise<MarketplaceData> {
   const params = await searchParams;
   const supabase = createSupabaseClient();
 
@@ -116,13 +100,59 @@ async function getMarketplaceData(searchParams: Promise<{ [key: string]: string 
     sortDir: ((params.sortDir as string) ?? "desc") as "asc" | "desc",
   };
 
-  // Fetch listings with server-side filters
-  const listingsFilter: any = {
-    status: ["AVAILABLE", "NEGOTIABLE"],
+  const statusMap: Record<string, string> = {
+    active: "AVAILABLE",
+    pending: "WAITING",
+    negotiable: "NEGOTIABLE",
+    reserved: "RESERVED",
   };
-  
+  const listingsFilter: any = {
+    status:
+      filters.status && statusMap[filters.status]
+        ? statusMap[filters.status]
+        : ["AVAILABLE", "NEGOTIABLE"],
+  };
+
   if (filters.brand) listingsFilter.brand = filters.brand;
-  if (filters.search) listingsFilter.search = filters.search;
+  if (filters.bodyType) listingsFilter.bodyType = filters.bodyType;
+  if (filters.city) listingsFilter.city = filters.city;
+  if (filters.fuelType) listingsFilter.fuel = filters.fuelType;
+  if (filters.listingType) listingsFilter.listingType = filters.listingType;
+  if (filters.priceMin) {
+    listingsFilter.priceMin = Number(filters.priceMin) * 1_000_000_000;
+  }
+  if (filters.priceMax) {
+    listingsFilter.priceMax = Number(filters.priceMax) * 1_000_000_000;
+  }
+
+  const search = filters.search.trim();
+  if (filters.verifiedOnly || search) {
+    const [verifiedSellers, namedSellers] = await Promise.all([
+      filters.verifiedOnly
+        ? supabase.from("sellers").select("id").eq("verified", true)
+        : Promise.resolve({ data: null, error: null }),
+      search
+        ? supabase
+            .from("sellers")
+            .select("id")
+            .ilike("full_name", `%${search}%`)
+        : Promise.resolve({ data: null, error: null }),
+    ]);
+    if (verifiedSellers.error) throw verifiedSellers.error;
+    if (namedSellers.error) throw namedSellers.error;
+
+    if (filters.verifiedOnly) {
+      listingsFilter.sellerIds = (verifiedSellers.data ?? []).map(
+        (seller) => seller.id,
+      );
+    }
+    if (search) {
+      listingsFilter.search = search;
+      listingsFilter.searchSellerIds = (namedSellers.data ?? []).map(
+        (seller) => seller.id,
+      );
+    }
+  }
 
   const [listingsRes, taxonomyRes] = await Promise.all([
     fetchListings(listingsFilter),
@@ -145,15 +175,16 @@ async function getMarketplaceData(searchParams: Promise<{ [key: string]: string 
     };
   });
 
-  // Apply remaining filters server-side
-  const filteredListings = applyFiltersServer(allListings, filters);
-  
   // Sort
-  const sortedListings = sortListings(filteredListings, filters.sortBy, filters.sortDir);
-  
+  const sortedListings = sortListings(
+    allListings,
+    filters.sortBy,
+    filters.sortDir,
+  );
+
   // Pagination - first 20
   const paginatedListings = sortedListings.slice(0, 20);
-  const totalCount = filteredListings.length;
+  const totalCount = sortedListings.length;
 
   // Count active filters
   const activeCount = [
@@ -195,7 +226,13 @@ export default async function ListingMarketplace({
 
   return (
     <main className="pt-16">
-      <Suspense fallback={<div className="flex h-20 items-center justify-center">در حال بارگذاری…</div>}>
+      <Suspense
+        fallback={
+          <div className="flex h-20 items-center justify-center">
+            در حال بارگذاری…
+          </div>
+        }
+      >
         <MarketplaceServerWrapper dataPromise={dataPromise} />
       </Suspense>
     </main>

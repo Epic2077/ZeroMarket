@@ -47,6 +47,18 @@ const SELLER_LIMIT = 4;
 const fieldClass =
   "h-8 rounded-lg border border-border bg-card text-xs focus:outline-none focus:ring-2 focus:ring-primary/30";
 
+function matchesLocalizedValue(
+  value: string,
+  selected: string,
+  labels: Record<string, string>,
+) {
+  return (
+    value === selected ||
+    labels[value] === selected ||
+    labels[selected] === value
+  );
+}
+
 const SelectField = ({
   value,
   onChange,
@@ -193,10 +205,24 @@ export default function SearchModal({ onClose }: Props) {
           if (!haystack.includes(q)) return false;
         }
 
-        if (brand && brandFa[l.brand] !== brand) return false;
-        if (bodyType && bodyTypeFa[l.bodyType] !== bodyType) return false;
-        if (city && cityFa[l.city] !== city) return false;
-        if (fuelType && fuelTypeFa[l.fuelType] !== fuelType) return false;
+        if (brand && !matchesLocalizedValue(l.brand, brand, brandFa)) {
+          return false;
+        }
+        if (
+          bodyType &&
+          !matchesLocalizedValue(l.bodyType, bodyType, bodyTypeFa)
+        ) {
+          return false;
+        }
+        if (city && !matchesLocalizedValue(l.city, city, cityFa)) {
+          return false;
+        }
+        if (
+          fuelType &&
+          !matchesLocalizedValue(l.fuelType, fuelType, fuelTypeFa)
+        ) {
+          return false;
+        }
         if (status && l.status !== status) return false;
         if (verifiedOnly && !l.sellerVerified) return false;
         if (!Number.isNaN(min) && l.price < min * BILLION) return false;
@@ -230,8 +256,17 @@ export default function SearchModal({ onClose }: Props) {
             .includes(q);
           if (!match) return false;
         }
-        if (brand && !s.brands.includes(brand)) return false;
-        if (city && s.city !== city) return false;
+        if (
+          brand &&
+          !s.brands.some((sellerBrand) =>
+            matchesLocalizedValue(sellerBrand, brand, brandFa),
+          )
+        ) {
+          return false;
+        }
+        if (city && !matchesLocalizedValue(s.city, city, cityFa)) {
+          return false;
+        }
         if (verifiedOnly && !s.verified) return false;
         return true;
       })
@@ -257,7 +292,7 @@ export default function SearchModal({ onClose }: Props) {
         {/* Search input */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-border shrink-0">
           <Search size={18} className="text-muted-foreground shrink-0" />
-          { }
+          {}
           <input
             autoFocus
             value={query}

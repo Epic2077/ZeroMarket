@@ -1,9 +1,10 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useTransition } from "react";
 import { FilterState } from "@/types/marketplace";
 import { MarketplaceContentWithData } from "@/components/market/MarketplaceContent";
+import { activeFilterCount } from "@/context/marketFilters";
 
 interface MarketplaceData {
   listings: any[];
@@ -17,9 +18,13 @@ interface MarketplaceClientProps {
   initialData: MarketplaceData;
 }
 
-export default function MarketplaceClient({ initialData }: MarketplaceClientProps) {
+export default function MarketplaceClient({
+  initialData,
+}: MarketplaceClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
+  const [isFilterUpdating, setIsFilterUpdating] = useState(false);
 
   // Initialize client-side filters from searchParams
   const [filters, setFilters] = useState<FilterState>(() => ({
@@ -40,6 +45,11 @@ export default function MarketplaceClient({ initialData }: MarketplaceClientProp
   // Data state - initially from server, then updated on filter change
   const [data, setData] = useState<MarketplaceData>(initialData);
 
+  useEffect(() => {
+    setData(initialData);
+    setIsFilterUpdating(false);
+  }, [initialData]);
+
   // Debounced URL update
   const updateUrl = useCallback(
     (newFilters: FilterState) => {
@@ -52,9 +62,13 @@ export default function MarketplaceClient({ initialData }: MarketplaceClientProp
         }
       });
       const query = params.toString();
-      router.replace(query ? `/market?${query}` : "/market", { scroll: false });
+      startTransition(() => {
+        router.replace(query ? `/market?${query}` : "/market", {
+          scroll: false,
+        });
+      });
     },
-    [router],
+    [router, startTransition],
   );
 
   // Sync local state to URL (debounced)
@@ -70,10 +84,12 @@ export default function MarketplaceClient({ initialData }: MarketplaceClientProp
     key: K,
     value: FilterState[K],
   ) => {
+    setIsFilterUpdating(true);
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleReset = () => {
+    setIsFilterUpdating(true);
     setFilters({
       search: "",
       brand: "",
@@ -92,10 +108,11 @@ export default function MarketplaceClient({ initialData }: MarketplaceClientProp
 
   return (
     <MarketplaceContentWithData
-      data={data}
+      data={{ ...data, activeCount: activeFilterCount(filters) }}
       filters={filters}
       onUpdate={handleFilterChange}
       onReset={handleReset}
+      isLoading={isPending || isFilterUpdating}
     />
   );
 }

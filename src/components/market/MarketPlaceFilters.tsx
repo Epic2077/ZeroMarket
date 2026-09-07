@@ -77,7 +77,7 @@ export default function MarketplaceFilters({
   fuelTypeOptions,
 }: Props) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex w-max min-w-full flex-nowrap items-center gap-2 lg:w-full lg:min-w-0 lg:flex-wrap">
       {/* Search */}
       <div className="relative">
         <Search

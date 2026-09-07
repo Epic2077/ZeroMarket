@@ -18,8 +18,12 @@ interface MarketplaceData {
 
 interface MarketplaceContentProps {
   filters: FilterState;
-  onUpdate: <K extends keyof FilterState>(key: K, value: FilterState[K]) => void;
+  onUpdate: <K extends keyof FilterState>(
+    key: K,
+    value: FilterState[K],
+  ) => void;
   onReset: () => void;
+  isLoading?: boolean;
 }
 
 export default function MarketplaceContent({
@@ -42,16 +46,25 @@ export function MarketplaceContentWithData({
   filters,
   onUpdate,
   onReset,
+  isLoading = false,
 }: MarketplaceContentDataProps) {
   const { listings, totalCount, taxonomy, activeCount } = data;
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
 
   // Taxonomy-driven filter options
-  const brandOptions: SelectOption[] = (taxonomy.BRAND ?? []).map((v: string) => ({ value: v, label: v }));
-  const bodyTypeOptions: SelectOption[] = (taxonomy.BODY_TYPE ?? []).map((v: string) => ({ value: v, label: v }));
-  const cityOptions: SelectOption[] = (taxonomy.CITY ?? []).map((v: string) => ({ value: v, label: v }));
-  const fuelTypeOptions: SelectOption[] = (taxonomy.FUEL_TYPE ?? []).map((v: string) => ({ value: v, label: v }));
+  const brandOptions: SelectOption[] = (taxonomy.BRAND ?? []).map(
+    (v: string) => ({ value: v, label: v }),
+  );
+  const bodyTypeOptions: SelectOption[] = (taxonomy.BODY_TYPE ?? []).map(
+    (v: string) => ({ value: v, label: v }),
+  );
+  const cityOptions: SelectOption[] = (taxonomy.CITY ?? []).map(
+    (v: string) => ({ value: v, label: v }),
+  );
+  const fuelTypeOptions: SelectOption[] = (taxonomy.FUEL_TYPE ?? []).map(
+    (v: string) => ({ value: v, label: v }),
+  );
 
   return (
     <section
@@ -93,19 +106,32 @@ export function MarketplaceContentWithData({
       </div>
 
       {/* Sticky filter bar */}
-      <div className="sticky-filters -mx-4 lg:-mx-8 xl:-mx-10 px-4 lg:px-8 xl:px-10 py-3 mb-6">
-        <MarketplaceFilters
-          filters={filters}
-          onUpdate={onUpdate}
-          onReset={onReset}
-          activeCount={activeCount}
-          totalResults={totalCount}
-          brandOptions={brandOptions}
-          bodyTypeOptions={bodyTypeOptions}
-          cityOptions={cityOptions}
-          fuelTypeOptions={fuelTypeOptions}
-        />
+      <div className="sticky-filters -mx-4 lg:-mx-8 xl:-mx-10 mb-6 overflow-x-auto lg:overflow-visible px-4 py-3 lg:px-8 xl:px-10">
+        <div className="min-w-max lg:min-w-0">
+          <MarketplaceFilters
+            filters={filters}
+            onUpdate={onUpdate}
+            onReset={onReset}
+            activeCount={activeCount}
+            totalResults={totalCount}
+            brandOptions={brandOptions}
+            bodyTypeOptions={bodyTypeOptions}
+            cityOptions={cityOptions}
+            fuelTypeOptions={fuelTypeOptions}
+          />
+        </div>
       </div>
+
+      {isLoading && (
+        <div
+          className="mb-4 flex items-center justify-center gap-2 text-xs font-600 text-primary"
+          role="status"
+          aria-live="polite"
+        >
+          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary/25 border-t-primary" />
+          در حال به‌روزرسانی نتایج…
+        </div>
+      )}
 
       {/* Body */}
       <div className="flex items-start gap-5">

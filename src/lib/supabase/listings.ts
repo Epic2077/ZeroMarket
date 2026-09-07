@@ -42,6 +42,14 @@ export type ListingStatus =
 export interface ListingsFilter {
   status?: ListingStatus | ListingStatus[];
   brand?: string;
+  bodyType?: string;
+  city?: string;
+  fuel?: string;
+  listingType?: "SELL" | "BUY";
+  priceMin?: number;
+  priceMax?: number;
+  sellerIds?: string[];
+  searchSellerIds?: string[];
   sellerId?: string;
   search?: string;
   includeDeleted?: boolean;
@@ -67,11 +75,35 @@ export async function fetchListings(
     query = query.eq("brand", filter.brand);
   }
 
+  if (filter?.bodyType) query = query.eq("body_type", filter.bodyType);
+  if (filter?.city) query = query.eq("city", filter.city);
+  if (filter?.fuel) query = query.eq("fuel", filter.fuel);
+  if (filter?.listingType) {
+    query = query.eq("listing_type", filter.listingType);
+  }
+  if (filter?.priceMin !== undefined)
+    query = query.gte("price", filter.priceMin);
+  if (filter?.priceMax !== undefined)
+    query = query.lte("price", filter.priceMax);
+
+  if (filter?.sellerIds) {
+    query = filter.sellerIds.length
+      ? query.in("seller_id", filter.sellerIds)
+      : query.eq("id", "00000000-0000-0000-0000-000000000000");
+  }
+
   if (filter?.sellerId) {
     query = query.eq("seller_id", filter.sellerId);
   }
 
-  if (filter?.search) {
+  if (filter?.search && filter.searchSellerIds) {
+    const sellerClause = filter.searchSellerIds.length
+      ? `,seller_id.in.(${filter.searchSellerIds.join(",")})`
+      : "";
+    query = query.or(
+      `brand.ilike.%${filter.search}%,model.ilike.%${filter.search}%,trim.ilike.%${filter.search}%${sellerClause}`,
+    );
+  } else if (filter?.search) {
     query = query.or(
       `brand.ilike.%${filter.search}%,model.ilike.%${filter.search}%,trim.ilike.%${filter.search}%`,
     );
