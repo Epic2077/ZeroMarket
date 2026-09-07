@@ -191,12 +191,15 @@ export function sellerRowToSummary(
   const activeListings = listing?.activeListings ?? row.active_listings_count;
   const totalListings = listing?.totalListings ?? row.active_listings_count;
 
+  const initials = nameInitials(row.full_name);
+
   const summary: any = {
     id: row.id,
     slug: sellerSlugFromName(row.full_name, row.id),
     name: row.full_name,
     nameEn: row.full_name,
-    avatar_path: nameInitials(row.full_name),
+    avatar_path: row.avatar_path ?? initials, // actual avatar from DB or initials as fallback
+    avatar: initials, // fallback initials
     city: row.city,
     verified: row.verified,
     responseRate: Math.round(row.answer_rate),

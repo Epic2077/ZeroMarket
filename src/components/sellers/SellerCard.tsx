@@ -4,9 +4,28 @@ import VerifiedBadge from "@/components/shared/VerifiedBadeg";
 import { useBanners } from "@/context/BannerProvider";
 import { toFa } from "@/context/carLabels";
 import { formatPrice } from "@/context/data";
-import type { SellerSummary } from "@/types/dataTypes";
 import { ArrowLeft, MapPin, Star } from "lucide-react";
 import Link from "next/link";
+
+interface SellerSummary {
+  id: string;
+  slug: string;
+  name: string;
+  nameEn?: string;
+  avatar_path: string | null;
+  avatar?: string;
+  city: string;
+  verified: boolean;
+  responseRate: number;
+  memberSince: string;
+  activeListings: number;
+  totalListings: number;
+  totalSoldCount: number;
+  sellerScore: number;
+  minPrice: number;
+  brands: string[];
+  listings?: any[];
+}
 
 interface Props {
   seller: SellerSummary;

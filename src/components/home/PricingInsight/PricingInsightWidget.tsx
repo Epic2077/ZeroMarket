@@ -1,7 +1,6 @@
 "use client";
 
 import { TrendingUp, Plus, X, Loader2 } from "lucide-react";
-import { useTaxonomyOptions } from "@/hooks/useTaxonomyOptions";
 import { fetchModelsByBrand } from "@/lib/supabase/taxonomy";
 import { supabase } from "@/lib/supabase/client";
 import { toFa, toEn } from "@/context/carLabels";
@@ -21,6 +20,12 @@ interface InsightData {
   activeListings: number;
 }
 
+interface TaxonomyOptions {
+  BRAND: string[];
+  MODEL: string[];
+  YEAR: string[];
+}
+
 const CHART_COLORS = ["#1B4FD8", "#0EA5E9", "#10B981"];
 const PRICE_COLORS = ["text-primary", "text-accent", "text-success"];
 const BG_COLORS = ["bg-primary/10", "bg-accent/10", "bg-success/10"];
@@ -36,10 +41,13 @@ function formatPriceShort(value: number): string {
   return toFa(Math.round(value / 1_000_000)) + " میلیون";
 }
 
-export default function PriceInsightWidget() {
-  const { values, loading: taxLoading } = useTaxonomyOptions();
-  const brandOptions = useMemo(() => values("BRAND"), [values]);
-  const yearOptions = useMemo(() => values("YEAR"), [values]);
+interface PriceInsightWidgetProps {
+  taxonomy: TaxonomyOptions;
+}
+
+export default function PriceInsightWidget({ taxonomy }: PriceInsightWidgetProps) {
+  const brandOptions = taxonomy.BRAND ?? [];
+  const yearOptions = taxonomy.YEAR ?? [];
   const [slots, setSlots] = useState<CarSlot[]>([
     { brand: "", model: "", year: "" },
   ]);
@@ -201,8 +209,7 @@ export default function PriceInsightWidget() {
                     <select
                       value={slot.brand}
                       onChange={(e) => updateSlot(idx, "brand", e.target.value)}
-                      disabled={taxLoading}
-                      className="h-9 rounded-lg border border-white/10 bg-white/10 text-sm text-slate-200 px-3 focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50 cursor-pointer"
+                      className="h-9 rounded-lg border border-white/10 bg-white/10 text-sm text-slate-200 px-3 focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer"
                       dir="rtl"
                     >
                       <option value="">انتخاب برند</option>
@@ -299,17 +306,6 @@ export default function PriceInsightWidget() {
                 </button>
               )}
             </div>
-            {/* <div className="flex items-center gap-3 p-3 bg-warning/10 border border-warning/20 rounded-xl">
-              <Lock size={16} className="text-warning shrink-0" />
-              <div>
-                <div className="text-xs font-700 text-warning">
-                  تحلیل کامل — ویژه
-                </div>
-                <div className="text-2xs text-slate-400 mt-0.5">
-                  تاریخچه ۳۰ روزه، مقایسه مدل‌ها، خروجی
-                </div>
-              </div>
-            </div> */}
           </div>
           <div className="lg:w-2/3 w-full">
             <div className="bg-white/5 border border-white/10 rounded-xl p-5">
