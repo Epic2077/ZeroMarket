@@ -16,13 +16,13 @@ export interface HomepageStatsRow {
 
 // ── Fetcher ─────────────────────────────────────────────────────────
 
-/** Fetch the singleton homepage stats row. */
-export async function fetchHomepageStats(): Promise<HomepageStatsRow> {
+/** Fetch the singleton homepage stats row when it has been seeded. */
+export async function fetchHomepageStats(): Promise<HomepageStatsRow | null> {
   const { data, error } = await supabase
     .from("homepage_stats")
     .select("*")
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
-  return data as HomepageStatsRow;
+  return data as HomepageStatsRow | null;
 }
