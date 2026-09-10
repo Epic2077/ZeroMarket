@@ -11,6 +11,7 @@ import {
   CheckCircle,
   AlertCircle,
   XCircle,
+  PhoneCall,
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -75,6 +76,25 @@ export default function ContactPage() {
   return (
     <main className="pt-20" dir="rtl">
       <div className="max-w-screen-2xl mx-auto px-4 lg:px-8 xl:px-10 py-8 vazir-matn">
+        <div className="card-elevated mb-8 flex flex-col gap-4 border border-primary/15 bg-primary/[0.03] p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div className="flex items-start gap-3">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <PhoneCall size={19} />
+            </div>
+            <p className="max-w-2xl text-sm leading-7 text-foreground sm:text-base">
+              جهت تماس با کارشناسان ما با شماره زیر تماس حاصل فرمایید یا از طریق
+              فرم زیر درخواست خود را ثبت کنید.
+            </p>
+          </div>
+          <a
+            href="tel:09179449399"
+            dir="ltr"
+            className="w-fit text-lg font-800 tracking-wide text-primary transition-colors hover:text-primary/75 sm:text-xl"
+          >
+            {toFa("09179449399")}
+          </a>
+        </div>
+
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-800 text-foreground">تماس با ما</h1>

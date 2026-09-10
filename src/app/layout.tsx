@@ -5,6 +5,7 @@ import Header from "@/components/layout/header/Header";
 import Footer from "@/components/layout/footer/Footer";
 import AppProviders from "@/components/providers/AppProviders";
 import PageLoaderWrapper from "@/components/shared/PageLoaderWrapper";
+import DevConsoleCredit from "@/components/shared/DevConsoleCredit";
 import { Toaster } from "@/components/ui/sonner";
 
 const vazirMatn = Vazirmatn({
@@ -54,6 +55,7 @@ export default function RootLayout({
             <Footer />
           </footer>
           <PageLoaderWrapper />
+          <DevConsoleCredit />
           <Toaster position="top-center" dir="rtl" />
         </AppProviders>
       </body>

@@ -74,14 +74,14 @@ export const userStats: UserStat[] = [
     up: true,
     icon: <Bell size={18} className="text-warning" />,
   },
-  {
-    id: "us-views",
-    label: "بازدید این ماه",
-    value: "۱۲۶",
-    change: "+۲۴٪",
-    up: true,
-    icon: <Eye size={18} className="text-success" />,
-  },
+  // {
+  //   id: "us-views",
+  //   label: "بازدید این ماه",
+  //   value: "۱۲۶",
+  //   change: "+۲۴٪",
+  //   up: true,
+  //   icon: <Eye size={18} className="text-success" />,
+  // },
 ];
 
 export const userDashboardTabs = [

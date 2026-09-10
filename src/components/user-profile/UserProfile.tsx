@@ -45,7 +45,7 @@ export default function UserProfile() {
         )}
         {activeTab === "security" && <SecurityForm />}
         {activeTab === "notifications" && <NotificationSettings />}
-        {activeTab === "seller" && <BecomeSellerForm status={appStatus} />}
+        {/* {activeTab === "seller" && <BecomeSellerForm status={appStatus} />} */}
       </div>
     </div>
   );
