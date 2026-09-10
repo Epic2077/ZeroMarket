@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Bell } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useUserInfo } from "@/context/UserInfoProvider";
 import {
   fetchUserNotifications,
@@ -116,28 +116,27 @@ export default function Notification() {
     };
   }, [user?.id]);
 
-  // When the dropdown is opened, mark notifications as read for the user
+  // Mark notifications as read when the dropdown is closed after being open
+  const prevOpen = useRef(open);
   useEffect(() => {
-    if (!open || !user?.id) return;
-    const hasUnread = notifications.some((n) => n.is_unread);
-    if (!hasUnread) return;
+    const wasOpen = prevOpen.current;
+    prevOpen.current = open;
 
-    let canceled = false;
-    (async () => {
-      try {
-        await markAllNotificationsRead(user.id);
-        if (canceled) return;
-        setNotifications((prev) =>
-          prev.map((n) => ({ ...n, is_unread: false })),
-        );
-      } catch {
-        // ignore errors silently
-      }
-    })();
+    if (wasOpen && !open && user?.id) {
+      const hasUnread = notifications.some((n) => n.is_unread);
+      if (!hasUnread) return;
 
-    return () => {
-      canceled = true;
-    };
+      void (async () => {
+        try {
+          await markAllNotificationsRead(user.id);
+          setNotifications((prev) =>
+            prev.map((n) => ({ ...n, is_unread: false })),
+          );
+        } catch {
+          // ignore errors silently
+        }
+      })();
+    }
   }, [open, user?.id, notifications]);
 
   return (
@@ -164,7 +163,6 @@ export default function Notification() {
           className="absolute top-full right-0 mt-2 w-80 bg-card border border-border rounded-xl shadow-xl z-50 vazir-matn"
           dir="rtl"
           onMouseEnter={() => setOpen(true)}
-          onMouseLeave={() => setOpen(false)}
         >
           <div className="absolute -top-2 left-0 right-0 h-2" />
           {/* Header */}

@@ -2,7 +2,7 @@
 
 import { Car } from "lucide-react";
 import { Section } from "@/components/shared/Section";
-import { SelectField } from "@/components/shared/SelectField";
+import { SearchSelect } from "@/components/shared/SearchSelect";
 import { Input } from "@/components/ui/input";
 import {
   Field,
@@ -11,13 +11,6 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Controller, type Control } from "react-hook-form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toPersianYear, withCurrent } from "@/lib/utils";
 import type {
   ProductFormErrors,
@@ -59,54 +52,47 @@ export function IdentitySection({
     >
       <FieldGroup>
         <Field className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <SelectField
-            id="p-brand"
-            label="برند"
-            control={control}
-            name="brand"
-            options={brandOptions}
-            placeholder="انتخاب برند"
-            error={errors.brand?.message}
-            withCurrent={withCurrent}
-            currentValue={listing?.brand}
-          />
+          <Field data-invalid={!!errors.brand}>
+            <Controller
+              control={control}
+              name="brand"
+              render={({ field }) => (
+                <SearchSelect
+                  id="p-brand"
+                  label="برند"
+                  value={field.value ?? ""}
+                  options={brandOptions}
+                  placeholder="انتخاب برند"
+                  onChange={field.onChange}
+                />
+              )}
+            />
+            <FieldError>{errors.brand?.message}</FieldError>
+          </Field>
           <Field data-invalid={!!errors.model}>
-            <FieldLabel htmlFor="p-model" className="font-bold">
-              مدل
-            </FieldLabel>
             <Controller
               control={control}
               name="model"
               render={({ field }) => (
-                <Select
-                  dir="rtl"
-                  value={field.value || undefined}
-                  onValueChange={field.onChange}
-                  disabled={
-                    !selectedBrand || modelValues.length === 0 || modelsLoading
+                <SearchSelect
+                  id="p-model"
+                  label="مدل"
+                  value={field.value ?? ""}
+                  options={withCurrent(modelValues, listing?.model)}
+                  placeholder={
+                    modelsLoading
+                      ? "در حال بارگذاری…"
+                      : !selectedBrand
+                        ? "ابتدا برند را انتخاب کنید"
+                        : modelValues.length === 0
+                          ? "مدلی یافت نشد"
+                          : "انتخاب مدل"
                   }
-                >
-                  <SelectTrigger id="p-model" className="w-full vazir-matn">
-                    <SelectValue
-                      placeholder={
-                        modelsLoading
-                          ? "در حال بارگذاری…"
-                          : !selectedBrand
-                            ? "ابتدا برند را انتخاب کنید"
-                            : modelValues.length === 0
-                              ? "مدلی یافت نشد"
-                              : "انتخاب مدل"
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {withCurrent(modelValues, listing?.model).map((m) => (
-                      <SelectItem key={m} value={m}>
-                        {m}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  emptyText="مدلی یافت نشد"
+                  loading={modelsLoading}
+                  disabled={!selectedBrand || modelsLoading}
+                  onChange={field.onChange}
+                />
               )}
             />
             <FieldError>{errors.model?.message}</FieldError>
@@ -123,49 +109,35 @@ export function IdentitySection({
             />
             <FieldError>{errors.trim?.message}</FieldError>
           </Field>
-          <SelectField
-            id="p-year"
-            label="سال ساخت"
+          <Controller
             control={control}
             name="year"
-            options={yearOptions}
-            placeholder="انتخاب سال"
-            error={errors.year?.message}
-            withCurrent={withCurrent}
-            currentValue={listing?.year ? toPersianYear(listing.year) : undefined}
+            render={({ field }) => (
+              <SearchSelect
+                id="p-year"
+                label="سال ساخت"
+                value={field.value ?? ""}
+                options={withCurrent(yearOptions, listing?.year ? toPersianYear(listing.year) : undefined)}
+                placeholder="انتخاب سال"
+                onChange={field.onChange}
+              />
+            )}
           />
-          <Field data-invalid={!!errors.bodyType}>
-            <FieldLabel htmlFor="p-body">نوع بدنه</FieldLabel>
-            <Controller
-              control={control}
-              name="bodyType"
-              render={({ field }) => (
-                <Select
-                  dir="rtl"
-                  value={field.value || undefined}
-                  onValueChange={field.onChange}
-                  disabled
-                >
-                  <SelectTrigger
-                    id="p-body"
-                    className="w-full vazir-matn opacity-70"
-                  >
-                    <SelectValue placeholder="بر اساس مدل انتخاب می‌شود" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {withCurrent(bodyTypeOptions, listing?.bodyType).map(
-                      (b) => (
-                        <SelectItem key={b} value={b}>
-                          {b}
-                        </SelectItem>
-                      ),
-                    )}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            <FieldError>{errors.bodyType?.message}</FieldError>
-          </Field>
+          <Controller
+            control={control}
+            name="bodyType"
+            render={({ field }) => (
+              <SearchSelect
+                id="p-body"
+                label="نوع بدنه"
+                value={field.value ?? ""}
+                options={withCurrent(bodyTypeOptions, listing?.bodyType)}
+                placeholder="بر اساس مدل انتخاب می‌شود"
+                disabled
+                onChange={field.onChange}
+              />
+            )}
+          />
         </Field>
       </FieldGroup>
     </Section>

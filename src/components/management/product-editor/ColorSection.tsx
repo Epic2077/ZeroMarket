@@ -2,6 +2,7 @@
 
 import { Palette } from "lucide-react";
 import { Section } from "@/components/shared/Section";
+import { SearchSelect } from "@/components/shared/SearchSelect";
 import { Input } from "@/components/ui/input";
 import {
   Field,
@@ -14,13 +15,6 @@ import {
   type Control,
   type UseFormSetValue,
 } from "react-hook-form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { withCurrent } from "@/lib/utils";
 import type {
   ProductFormErrors,
@@ -52,34 +46,23 @@ export function ColorSection({
       <FieldGroup>
         <Field className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field data-invalid={!!errors.color}>
-            <FieldLabel htmlFor="p-color" className="font-bold">
-              رنگ
-            </FieldLabel>
             <Controller
               control={control}
               name="color"
               render={({ field }) => (
-                <Select
-                  dir="rtl"
-                  value={field.value || undefined}
-                  onValueChange={(v) => {
+                <SearchSelect
+                  id="p-color"
+                  label="رنگ"
+                  value={field.value ?? ""}
+                  options={withCurrent(colorOptions, listing?.color)}
+                  placeholder="انتخاب رنگ"
+                  onChange={(v) => {
                     field.onChange(v);
                     setValue("colorHex", getColorHex(v), {
                       shouldValidate: true,
                     });
                   }}
-                >
-                  <SelectTrigger id="p-color" className="w-full vazir-matn">
-                    <SelectValue placeholder="انتخاب رنگ" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {withCurrent(colorOptions, listing?.color).map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                />
               )}
             />
             <FieldError>{errors.color?.message}</FieldError>

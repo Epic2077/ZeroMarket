@@ -2,7 +2,7 @@
 
 import { Tag, Sparkles } from "lucide-react";
 import { Section } from "@/components/shared/Section";
-import { SelectField } from "@/components/shared/SelectField";
+import { SearchSelect } from "@/components/shared/SearchSelect";
 import { Input } from "@/components/ui/input";
 import {
   Field,
@@ -16,13 +16,6 @@ import {
   type Control,
   type UseFormSetValue,
 } from "react-hook-form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { withCurrent, fromPersianYear } from "@/lib/utils";
 import { useMarketInsight } from "@/hooks/useMarketInsight";
 import type {
@@ -97,16 +90,19 @@ export function AvailabilityPriceSection({
     >
       <FieldGroup>
         <Field className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <SelectField
-            id="p-city"
-            label="شهر"
+          <Controller
             control={control}
             name="city"
-            options={cityOptions}
-            placeholder="انتخاب شهر"
-            error={errors.city?.message}
-            withCurrent={withCurrent}
-            currentValue={listing?.city}
+            render={({ field }) => (
+              <SearchSelect
+                id="p-city"
+                label="شهر"
+                value={field.value ?? ""}
+                options={withCurrent(cityOptions, listing?.city)}
+                placeholder="انتخاب شهر"
+                onChange={field.onChange}
+              />
+            )}
           />
           <Field data-invalid={!!errors.deliveryDays}>
             <FieldLabel htmlFor="p-delivery">زمان تحویل (روز)</FieldLabel>
@@ -120,32 +116,26 @@ export function AvailabilityPriceSection({
             />
             <FieldError>{errors.deliveryDays?.message}</FieldError>
           </Field>
-          <Field data-invalid={!!errors.status}>
-            <FieldLabel htmlFor="p-status">وضعیت</FieldLabel>
-            <Controller
-              control={control}
-              name="status"
-              render={({ field }) => (
-                <Select
-                  dir="rtl"
-                  value={field.value}
-                  onValueChange={field.onChange}
-                >
-                  <SelectTrigger id="p-status" className="w-full vazir-matn">
-                    <SelectValue placeholder="انتخاب وضعیت" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {productStatusOptions.map((o) => (
-                      <SelectItem key={o.value} value={o.value}>
-                        {o.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            <FieldError>{errors.status?.message}</FieldError>
-          </Field>
+          <Controller
+            control={control}
+            name="status"
+            render={({ field }) => {
+              const statusLabel = productStatusOptions.find((o) => o.value === field.value)?.label ?? "";
+              return (
+                <SearchSelect
+                  id="p-status"
+                  label="وضعیت"
+                  value={statusLabel}
+                  options={productStatusOptions.map((o) => o.label)}
+                  placeholder="انتخاب وضعیت"
+                  onChange={(label) => {
+                    const match = productStatusOptions.find((o) => o.label === label);
+                    if (match) field.onChange(match.value);
+                  }}
+                />
+              );
+            }}
+          />
         </Field>
         <Field data-invalid={!!errors.price}>
           <FieldLabel htmlFor="p-price">قیمت (تومان)</FieldLabel>
