@@ -4,13 +4,14 @@ import { useAdmin } from "@/context/AdminProvider";
 import { CURRENT_ADMIN_ID } from "@/context/adminData";
 import { useSession } from "@/context/SessionProvider";
 import { useUserInfo } from "@/context/UserInfoProvider";
-import { FileText, ShieldHalf, Users, MessageSquare } from "lucide-react";
+import { FileText, ShieldHalf, Users, MessageSquare, Package } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import TaxonomyManager from "../management/TaxonomyManager";
 import UserManagementTable from "../management/UserManagementTable";
 import AdminNotifications from "./AdminNotifications";
 import MarketRequestsFeed from "./MarketRequestsFeed";
 import TicketsTab from "../shared/TicketsTab";
+import ProductsCatalog from "../owner-panel/ProductsCatalog";
 import { useAdminUsers } from "@/hooks/useAdminUsers";
 import { getUnreadCount } from "@/lib/supabase/userNotifications";
 import Avatar from "../shared/Avatar";
@@ -19,6 +20,7 @@ const faNum = (n: number) => n.toLocaleString("fa-IR");
 
 const tabs = [
   { id: "users", label: "کاربران من" },
+  { id: "posts", label: "آگهی‌ها" },
   { id: "options", label: "گزینه‌های ثبت آگهی" },
   { id: "notifications", label: "اعلان‌ها" },
   { id: "tickets", label: "تیکت‌ها" },
@@ -88,7 +90,7 @@ export default function AdminDashboard() {
         id: "posts",
         label: "آگهی‌های تحت مدیریت",
         value: faNum(0),
-        icon: <FileText size={18} className="text-warning" />,
+        icon: <Package size={18} className="text-warning" />,
       },
     ];
 
@@ -175,6 +177,7 @@ export default function AdminDashboard() {
       {active === "notifications" && <AdminNotifications />}
       {active === "tickets" && <TicketsTab />}
       {active === "market" && <MarketRequestsFeed />}
+      {active === "posts" && <ProductsCatalog />}
     </div>
   );
 }

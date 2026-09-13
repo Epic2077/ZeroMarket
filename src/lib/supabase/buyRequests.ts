@@ -34,46 +34,62 @@ export interface BuyRequestRow {
 export async function fetchSellerRequests(
   sellerId: string,
 ): Promise<BuyRequestRow[]> {
-  const { data, error } = await supabase
+  // First fetch requests with listing info
+  const { data: requests, error } = await supabase
     .from("buy_requests")
     .select(
-      "id, listing_id, buyer_id, offered_price, message, status, created_at, buyer:buyer_id(full_name, phone), listing:listing_id(brand, model, listing_type)",
+      "id, listing_id, buyer_id, offered_price, message, status, created_at, listing:listing_id(brand, model, listing_type)",
     )
     .eq("seller_id", sellerId)
     .order("created_at", { ascending: false });
 
   if (error) throw error;
 
-  return (
-    (data ?? []) as Array<{
-      id: string;
-      listing_id: string;
-      buyer_id: string;
-      offered_price: number;
-      message: string | null;
-      status: BuyRequestStatus;
-      created_at: string;
-      buyer: { full_name: string; phone: string | null }[] | null;
-      listing: { brand: string; model: string; listing_type: string }[] | null;
-    }>
-  ).map((row) => ({
-    id: row.id,
-    listing_id: row.listing_id,
-    buyer_id: row.buyer_id,
-    offered_price: row.offered_price,
-    message: row.message,
-    status: row.status,
-    created_at: row.created_at,
-    buyer_name: row.buyer?.[0]?.full_name ?? "خریدار",
-    // Only reveal phone for accepted/negotiable (mirrors the DB view's logic)
-    buyer_phone:
-      row.status === "ACCEPTED" || row.status === "NEGOTIABLE"
-        ? (row.buyer?.[0]?.phone ?? null)
-        : null,
-    listing_brand: row.listing?.[0]?.brand,
-    listing_model: row.listing?.[0]?.model,
-    listing_type: row.listing?.[0]?.listing_type ?? "SELL",
-  }));
+  if (!requests || requests.length === 0) return [];
+
+  // Collect unique buyer_ids
+  const buyerIds = [...new Set(requests.map((r: { buyer_id: string }) => r.buyer_id))];
+
+  // Fetch buyer profiles separately
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, full_name, email, phone")
+    .in("id", buyerIds);
+
+  // Create lookup map
+  const profileMap = new Map<string, { id: string; full_name: string | null; email: string | null; phone: string | null }>(
+    (profiles ?? []).map((p: { id: string; full_name: string | null; email: string | null; phone: string | null }) => [p.id, p]),
+  );
+
+  return requests.map((row: {
+    id: string;
+    listing_id: string;
+    buyer_id: string;
+    offered_price: number;
+    message: string | null;
+    status: string;
+    created_at: string;
+    listing: { brand: string; model: string; listing_type: string }[] | null;
+  }) => {
+    const profile = profileMap.get(row.buyer_id);
+    return {
+      id: row.id,
+      listing_id: row.listing_id,
+      buyer_id: row.buyer_id,
+      offered_price: row.offered_price,
+      message: row.message,
+      status: row.status,
+      created_at: row.created_at,
+      buyer_name: profile?.full_name ?? profile?.email?.split("@")[0] ?? "خریدار",
+      buyer_phone:
+        row.status === "ACCEPTED" || row.status === "NEGOTIABLE"
+          ? (profile?.phone ?? null)
+          : null,
+      listing_brand: row.listing?.[0]?.brand,
+      listing_model: row.listing?.[0]?.model,
+      listing_type: row.listing?.[0]?.listing_type ?? "SELL",
+    };
+  });
 }
 
 /** Mark all REQUEST notifications as read for a user. */
@@ -163,43 +179,61 @@ export interface BuyerRequestRow {
 export async function fetchBuyerRequests(
   buyerId: string,
 ): Promise<BuyerRequestRow[]> {
-  const { data, error } = await supabase
+  // First fetch requests with listing info and seller basic info
+  const { data: requests, error } = await supabase
     .from("buy_requests")
     .select(
-      "id, listing_id, offered_price, status, created_at, seller:seller_id(full_name, phone), listing:listing_id(brand, model, listing_type)",
+      "id, listing_id, offered_price, status, created_at, seller_id, listing:listing_id(brand, model, listing_type)",
     )
     .eq("buyer_id", buyerId)
     .order("created_at", { ascending: false });
 
   if (error) throw error;
 
-  return (
-    (data ?? []) as Array<{
-      id: string;
-      listing_id: string;
-      offered_price: number;
-      status: BuyRequestStatus;
-      created_at: string;
-      seller: { full_name: string; phone: string | null }[] | null;
-      listing: { brand: string; model: string; listing_type: string }[] | null;
-    }>
-  ).map((row) => ({
-    id: row.id,
-    listing_id: row.listing_id,
-    offered_price: row.offered_price,
-    status: row.status,
-    created_at: row.created_at,
-    seller_name: row.seller?.[0]?.full_name ?? "فروشنده",
-    // Only reveal seller phone for accepted/negotiable
-    seller_phone:
-      row.status === "ACCEPTED" || row.status === "NEGOTIABLE"
-        ? (row.seller?.[0]?.phone ?? null)
-        : null,
-    listing_title: row.listing?.[0]
-      ? `${row.listing[0].brand} ${row.listing[0].model}`
-      : "آگهی",
-    listing_type: row.listing?.[0]?.listing_type ?? "SELL",
-  }));
+  if (!requests || requests.length === 0) return [];
+
+  // Collect unique seller_ids
+  const sellerIds = [...new Set(requests.map((r: { seller_id: string }) => r.seller_id))];
+
+  // Fetch seller profiles (from sellers table + profiles for email/phone)
+  const { data: sellers } = await supabase
+    .from("sellers")
+    .select("id, full_name, profiles!inner(email, phone)")
+    .in("id", sellerIds);
+
+  // Create lookup map
+  const sellerMap = new Map<string, { id: string; full_name: string; profiles: { email: string; phone: string } | null }>(
+    (sellers ?? []).map((s: { id: string; full_name: string; profiles: { email: string; phone: string } | null }) => [s.id, s]),
+  );
+
+  return requests.map((row: {
+    id: string;
+    listing_id: string;
+    offered_price: number;
+    status: string;
+    created_at: string;
+    seller_id: string;
+    listing: { brand: string; model: string; listing_type: string }[] | null;
+  }) => {
+    const seller = sellerMap.get(row.seller_id);
+    const profiles = seller?.profiles as { email: string; phone: string } | null;
+    return {
+      id: row.id,
+      listing_id: row.listing_id,
+      offered_price: row.offered_price,
+      status: row.status,
+      created_at: row.created_at,
+      seller_name: seller?.full_name ?? profiles?.email?.split("@")[0] ?? "فروشنده",
+      seller_phone:
+        row.status === "ACCEPTED" || row.status === "NEGOTIABLE"
+          ? (profiles?.phone ?? null)
+          : null,
+      listing_title: row.listing?.[0]
+        ? `${row.listing[0].brand} ${row.listing[0].model}`
+        : "آگهی",
+      listing_type: row.listing?.[0]?.listing_type ?? "SELL",
+    };
+  });
 }
 
 /** Cancel (delete) a buy request. Only allowed for WAITING or NEGOTIABLE. */
