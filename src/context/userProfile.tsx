@@ -87,6 +87,7 @@ export const userStats: UserStat[] = [
 export const userDashboardTabs = [
   { id: "saved", label: "آگهی‌های ذخیره‌شده" },
   { id: "requests", label: "درخواست‌های من" },
+  { id: "vehicleRequests", label: "ثبت نام های خودرو" },
   { id: "notifications", label: "اعلان‌ها" },
   { id: "alerts", label: "هشدارهای قیمت" },
 ] as const;
