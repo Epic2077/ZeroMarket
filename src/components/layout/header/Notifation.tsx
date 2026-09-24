@@ -13,18 +13,31 @@ import {
 } from "@/lib/supabase/buyRequests";
 import { supabase } from "@/lib/supabase/client";
 
-/** Determine the user's dashboard path based on their role. */
+/** Determine the notification destination based on the user's role. */
 function dashboardPath(role: string | undefined): string {
   switch (role) {
     case "OWNER":
       return "/dashboard/owner";
     case "ADMIN":
       return "/dashboard/admin";
-    case "USER":
-      return "/dashboard/user";
     default:
-      return "/dashboard/user";
+      return "/dashboard/user#notif";
   }
+}
+
+function notificationPath(
+  notification: NotificationRow,
+  role: string | undefined,
+): string {
+  const isBuyingOrSelling = ["REQUEST", "PRICE", "SAVED"].includes(
+    notification.kind.toUpperCase(),
+  );
+
+  if (isBuyingOrSelling && (role === "OWNER" || role === "ADMIN")) {
+    return "/dashboard/user#notif";
+  }
+
+  return dashboardPath(role);
 }
 
 function timeAgo(iso: string): string {
@@ -203,8 +216,7 @@ export default function Notification() {
                   }`}
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (n.href) router.push(n.href);
-                    else router.push(dashboardHref);
+                    router.push(notificationPath(n, profile?.role));
                   }}
                 >
                   <div className="relative shrink-0 mt-0.5">

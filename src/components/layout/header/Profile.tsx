@@ -40,19 +40,16 @@ export default function Profile() {
             <Link href="/dashboard/admin">پنل مدیریت</Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href="/dashboard/seller">پنل معامله</Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/dashboard/user">پروفایل کاربری</Link>
+            <Link href="/dashboard/user">پنل کاربری</Link>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     );
   } else if (profile?.role === "USER") {
     dashboardLink = (
-      <Link href="/dashboard/seller" className={linkClass}>
+      <Link href="/dashboard/user" className={linkClass}>
         <LayoutDashboardIcon size={15} />
-        پنل معامله
+        پنل کاربری
       </Link>
     );
   }
@@ -61,7 +58,7 @@ export default function Profile() {
     <>
       {user && (
         <div className="flex items-center gap-2">
-          <Link href="/dashboard/user" className={linkClass}>
+          <Link href="/user-profile" className={linkClass}>
             <User size={15} />
             پروفایل
           </Link>

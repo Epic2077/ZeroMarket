@@ -30,10 +30,10 @@ import {
 const faNum = (n: number) => n.toLocaleString("fa-IR");
 
 const kindStyles: Record<string, { label: string; className: string }> = {
-  REQUEST: { label: "درخواست", className: "bg-primary/10 text-primary" },
-  PRICE: { label: "قیمت", className: "bg-warning/10 text-warning" },
-  SAVED: { label: "ذخیره‌شده", className: "bg-success/10 text-success" },
-  SYSTEM: { label: "سیستم", className: "bg-accent/10 text-accent" },
+  REQUEST: { label: "بازار", className: "bg-primary/10 text-primary" },
+  PRICE: { label: "شخصی", className: "bg-warning/10 text-warning" },
+  SAVED: { label: "شخصی", className: "bg-success/10 text-success" },
+  SYSTEM: { label: "شخصی", className: "bg-accent/10 text-accent" },
 };
 
 const filters = [

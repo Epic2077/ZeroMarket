@@ -4,15 +4,24 @@ import VerifiedBadge from "@/components/shared/VerifiedBadeg";
 import { useUserInfo } from "@/context/UserInfoProvider";
 import { currentUser } from "@/context/userProfile";
 import type { SellerApplicationStatus } from "@/types/user";
-import { Clock, LayoutDashboard } from "lucide-react";
+import { Clock, LayoutDashboard, LogOutIcon } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Button } from "../ui/button";
 
 interface Props {
   appStatus: SellerApplicationStatus;
 }
 
 export default function ProfileHeader({ appStatus }: Props) {
-  const { profile } = useUserInfo();
+  const { signOut, profile } = useUserInfo();
+
+  const navigate = useRouter();
+
+  const logout = () => {
+    signOut();
+    navigate.push("/");
+  };
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
@@ -56,6 +65,15 @@ export default function ProfileHeader({ appStatus }: Props) {
       </div>
       <div className="flex items-center gap-2">
         {/* Maps to this member's managed-platform record. */}
+        <Button
+          onClick={logout}
+          variant={"destructive"}
+          size="lg"
+          className="btn-secondary border-destructive! text-destructive!"
+        >
+          <LogOutIcon />
+          خروج
+        </Button>
         {/* <AdminManageButton userId="usr-nima-asadi" /> */}
         <Link href="/dashboard/user" className="btn-secondary text-sm">
           <LayoutDashboard size={14} />
