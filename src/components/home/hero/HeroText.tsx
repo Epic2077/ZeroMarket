@@ -15,10 +15,10 @@ export default function HeroText() {
         خودروی نو بخر یا بفروش
       </h1>
       <p className="text-sm md:text-base sm:text-lg text-white/70 mb-4 max-w-xl leading-relaxed">
-        <p className="font-bold mb-1">
+        <span className="block font-bold mb-1">
           {" "}
           تنها پلتفرم تخصصی خودروهای صفر کیلومتر
-        </p>
+        </span>
         آگهی‌های ساختارمند، فروشندگان تأییدشده، تحلیل قیمت لحظه‌ای
       </p>
     </div>
