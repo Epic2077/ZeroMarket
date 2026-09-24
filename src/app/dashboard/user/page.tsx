@@ -1,9 +1,9 @@
-import UserDashboard from "@/components/user-dashboard/UserDashboard";
+import Dashboard from "@/components/dashboard/Dashboard";
 
 export default function UserDashboardPage() {
   return (
     <main className="pt-16" dir="rtl">
-      <UserDashboard />
+      <Dashboard />
     </main>
   );
 }
