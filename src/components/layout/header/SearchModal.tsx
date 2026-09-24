@@ -45,7 +45,7 @@ const CAR_LIMIT = 6;
 const SELLER_LIMIT = 4;
 
 const fieldClass =
-  "h-8 rounded-lg border border-border bg-card text-xs focus:outline-none focus:ring-2 focus:ring-primary/30";
+  "h-10 rounded-lg border border-border bg-card text-xs focus:outline-none focus:ring-2 focus:ring-primary/30";
 
 function matchesLocalizedValue(
   value: string,
@@ -74,7 +74,7 @@ const SelectField = ({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className={`${fieldClass} appearance-none pl-3 pr-7 py-1.5 font-500 text-foreground cursor-pointer min-w-[110px] text-right`}
+      className={`${fieldClass} w-full appearance-none pl-3 pr-7 py-1.5 font-500 text-foreground cursor-pointer text-right sm:min-w-27.5 sm:w-auto`}
       dir="rtl"
     >
       <option value="">{placeholder}</option>
@@ -277,7 +277,7 @@ export default function SearchModal({ onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-20 vazir-matn"
+      className="fixed inset-0 z-50 flex items-stretch justify-center vazir-matn sm:items-start sm:p-4 sm:pt-20"
       dir="rtl"
       role="dialog"
       aria-modal="true"
@@ -288,21 +288,20 @@ export default function SearchModal({ onClose }: Props) {
         onClick={onClose}
       />
 
-      <div className="relative bg-card rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden">
+      <div className="relative flex h-dvh max-h-dvh w-full flex-col overflow-hidden bg-card shadow-2xl sm:h-auto sm:max-h-[80vh] sm:max-w-2xl sm:rounded-2xl">
         {/* Search input */}
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-border shrink-0">
+        <div className="flex items-center gap-2 border-b border-border px-4 py-3 sm:gap-3 sm:px-5 sm:py-4">
           <Search size={18} className="text-muted-foreground shrink-0" />
-          {}
           <input
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="جست‌وجوی خودرو یا فروشنده…"
-            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+            className="min-w-0 flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
           />
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-600 transition-colors duration-150 shrink-0 ${
+            className={`flex h-10 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-xs font-600 transition-colors duration-150 sm:px-3 ${
               showFilters
                 ? "bg-primary/10 text-primary"
                 : "text-muted-foreground hover:bg-muted"
@@ -319,7 +318,7 @@ export default function SearchModal({ onClose }: Props) {
           <button
             onClick={onClose}
             aria-label="بستن"
-            className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted transition-colors duration-150 shrink-0"
+            className="shrink-0 rounded-lg p-2 text-muted-foreground transition-colors duration-150 hover:bg-muted"
           >
             <X size={16} />
           </button>
@@ -327,7 +326,7 @@ export default function SearchModal({ onClose }: Props) {
 
         {/* Filters drawer/panel */}
         {showFilters && (
-          <div className="px-5 py-3 border-b border-border bg-muted/20 flex flex-wrap items-center gap-2 max-h-[160px] overflow-y-auto shrink-0 select-none">
+          <div className="grid max-h-[42vh] shrink-0 grid-cols-2 gap-2 overflow-y-auto border-b border-border bg-muted/20 px-4 py-3 select-none sm:flex sm:max-h-40 sm:flex-wrap sm:items-center sm:px-5">
             <SelectField
               value={brand}
               onChange={setBrand}
@@ -360,13 +359,13 @@ export default function SearchModal({ onClose }: Props) {
             />
 
             {/* Price range */}
-            <div className="flex items-center gap-1">
+            <div className="col-span-2 grid grid-cols-2 items-center gap-2 sm:flex sm:items-center sm:gap-1">
               <input
                 type="number"
                 value={priceMin}
                 onChange={(e) => setPriceMin(e.target.value)}
                 placeholder="حداقل (میلیارد)"
-                className={`${fieldClass} w-50 px-2 py-1 font-mono text-center`}
+                className={`${fieldClass} w-full px-2 py-1 font-mono text-center sm:w-50`}
               />
               <span className="text-xs text-muted-foreground">–</span>
               <input
@@ -374,14 +373,14 @@ export default function SearchModal({ onClose }: Props) {
                 value={priceMax}
                 onChange={(e) => setPriceMax(e.target.value)}
                 placeholder="حداکثر (میلیارد)"
-                className={`${fieldClass} w-50 px-2 py-1 font-mono text-center`}
+                className={`${fieldClass} w-full px-2 py-1 font-mono text-center sm:w-50`}
               />
             </div>
 
             {/* Verified toggle */}
             <button
               onClick={() => setVerifiedOnly(!verifiedOnly)}
-              className={`flex items-center gap-1.5 h-8 px-2.5 text-xs font-500 rounded-lg border transition-colors duration-150 ${
+              className={`flex h-10 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-500 transition-colors duration-150 sm:h-8 ${
                 verifiedOnly
                   ? "bg-accent/10 border-accent/30 text-accent"
                   : "bg-card border-border text-muted-foreground hover:text-foreground"
@@ -395,7 +394,7 @@ export default function SearchModal({ onClose }: Props) {
             {activeFilterCount > 0 && (
               <button
                 onClick={handleReset}
-                className="text-xs text-danger font-600 hover:underline flex items-center gap-0.5 ml-auto"
+                className="col-span-2 flex items-center gap-0.5 text-xs font-600 text-danger hover:underline sm:ml-auto sm:col-span-1"
               >
                 <X size={12} />
                 حذف فیلترها
@@ -405,7 +404,7 @@ export default function SearchModal({ onClose }: Props) {
         )}
 
         {/* Results */}
-        <div className="overflow-y-auto px-2 py-2">
+        <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
           {loading ? (
             <div className="flex items-center justify-center gap-2 py-10">
               <Loader2 size={18} className="animate-spin text-primary" />

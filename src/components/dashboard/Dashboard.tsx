@@ -31,7 +31,8 @@ export default function Dashboard() {
 
     selectNotificationTab();
     window.addEventListener("hashchange", selectNotificationTab);
-    return () => window.removeEventListener("hashchange", selectNotificationTab);
+    return () =>
+      window.removeEventListener("hashchange", selectNotificationTab);
   }, []);
 
   return (
