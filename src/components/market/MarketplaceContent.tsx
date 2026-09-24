@@ -49,7 +49,7 @@ export function MarketplaceContentWithData({
   isLoading = false,
 }: MarketplaceContentDataProps) {
   const { listings, totalCount, taxonomy, activeCount } = data;
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
 
   // Taxonomy-driven filter options
@@ -86,7 +86,7 @@ export function MarketplaceContentWithData({
           {/* Desktop toggle */}
           <button
             onClick={() => setSidebarOpen((open) => !open)}
-            className="hidden xl:flex items-center gap-2 px-3 py-2 text-sm font-600 text-muted-foreground border border-border rounded-lg hover:bg-muted transition-colors duration-150"
+            className="hidden border-accent border-2 animate-pulse xl:flex items-center gap-2 px-3 py-2 text-sm font-600 text-muted-foreground  rounded-lg hover:bg-muted transition-colors duration-150"
           >
             <SlidersHorizontal size={15} />
             {sidebarOpen ? "پنهان کردن" : "نمایش"} تحلیل‌ها
@@ -95,7 +95,7 @@ export function MarketplaceContentWithData({
           {/* Mobile analytics modal trigger */}
           <button
             onClick={() => setAnalyticsOpen(true)}
-            className="xl:hidden mb-5 flex items-center gap-2 px-3 py-2 text-sm font-600 text-muted-foreground border border-border rounded-lg hover:bg-muted transition-colors duration-150"
+            className="xl:hidden mb-5 flex border-accent border-2 animate-pulse items-center gap-2 px-3 py-2 text-sm font-600 text-muted-foreground rounded-lg hover:bg-muted transition-colors duration-150"
             aria-haspopup="dialog"
             aria-expanded={analyticsOpen}
           >

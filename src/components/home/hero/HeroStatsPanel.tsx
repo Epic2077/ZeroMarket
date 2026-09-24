@@ -1,5 +1,7 @@
 "use client";
 
+/*
+// Commented out - replaced with VehicleRequestWidget
 import { brandModelLabel, colorLabel, toFa } from "@/context/carLabels";
 import { formatPrice } from "@/context/data";
 import { brandLogoStyle } from "@/context/latestTable";
@@ -48,7 +50,7 @@ export default function HeroStatsPanel({ listings }: HeroStatsPanelProps) {
 
   return (
     <div className="w-full max-w-95 bg-card rounded-2xl shadow-2xl shadow-black/30 ring-1 ring-black/5 overflow-hidden vazir-matn">
-      {/* Header */}
+      // Header
       <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-muted/40">
         <div className="flex items-center gap-2">
           <span className="relative flex h-2 w-2">
@@ -62,7 +64,7 @@ export default function HeroStatsPanel({ listings }: HeroStatsPanelProps) {
         </span>
       </div>
 
-      {/* Listing rows */}
+      // Listing rows
       <div className="divide-y divide-border">
         {recent.map((l) => (
           <Link
@@ -106,7 +108,7 @@ export default function HeroStatsPanel({ listings }: HeroStatsPanelProps) {
         ))}
       </div>
 
-      {/* Footer */}
+      // Footer
       <Link
         href="/market"
         className="flex items-center justify-center gap-1 px-5 py-3 text-sm text-primary hover:bg-primary/5 font-600 transition-colors duration-150 border-t border-border"
@@ -116,4 +118,12 @@ export default function HeroStatsPanel({ listings }: HeroStatsPanelProps) {
       </Link>
     </div>
   );
+}
+*/
+
+// Re-export VehicleRequestWidget as HeroStatsPanel replacement
+import { VehicleRequestWidget } from "@/components/vehicle-request/VehicleRequestWidget";
+
+export default function HeroStatsPanel() {
+  return <VehicleRequestWidget className="max-w-95" />;
 }

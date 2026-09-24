@@ -19,6 +19,7 @@ import {
   type OwnerNotification,
 } from "@/lib/supabase/taxonomy";
 import Avatar from "../shared/Avatar";
+import VehicleRequestsTab from "../management/VehicleRequestsTab";
 
 const tabs = [
   { id: "overview", label: "مرور کلی" },
@@ -30,6 +31,7 @@ const tabs = [
   { id: "tickets", label: "تیکت‌ها" },
   { id: "transactions", label: "معاملات و آمار" },
   { id: "market", label: "تراکنش‌های بازار" },
+  { id: "vehicleRequests", label: "ثبت نام های خودرو" },
 ] as const;
 
 type TabId = (typeof tabs)[number]["id"];
@@ -155,6 +157,7 @@ export default function OwnerDashboard() {
       {active === "tickets" && <TicketsTab />}
       {active === "transactions" && <OwnerTransactions />}
       {active === "market" && <MarketRequestsFeed />}
+      {active === "vehicleRequests" && <VehicleRequestsTab />}
     </div>
   );
 }

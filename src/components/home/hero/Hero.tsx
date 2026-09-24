@@ -47,9 +47,19 @@ export default function Hero({ taxonomy, listings }: HeroProps) {
     <div className="relative w-full min-h-160 bg-linear-to-br from-accent via-primary to-[#060f28] overflow-hidden flex items-center px-4 py-16 sm:px-6 md:px-9.5">
       {/* Background decorations */}
       <div className="absolute inset-0 pointer-events-none select-none">
-        <svg className="absolute inset-0 w-full h-full opacity-[0.09]" xmlns="http://www.w3.org/2000/svg">
+        <svg
+          className="absolute inset-0 w-full h-full opacity-[0.09]"
+          xmlns="http://www.w3.org/2000/svg"
+        >
           <defs>
-            <pattern id="hero-dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+            <pattern
+              id="hero-dots"
+              x="0"
+              y="0"
+              width="24"
+              height="24"
+              patternUnits="userSpaceOnUse"
+            >
               <circle cx="1" cy="1" r="1" fill="white" />
             </pattern>
           </defs>
@@ -70,7 +80,7 @@ export default function Hero({ taxonomy, listings }: HeroProps) {
           <HeroLabels />
         </div>
         <div className="hidden md:flex md:w-[40%] justify-center">
-          <HeroStatsPanel listings={listings} />
+          <HeroStatsPanel />
         </div>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { UserDashboardTabId } from "@/context/userProfile";
 import NotificationsTab from "./NotificationsTab";
 import MyRequestsTab from "./MyRequestsTab";
+import MyVehicleRequestsTab from "./MyVehicleRequestsTab";
 import PriceAlertsTab from "./PriceAlertsTab";
 import SavedListingsTab from "./SavedListingsTab";
 import UserDashboardHeader from "./UserDashboardHeader";
@@ -21,6 +22,7 @@ export default function UserDashboard() {
 
       {activeTab === "saved" && <SavedListingsTab />}
       {activeTab === "requests" && <MyRequestsTab />}
+      {activeTab === "vehicleRequests" && <MyVehicleRequestsTab />}
       {activeTab === "notifications" && <NotificationsTab />}
       {activeTab === "alerts" && <PriceAlertsTab />}
     </div>
