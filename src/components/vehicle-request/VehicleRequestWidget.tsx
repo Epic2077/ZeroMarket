@@ -139,7 +139,7 @@ export function VehicleRequestWidget({
         </Button>
 
         <p className="text-xs text-muted-foreground text-center mt-3">
-          بدون هزینه و بدون تعهد &nbsp;|&nbsp; تیم ما با شما تماس می‌گیرد
+          رزرو بدون هزینه &nbsp;|&nbsp; تیم ما با شما تماس می‌گیرد
         </p>
       </div>
     </div>
