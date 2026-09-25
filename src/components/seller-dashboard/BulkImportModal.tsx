@@ -33,20 +33,54 @@ export default function BulkImportModal({ onClose }: Props) {
   const [downloading, setDownloading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const [dragActive, setDragActive] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const getAuthHeaders = () => {
+    const headers = new Headers();
+    if (session?.access_token) {
+      headers.set("Authorization", `Bearer ${session.access_token}`);
+    }
+    return headers;
+  };
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const removeFile = () => {
+    setFile(null);
+    setErrors([]);
+    if (inputRef.current) inputRef.current.value = "";
+  };
 
   const downloadTemplate = async () => {
     setDownloading(true);
     try {
-      const fnUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-excel-template`;
-      const res = await fetch(fnUrl, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-        },
+      const res = await fetch("/api/excel/export", {
+        method: "GET",
+        headers: getAuthHeaders(),
       });
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error ?? `HTTP ${res.status}`);
+      }
 
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
@@ -78,18 +112,22 @@ export default function BulkImportModal({ onClose }: Props) {
     formData.append("file", file);
 
     try {
-      const fnUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/import-listings`;
-      const res = await fetch(fnUrl, {
+      const res = await fetch("/api/excel/import", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${session?.access_token ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-        },
+        headers: getAuthHeaders(),
         body: formData,
       });
 
       const result = await res.json();
 
-      if (!res.ok) throw new Error(result.error ?? `HTTP ${res.status}`);
+      if (!res.ok) {
+        if (result.errors && Array.isArray(result.errors)) {
+          setErrors(result.errors);
+        } else {
+          throw new Error(result.error ?? `HTTP ${res.status}`);
+        }
+        return;
+      }
 
       if (result.success) {
         toast.success(result.message ?? "آگهی‌ها با موفقیت ثبت شدند");
@@ -175,7 +213,17 @@ export default function BulkImportModal({ onClose }: Props) {
           {/* Upload dropzone */}
           <div
             onClick={() => inputRef.current?.click()}
-            className="flex flex-col items-center justify-center gap-2 w-full py-6 rounded-xl border-2 border-dashed border-border hover:border-primary/40 hover:bg-muted/30 transition-colors duration-150 cursor-pointer text-center"
+            onDragEnter={handleDrag}
+            onDragOver={handleDrag}
+            onDragLeave={handleDrag}
+            onDrop={handleDrop}
+            className={`flex flex-col items-center justify-center gap-2 w-full py-6 rounded-xl border-2 border-dashed transition-colors duration-150 cursor-pointer text-center ${
+              dragActive
+                ? "border-primary bg-primary/5"
+                : file
+                ? "border-primary/40 bg-primary/5"
+                : "border-border hover:border-primary/40 hover:bg-muted/30"
+            }`}
           >
             <input
               ref={inputRef}
@@ -186,9 +234,21 @@ export default function BulkImportModal({ onClose }: Props) {
             />
             <FileSpreadsheet size={24} className="text-muted-foreground" />
             {file ? (
-              <span className="text-sm font-600 text-foreground">
-                {file.name}
-              </span>
+              <div className="flex items-center gap-2 w-full max-w-xs">
+                <span className="text-sm font-600 text-foreground truncate flex-1">
+                  {file.name}
+                </span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeFile();
+                  }}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-danger hover:bg-danger/10 transition-colors duration-150"
+                  aria-label="حذف فایل"
+                >
+                  <X size={16} />
+                </button>
+              </div>
             ) : (
               <>
                 <span className="text-sm font-600 text-foreground">

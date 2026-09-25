@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import BulkImportProductsModal from "./BulkImportProductsModal";
 import ConfirmDialog from "./ConfirmDialog";
 import RecordSaleModal from "./RecordSaleModal";
+import { useSession } from "@/context/SessionProvider";
 
 interface Props {
   user: PlatformUser;
@@ -33,6 +34,7 @@ interface Props {
 
 export default function ProductsManager({ user }: Props) {
   const { listings: rawListings } = useListings({ includeDeleted: true });
+  const { role: viewerRole } = useSession();
   const products = rawListings
     .filter((r) => r.seller_id === user.id)
     .map((r) => listingRowToListing(r));
@@ -41,6 +43,7 @@ export default function ProductsManager({ user }: Props) {
   const [bulkOpen, setBulkOpen] = useState(false);
 
   const canHaveProducts = user.role !== "USER";
+  const isAdminOrOwner = viewerRole === "admin" || viewerRole === "owner";
 
   const handleBulk = async (rows: ProductInput[]) => {
     for (const row of rows) {
@@ -80,13 +83,15 @@ export default function ProductsManager({ user }: Props) {
         </h3>
         {canHaveProducts && (
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setBulkOpen(true)}
-              className="btn-secondary text-xs"
-            >
-              <Upload size={13} />
-              ورود گروهی (اکسل)
-            </button>
+            {isAdminOrOwner && (
+              <button
+                onClick={() => setBulkOpen(true)}
+                className="btn-secondary text-xs"
+              >
+                <Upload size={13} />
+                ورود گروهی (اکسل)
+              </button>
+            )}
             <Link
               href={`/dashboard/manage/products/new?owner=${user.id}`}
               className="btn-primary text-xs"
