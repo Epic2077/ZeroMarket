@@ -132,7 +132,7 @@ export default function BecomeSellerForm({ status, onSubmitted }: Props) {
         <p className="text-sm text-muted-foreground max-w-md">
           اکنون می‌توانید آگهی ثبت کنید و درخواست‌های خرید را مدیریت کنید.
         </p>
-        <Link href="/dashboard/seller" className="btn-primary text-sm mt-1">
+        <Link href="/dashboard/user" className="btn-primary text-sm mt-1">
           <Store size={14} />
           ورود به داشبورد فروشنده
         </Link>

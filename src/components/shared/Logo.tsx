@@ -49,16 +49,12 @@ const Logo = memo(function Logo({
           alt="Logo"
           width={resolvedSize}
           height={resolvedSize}
-          className="flex-shrink-0"
+          className="h-auto max-w-full shrink-0 bg-transparent! object-contain"
           priority={true}
           unoptimized={src.endsWith(".svg")}
         />
       ) : (
-        <AppIcon
-          name={iconName}
-          size={resolvedSize}
-          className="flex-shrink-0"
-        />
+        <AppIcon name={iconName} size={resolvedSize} className="shrink-0" />
       )}
     </div>
   );

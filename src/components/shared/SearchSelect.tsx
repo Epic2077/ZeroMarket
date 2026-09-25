@@ -70,7 +70,7 @@ export function SearchSelect({
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e: MouseEvent) => {
+    const handler = (e: Event) => {
       if (
         containerRef.current &&
         !containerRef.current.contains(e.target as Node)
@@ -79,7 +79,11 @@ export function SearchSelect({
       }
     };
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("touchstart", handler);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("touchstart", handler);
+    };
   }, [open]);
 
   const select = (val: string) => {
@@ -110,7 +114,10 @@ export function SearchSelect({
           {loading ? loadingText : value || placeholder}
         </span>
         {loading ? (
-          <Loader2 size={16} className="shrink-0 text-muted-foreground animate-spin" />
+          <Loader2
+            size={16}
+            className="shrink-0 text-muted-foreground animate-spin"
+          />
         ) : (
           <ChevronDown
             size={16}
@@ -142,7 +149,10 @@ export function SearchSelect({
               </button>
             )}
           </div>
-          <div ref={listRef} className="max-h-56 overflow-y-auto py-1">
+          <div
+            ref={listRef}
+            className="max-h-56 overflow-y-auto overscroll-contain py-1"
+          >
             {filtered.length === 0 ? (
               <p className="px-4 py-6 text-center text-xs text-muted-foreground">
                 {emptyText}

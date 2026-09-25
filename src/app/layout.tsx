@@ -43,7 +43,7 @@ export default function RootLayout({
   return (
     <html
       lang="fa"
-      className={`${vazirMatn.variable} ${dynaPuff.variable}  h-full antialiased vazir-matn`}
+      className={`${vazirMatn.variable} ${dynaPuff.variable} h-full antialiased vazir-matn`}
     >
       <body className="min-h-full flex flex-col">
         <AppProviders>

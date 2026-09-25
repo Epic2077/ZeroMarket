@@ -216,7 +216,7 @@ begin
       'درخواست بسته شد',
       'خریدار معامله را تأیید و تکمیل کرد.',
       'REQUEST',
-      '/dashboard/seller'
+      '/dashboard/user'
     );
   end if;
 

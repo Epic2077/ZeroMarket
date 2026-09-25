@@ -76,24 +76,39 @@ export default function ContactPage() {
   return (
     <main className="pt-20" dir="rtl">
       <div className="max-w-screen-2xl mx-auto px-4 lg:px-8 xl:px-10 py-8 vazir-matn">
-        <div className="card-elevated mb-8 flex flex-col gap-4 border border-primary/15 bg-primary/[0.03] p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-          <div className="flex items-start gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <PhoneCall size={19} />
+        <section className="relative mb-8 overflow-hidden rounded-2xl border border-primary/20 bg-primary/4 p-5 shadow-sm sm:p-6">
+          <div className="pointer-events-none absolute -left-12 -top-16 size-40 rounded-full bg-primary/10 blur-2xl" />
+          <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3.5">
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-white shadow-lg shadow-primary/20">
+                <PhoneCall size={20} />
+              </div>
+              <div>
+                <p className="mb-1 text-xs font-800 tracking-wide text-primary">
+                  پشتیبانی خودروجو
+                </p>
+                <h2 className="text-base font-800 text-foreground sm:text-lg">
+                  برای راهنمایی، با ما در تماس باشید
+                </h2>
+                <p className="mt-1.5 max-w-xl text-sm leading-6 text-muted-foreground">
+                  کارشناسان ما آماده پاسخ‌گویی به پرسش‌های شما هستند.
+                </p>
+              </div>
             </div>
-            <p className="max-w-2xl text-sm leading-7 text-foreground sm:text-base">
-              جهت تماس با کارشناسان ما با شماره زیر تماس حاصل فرمایید یا از طریق
-              فرم زیر درخواست خود را ثبت کنید.
-            </p>
+            <a
+              href="tel:09179449399"
+              dir="ltr"
+              className="group flex w-full items-center justify-between gap-4 rounded-xl border border-primary/20 bg-card px-4 py-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md sm:w-auto sm:min-w-56 sm:flex-col sm:items-end sm:gap-0"
+            >
+              <span className="text-2xs font-700 text-muted-foreground">
+                تماس مستقیم
+              </span>
+              <span className="text-xl font-900 tracking-wide text-primary transition-colors group-hover:text-primary/75 sm:text-2xl">
+                {toFa("09179449399")}
+              </span>
+            </a>
           </div>
-          <a
-            href="tel:09179449399"
-            dir="ltr"
-            className="w-fit text-lg font-800 tracking-wide text-primary transition-colors hover:text-primary/75 sm:text-xl"
-          >
-            {toFa("09179449399")}
-          </a>
-        </div>
+        </section>
 
         <div className="flex items-center justify-between mb-8">
           <div>

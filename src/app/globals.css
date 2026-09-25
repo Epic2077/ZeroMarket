@@ -188,6 +188,12 @@
     scrollbar-width: thin;
     scrollbar-color: var(--border) transparent;
   }
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
   .scrollbar-thin::-webkit-scrollbar {
     width: 4px;
     height: 4px;

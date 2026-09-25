@@ -59,7 +59,7 @@ export default function Footer() {
             <div className="flex flex-col gap-2">
               {[
                 { label: "ثبت آگهی", href: "/dashboard/seller/products/new" },
-                { label: "داشبورد فروشنده", href: "/dashboard/seller" },
+                { label: "داشبورد فروشنده", href: "/dashboard/user" },
                 { label: "دریافت تأییدیه", href: "/user-profile" },
               ]?.map((item) => (
                 <Link
