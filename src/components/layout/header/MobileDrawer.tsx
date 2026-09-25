@@ -102,7 +102,7 @@ export default function MobileDrawer({ setMobileOpen }: MobileDrawerProps) {
                 پروفایل کاربری
               </Link>
               <Link
-                href="/dashboard/seller"
+                href="/dashboard/user"
                 onClick={() => setMobileOpen(false)}
                 className="px-3 py-2.5 text-sm font-500 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors duration-150 flex items-center gap-2"
               >

@@ -8,5 +8,5 @@ export default function SellerProductCreateEntry() {
 
   if (!profile) return null;
 
-  return <ProductEditor owner={profile} backHref="/dashboard/seller" />;
+  return <ProductEditor owner={profile} backHref="/dashboard/user" />;
 }
