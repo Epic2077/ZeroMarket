@@ -7,6 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useUserInfo } from "@/context/UserInfoProvider";
+import { useSession } from "@/context/SessionProvider";
 import { useSeller } from "@/hooks/useSellers";
 import {
   ChevronDown,
@@ -31,9 +32,12 @@ interface Props {
 
 export default function DashHeader({ onBulkImport }: Props) {
   const { signOut, profile, loading: userLoading } = useUserInfo();
+  const { role } = useSession();
   const { seller, loading: sellerLoading } = useSeller(profile?.id ?? "");
   const loading = userLoading && sellerLoading ? true : false;
   const navigate = useRouter();
+
+  const isAdminOrOwner = role === "admin" || role === "owner";
 
   const logout = () => {
     signOut();
@@ -101,9 +105,17 @@ export default function DashHeader({ onBulkImport }: Props) {
                     ثبت آگهی جدید
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={onBulkImport}>
-                  <Upload size={14} />
-                  ورود گروهی (اکسل)
+                {isAdminOrOwner && (
+                  <DropdownMenuItem onSelect={onBulkImport}>
+                    <Upload size={14} />
+                    ورود گروهی (اکسل)
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem asChild>
+                  <Link href="/market">
+                    <Store size={14} />
+                    مشاهده بازار
+                  </Link>
                 </DropdownMenuItem>
               </>
             ) : (

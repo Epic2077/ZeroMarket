@@ -3,9 +3,10 @@
 import { toFa } from "@/context/carLabels";
 import { useTaxonomyOptions } from "@/hooks/useTaxonomyOptions";
 import type { ProductInput } from "@/types/admin";
-import { Download, FileSpreadsheet, Upload, X } from "lucide-react";
+import { Download, FileSpreadsheet, Loader2, Upload, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { useUserInfo } from "@/context/UserInfoProvider";
 
 interface Props {
   sellerName: string;
@@ -41,14 +42,13 @@ const steps = [
   },
 ];
 
-// Mock Excel import: no parser, so a successful upload synthesizes a few full
-// product rows from the current taxonomy to demonstrate the flow.
 export default function BulkImportProductsModal({
   sellerName,
   onImport,
   onClose,
 }: Props) {
   const { values } = useTaxonomyOptions();
+  const { session } = useUserInfo();
 
   const brands = values("BRAND");
   const colors = values("COLOR");
@@ -57,46 +57,115 @@ export default function BulkImportProductsModal({
   const bodyTypes = values("BODY_TYPE");
   const cities = values("CITY");
   const [file, setFile] = useState<File | null>(null);
+  const [downloading, setDownloading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [dragActive, setDragActive] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const downloadTemplate = () => {
-    const csv = "﻿" + TEMPLATE_COLUMNS.join(",") + "\n";
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "KhodroJu-products-template.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("قالب اکسل دانلود شد");
+  const getAuthHeaders = () => {
+    const headers = new Headers();
+    if (session?.access_token) {
+      headers.set("Authorization", `Bearer ${session.access_token}`);
+    }
+    return headers;
   };
 
-  const handleUpload = () => {
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const removeFile = () => {
+    setFile(null);
+    setErrors([]);
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  const downloadTemplate = async () => {
+    setDownloading(true);
+    try {
+      const res = await fetch("/api/excel/export", {
+        method: "GET",
+        headers: getAuthHeaders(),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error ?? `HTTP ${res.status}`);
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "Listings_Template.xlsx";
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("قالب اکسل دانلود شد");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "خطا در دانلود فایل");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleUpload = async () => {
     if (!file) {
       toast.error("لطفاً ابتدا فایل اکسل تکمیل شده را انتخاب کنید");
       return;
     }
-    const base = file.name.replace(/\.[^.]+$/, "");
-    const rows: ProductInput[] = Array.from({ length: 4 }).map((_, i) => ({
-      brand: brands[i % brands.length] ?? "خودرو",
-      model: `${base}-${toFa(i + 1)}`,
-      trim: "استاندارد",
-      year: 2026,
-      color: colors[i % colors.length] ?? "سفید",
-      colorHex: "#1b4fd8",
-      engine: "۲.۰ لیتر",
-      transmission: transmissions[0] ?? "اتوماتیک",
-      fuelType: fuelTypes[0] ?? "بنزینی",
-      bodyType: bodyTypes[i % bodyTypes.length] ?? "سدان",
-      city: cities[i % cities.length] ?? "تهران",
-      deliveryDays: 7,
-      price: 1_500_000_000 + i * 100_000_000,
-      status: "active",
-      factoryOptions: [],
-    }));
-    onImport(rows);
-    toast.success(`${toFa(rows.length)} محصول برای «${sellerName}» افزوده شد`);
-    onClose();
+
+    setUploading(true);
+    setErrors([]);
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/excel/import", {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: formData,
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        if (result.errors && Array.isArray(result.errors)) {
+          setErrors(result.errors);
+        } else {
+          throw new Error(result.error ?? `HTTP ${res.status}`);
+        }
+        return;
+      }
+
+      if (result.success) {
+        toast.success(result.message ?? "آگهی‌ها با موفقیت ثبت شدند");
+        onClose();
+      } else if (result.errors) {
+        setErrors(result.errors);
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "خطا در بارگذاری فایل");
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
   };
 
   return (
@@ -146,15 +215,30 @@ export default function BulkImportProductsModal({
 
           <button
             onClick={downloadTemplate}
-            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg border border-primary/30 bg-primary/5 text-primary text-sm font-700 hover:bg-primary/10 transition-colors duration-150"
+            disabled={downloading}
+            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg border border-primary/30 bg-primary/5 text-primary text-sm font-700 hover:bg-primary/10 transition-colors duration-150 disabled:opacity-50"
           >
-            <Download size={15} />
-            دانلود قالب اکسل
+            {downloading ? (
+              <Loader2 size={15} className="animate-spin" />
+            ) : (
+              <Download size={15} />
+            )}
+            {downloading ? "در حال آماده‌سازی…" : "دانلود قالب اکسل"}
           </button>
 
           <div
             onClick={() => inputRef.current?.click()}
-            className="flex flex-col items-center justify-center gap-2 w-full py-6 rounded-xl border-2 border-dashed border-border hover:border-primary/40 hover:bg-muted/30 transition-colors duration-150 cursor-pointer text-center"
+            onDragEnter={handleDrag}
+            onDragOver={handleDrag}
+            onDragLeave={handleDrag}
+            onDrop={handleDrop}
+            className={`flex flex-col items-center justify-center gap-2 w-full py-6 rounded-xl border-2 border-dashed transition-colors duration-150 cursor-pointer text-center ${
+              dragActive
+                ? "border-primary bg-primary/5"
+                : file
+                ? "border-primary/40 bg-primary/5"
+                : "border-border hover:border-primary/40 hover:bg-muted/30"
+            }`}
           >
             <input
               ref={inputRef}
@@ -165,9 +249,21 @@ export default function BulkImportProductsModal({
             />
             <FileSpreadsheet size={24} className="text-muted-foreground" />
             {file ? (
-              <span className="text-sm font-600 text-foreground">
-                {file.name}
-              </span>
+              <div className="flex items-center gap-2 w-full max-w-xs">
+                <span className="text-sm font-600 text-foreground truncate flex-1">
+                  {file.name}
+                </span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeFile();
+                  }}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-danger hover:bg-danger/10 transition-colors duration-150"
+                  aria-label="حذف فایل"
+                >
+                  <X size={16} />
+                </button>
+              </div>
             ) : (
               <>
                 <span className="text-sm font-600 text-foreground">
@@ -181,13 +277,34 @@ export default function BulkImportProductsModal({
           </div>
         </div>
 
+        {errors.length > 0 && (
+          <div className="p-3 bg-danger/5 border border-danger/20 rounded-xl text-xs text-danger max-h-40 overflow-y-auto">
+            <p className="font-700 mb-1">
+              لطفاً خطاهای زیر را در فایل اصلاح کنید:
+            </p>
+            <ul className="list-disc pr-5 space-y-0.5">
+              {errors.map((err, i) => (
+                <li key={i}>{err}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-border">
           <button onClick={onClose} className="btn-secondary text-sm">
             انصراف
           </button>
-          <button onClick={handleUpload} className="btn-primary text-sm">
-            <Upload size={14} />
-            بارگذاری و افزودن
+          <button
+            onClick={handleUpload}
+            disabled={uploading || !file}
+            className="btn-primary text-sm disabled:opacity-50"
+          >
+            {uploading ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Upload size={14} />
+            )}
+            {uploading ? "در حال بارگذاری…" : "بارگذاری و افزودن"}
           </button>
         </div>
       </div>
