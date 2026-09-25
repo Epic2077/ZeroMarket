@@ -61,6 +61,9 @@ export default function TableRender({ listings }: TableRenderProps) {
                   ? "bg-accent/5 border-accent/20"
                   : "bg-linear-to-br from-background via-background to-muted/30"
               }`}
+              onClick={() =>
+                window.location.replace(`/market/listings/${row.id}`)
+              }
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
@@ -117,12 +120,6 @@ export default function TableRender({ listings }: TableRenderProps) {
                     {status.label}
                   </Badge>
                 )}
-                <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                  {row.seller}
-                  {row.verified && (
-                    <BadgeCheck className="h-3.5 w-3.5 text-primary shrink-0" />
-                  )}
-                </span>
               </div>
 
               <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
@@ -135,6 +132,15 @@ export default function TableRender({ listings }: TableRenderProps) {
                 <div className="flex flex-col gap-0.5">
                   <span className="text-muted-foreground">رنگ</span>
                   <span className="font-medium">{row.color}</span>
+                </div>
+                <div className="col-span-2 flex flex-col gap-0.5">
+                  <span className="text-muted-foreground">فروشنده</span>
+                  <span className="inline-flex items-center gap-1.5 font-medium">
+                    {row.seller}
+                    {row.verified && (
+                      <BadgeCheck className="h-4 w-4 text-primary shrink-0" />
+                    )}
+                  </span>
                 </div>
               </div>
 

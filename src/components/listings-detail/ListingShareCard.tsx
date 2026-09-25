@@ -31,11 +31,11 @@ export default function ListingShareCard({ listing, forwardRef }: Props) {
       ref={forwardRef}
       style={{
         width: "100%",
-        aspectRatio: "1.2 / 1",
+        aspectRatio: "0.60 / 1",
         backgroundColor: "#ffffff",
         backgroundImage: "linear-gradient(135deg, #f0f4ff 0%, #f9f5ff 100%)",
         borderRadius: "20px",
-        padding: "32px",
+        padding: "28px",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
@@ -47,8 +47,29 @@ export default function ListingShareCard({ listing, forwardRef }: Props) {
         textAlign: "right",
         fontFeatureSettings: '"mark" on, "mset" on',
         textRendering: "optimizeLegibility",
+        position: "relative",
+        overflow: "hidden",
       }}
     >
+      {/* Brand watermark — captured in the downloaded image */}
+      <img
+        src="/assets/images/app_logo.png"
+        alt=""
+        aria-hidden="true"
+        crossOrigin="anonymous"
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%) rotate(-45deg)",
+          width: "78%",
+          maxWidth: "560px",
+          opacity: 0.07,
+          pointerEvents: "none",
+          userSelect: "none",
+          mixBlendMode: "multiply",
+        }}
+      />
       {/* Header */}
       <div
         style={{
@@ -200,132 +221,75 @@ export default function ListingShareCard({ listing, forwardRef }: Props) {
           </div>
         </div>
 
-        {/* Specs grid */}
+        {/* Specs grid — full product detail */}
         <div
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "12px",
+            gap: "10px",
           }}
         >
-          {/* City */}
-          <div
-            style={{
-              backgroundColor: "#ffffff",
-              border: "1px solid #e2e8f0",
-              borderRadius: "8px",
-              padding: "12px",
-              textAlign: "center",
-            }}
-          >
-            <p
+          {[
+            { label: "شهر", value: listing.city, color: "#0f172a" },
+            {
+              label: "تحویل",
+              value:
+                listing.deliveryDays === 0
+                  ? "آماده"
+                  : `${listing.deliveryDays} روز`,
+              color: "#10b981",
+            },
+            { label: "وضعیت", value: "صفر کیلومتر", color: "#10b981" },
+            { label: "رنگ", value: listing.color, color: "#0f172a" },
+            { label: "بدنه", value: listing.bodyType, color: "#0f172a" },
+            { label: "موتور", value: listing.engine, color: "#0f172a" },
+            {
+              label: "گیربکس",
+              value: listing.transmission,
+              color: "#0f172a",
+            },
+            { label: "سوخت", value: listing.fuelType, color: "#0f172a" },
+            { label: "سال", value: String(listing.year), color: "#0f172a" },
+          ].map((spec) => (
+            <div
+              key={spec.label}
               style={{
-                fontSize: "11px",
-                color: "#64748b",
-                marginBottom: "6px",
-                fontWeight: "600",
-                margin: "0",
-                direction: "rtl",
+                backgroundColor: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: "8px",
+                padding: "10px",
                 textAlign: "center",
-                unicodeBidi: "normal" as const,
               }}
             >
-              شهر
-            </p>
-            <p
-              style={{
-                fontSize: "13px",
-                fontWeight: "700",
-                color: "#0f172a",
-                margin: "0",
-                direction: "rtl",
-                textAlign: "center",
-                unicodeBidi: "normal" as const,
-              }}
-            >
-              {listing.city}
-            </p>
-          </div>
-
-          {/* Delivery */}
-          <div
-            style={{
-              backgroundColor: "#ffffff",
-              border: "1px solid #e2e8f0",
-              borderRadius: "8px",
-              padding: "12px",
-              textAlign: "center",
-            }}
-          >
-            <p
-              style={{
-                fontSize: "11px",
-                color: "#64748b",
-                marginBottom: "6px",
-                fontWeight: "600",
-                margin: "0",
-                direction: "rtl",
-                textAlign: "center",
-                unicodeBidi: "normal" as const,
-              }}
-            >
-              تحویل
-            </p>
-            <p
-              style={{
-                fontSize: "13px",
-                fontWeight: "700",
-                color: "#10b981",
-                margin: "0",
-                direction: "rtl",
-                textAlign: "center",
-                unicodeBidi: "normal" as const,
-              }}
-            >
-              {listing.deliveryDays === 0
-                ? "آماده"
-                : `${listing.deliveryDays} روز`}
-            </p>
-          </div>
-
-          {/* Status */}
-          <div
-            style={{
-              backgroundColor: "#ffffff",
-              border: "1px solid #e2e8f0",
-              borderRadius: "8px",
-              padding: "12px",
-              textAlign: "center",
-            }}
-          >
-            <p
-              style={{
-                fontSize: "11px",
-                color: "#64748b",
-                marginBottom: "6px",
-                fontWeight: "600",
-                margin: "0",
-                direction: "rtl",
-                textAlign: "center",
-                unicodeBidi: "normal" as const,
-              }}
-            >
-              وضعیت
-            </p>
-            <p
-              style={{
-                fontSize: "13px",
-                fontWeight: "700",
-                color: "#10b981",
-                margin: "0",
-                direction: "rtl",
-                textAlign: "center",
-                unicodeBidi: "normal" as const,
-              }}
-            >
-              صفر کیلومتر
-            </p>
-          </div>
+              <p
+                style={{
+                  fontSize: "11px",
+                  color: "#64748b",
+                  marginBottom: "5px",
+                  fontWeight: "600",
+                  margin: "0 0 5px 0",
+                  direction: "rtl",
+                  textAlign: "center",
+                  unicodeBidi: "normal" as const,
+                }}
+              >
+                {spec.label}
+              </p>
+              <p
+                style={{
+                  fontSize: "13px",
+                  fontWeight: "700",
+                  color: spec.color,
+                  margin: "0",
+                  direction: "rtl",
+                  textAlign: "center",
+                  unicodeBidi: "normal" as const,
+                }}
+              >
+                {spec.value}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
 
