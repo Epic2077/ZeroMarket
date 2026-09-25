@@ -133,12 +133,12 @@ export function LoginForm({
               <Field data-invalid={!!errors.password}>
                 <div className="flex items-center">
                   <FieldLabel htmlFor="password">رمز ورود</FieldLabel>
-                  <a
-                    href="#"
+                  <Link
+                    href="/auth/forgot-password"
                     className="mr-auto text-xs text-muted-foreground underline-offset-4 hover:text-primary hover:underline transition-colors"
                   >
                     رمز عبور خود را فراموش کردید؟
-                  </a>
+                  </Link>
                 </div>
                 <Input
                   id="password"
