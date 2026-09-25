@@ -2,7 +2,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toFa } from "@/context/carLabels";
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, BadgeCheck, ExternalLink } from "lucide-react";
+import {
+  ArrowUpDown,
+  BadgeCheck,
+  ExternalLink,
+  HandCoins,
+  ShoppingCart,
+} from "lucide-react";
 import Link from "next/link";
 
 export type LatestRow = {
@@ -108,6 +114,28 @@ export const LatestTableColumns: ColumnDef<LatestRow>[] = [
         </span>
       </div>
     ),
+  },
+  {
+    accessorKey: "listingType",
+    header: () => (
+      <span className="text-sm font-semibold vazir-matn">نوع آگهی</span>
+    ),
+    cell: ({ row }) => {
+      const isBuy = row.original.listingType === "BUY";
+      return (
+        <Badge
+          variant="outline"
+          className={`vazir-matn text-xs font-600 px-2.5 py-0.5 inline-flex items-center gap-1 ${
+            isBuy
+              ? "bg-accent/10 text-accent border-accent/25"
+              : "bg-primary/10 text-primary border-primary/25"
+          }`}
+        >
+          {isBuy ? <HandCoins size={11} /> : <ShoppingCart size={11} />}
+          {isBuy ? "خرید" : "فروش"}
+        </Badge>
+      );
+    },
   },
   {
     accessorKey: "year",

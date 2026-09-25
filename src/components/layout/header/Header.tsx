@@ -15,8 +15,8 @@ import { Button } from "@/components/ui/button";
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   return (
-    <div className=" max-w-screen fixed top-0 left-0 right-0 z-20 bg-card border-b border-border h-16 shadow-card vazir-matn overflow-x-hidden">
-      <div className="mx-auto flex h-full min-w-0 max-w-screen-2xl items-center justify-between gap-2 overflow-x-hidden px-3 sm:gap-4 sm:px-4 lg:px-8 xl:px-10">
+    <div className=" max-w-screen fixed top-0 left-0 right-0 z-20 bg-card border-b border-border h-16 shadow-card vazir-matn ">
+      <div className="mx-auto flex h-full min-w-0 max-w-screen-2xl items-center justify-between gap-2  px-3 sm:gap-4 sm:px-4 lg:px-8 xl:px-10">
         {/* Logo */}
         <Link
           href="/"
