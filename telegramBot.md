@@ -1,10 +1,11 @@
-# Telegram Bot Plan for KhodroJu (ZeroMarket)
+# Telegram Bot Plan for KhodroJu (KhodroJu)
 
 ## Project Overview
 
 KhodroJu (خودروجو) is a marketplace for **brand-new, zero-kilometer factory cars** in Iran. The Telegram bot will extend the web platform to provide real-time notifications, quick actions, and a conversational interface for buyers, sellers, and admins.
 
 **Tech Stack:**
+
 - **Backend:** Next.js 16 (App Router) + Supabase (PostgreSQL + Auth + Realtime)
 - **Bot Framework:** Telegraf.js (Node.js) or grammy.js (TypeScript-first)
 - **Database:** Supabase (existing tables: `listings`, `buy_requests`, `vehicle_requests`, `user_notifications`, `price_alerts`, `profiles`, `sellers`)
@@ -14,11 +15,11 @@ KhodroJu (خودروجو) is a marketplace for **brand-new, zero-kilometer facto
 
 ## User Roles & Permissions
 
-| Role | Telegram Features |
-|------|------------------|
-| **Buyer** (regular user) | Search listings, price alerts, buy requests, saved searches, notifications |
+| Role                         | Telegram Features                                                          |
+| ---------------------------- | -------------------------------------------------------------------------- |
+| **Buyer** (regular user)     | Search listings, price alerts, buy requests, saved searches, notifications |
 | **Seller** (verified dealer) | Manage listings, respond to buy requests, view analytics, seller dashboard |
-| **Admin** | Moderate listings/users, view system stats, broadcast announcements |
+| **Admin**                    | Moderate listings/users, view system stats, broadcast announcements        |
 
 ---
 
@@ -27,74 +28,90 @@ KhodroJu (خودروجو) is a marketplace for **brand-new, zero-kilometer facto
 ### 1. Buyer Features
 
 #### 1.1 Smart Car Search (`/search`)
+
 ```
 /search [brand] [model] [year] [city] [price_min] [price_max]
 ```
+
 - Inline query support: `@khodroju_bot Toyota Camry 2026`
 - Results as carousel cards with: photo, brand/model/trim, price, city, status badge, market insight (price vs market %)
 - Quick actions: "View Details", "Submit Buy Request", "Save Search", "Set Price Alert"
 
 #### 1.2 Price Alerts (`/alert`)
+
 ```
 /alert create <brand> <model> [year] <target_price>
 /alert list
 /alert toggle <alert_id>
 /alert delete <alert_id>
 ```
+
 - Monitors `car_market_insights` + active listings
 - Notifies when listing price ≤ target price
 - Shows current market avg vs target
 
 #### 1.3 Buy Requests (`/buy`)
+
 ```
 /buy <listing_id> <offer_price> [message]
 /buy history
 /buy cancel <request_id>
 ```
+
 - Submits to `buy_requests` table (status: `WAITING`)
 - Notifies seller via bot + web push
 - Tracks status: `WAITING` → `ACCEPTED`/`NEGOTIABLE`/`REJECTED` → `COMPLETED`/`CLOSED`
 - Reveals seller contact only when `ACCEPTED`/`NEGOTIABLE`
 
 #### 1.4 Vehicle Request (Custom Order) (`/request`)
+
 ```
 /request <brand> <model> <purchase_method> <city> <phone>
 ```
+
 - Creates `vehicle_requests` row (existing API)
 - Monthly limit enforcement (free: 3, premium: higher)
 - Status tracking: `PENDING` → `PROCESSING` → `COMPLETED`
 
 #### 1.5 Saved Searches (`/save`)
+
 ```
 /save <name> <filters_json>
 /save list
 /save delete <id>
 ```
+
 - Stores filter state (brand, model, body_type, city, fuel, price range, verified_only)
 - Scheduled job runs daily, sends new matches
 
 #### 1.6 Notifications (`/notifications`)
+
 ```
 /notifications
 /notifications unread
 /notifications mark_read <id>
 ```
+
 - Real-time via Supabase Realtime + bot push
 - Types: `REQUEST` (buy offer update), `PRICE` (alert triggered), `SAVED` (saved search match), `SYSTEM` (announcements)
 
 #### 1.7 Market Insights (`/market`)
+
 ```
 /market <brand> <model> [year]
 ```
+
 - Shows: avg listed price, avg sold price, 7d trend %, days to sell, active listings count
 - Price chart (last 7 days) as rendered image or text summary
 
 #### 1.8 Favorites / Watchlist (`/fav`)
+
 ```
 /fav add <listing_id>
 /fav list
 /fav remove <listing_id>
 ```
+
 - Quick access to tracked listings
 - Notifies on status change (sold, price drop, reserved)
 
@@ -103,17 +120,20 @@ KhodroJu (خودروجو) is a marketplace for **brand-new, zero-kilometer facto
 ### 2. Seller Features
 
 #### 2.1 Seller Dashboard (`/dashboard`)
+
 ```
 /dashboard
 /dashboard listings
 /dashboard requests
 /dashboard analytics
 ```
+
 - **Listings:** Paginated list with status badges, quick actions (edit, delete, toggle negotiable, mark sold)
 - **Requests:** Incoming buy requests with buyer info, offer price, message; actions: Accept, Negotiate, Reject
 - **Analytics:** Views, inquiries, conversion rate, avg response time, price vs market
 
 #### 2.2 Listing Management (`/listing`)
+
 ```
 /listing create          # Step-by-step wizard
 /listing edit <id>
@@ -121,26 +141,31 @@ KhodroJu (خودروجو) is a marketplace for **brand-new, zero-kilometer facto
 /listing status <id> <status>
 /listing renew <id>      # Repost (extends listedDate)
 ```
+
 - Wizard collects: brand, model, trim, year, color, engine, transmission, fuel, body_type, city, delivery_days, price, factory_options, photos
 - Validates against `checkDuplicateListing`
 - Publishes to `listings` table with `status: WAITING` (admin approval) or `AVAILABLE`
 
 #### 2.3 Request Responses (`/respond`)
+
 ```
 /respond <request_id> accept
 /respond <request_id> negotiate <counter_price> [message]
 /respond <request_id> reject [reason]
 ```
+
 - Updates `buy_requests.status`
 - Sends notification to buyer with seller contact (if accepted/negotiable)
 - Creates `user_notifications` row
 
 #### 2.4 Quick Stats (`/stats`)
+
 ```
 /stats today
 /stats week
 /stats month
 ```
+
 - New requests, accepted, conversion %, avg response time
 - Top viewed listings
 
@@ -149,6 +174,7 @@ KhodroJu (خودروجو) is a marketplace for **brand-new, zero-kilometer facto
 ### 3. Admin Features
 
 #### 3.1 Moderation (`/admin`)
+
 ```
 /admin users
 /admin listings pending
@@ -156,12 +182,14 @@ KhodroJu (خودروجو) is a marketplace for **brand-new, zero-kilometer facto
 /admin taxonomy requests
 /admin broadcast
 ```
+
 - Approve/reject listings (change `status` from `WAITING`)
 - Suspend/activate users
 - Review taxonomy requests (new brand/model/color/city)
 - Broadcast message to all users (with confirmation)
 
 #### 3.2 System Stats (`/admin stats`)
+
 ```
 /admin stats users
 /admin stats listings
@@ -174,14 +202,17 @@ KhodroJu (خودروجو) is a marketplace for **brand-new, zero-kilometer facto
 ### 4. Shared / Utility Features
 
 #### 4.1 Language & Locale (`/lang`)
+
 ```
 /lang fa
 /lang en
 ```
+
 - Persian (default) + English
 - Persian digits (`toLocaleString('fa-IR')`), Jalali dates
 
 #### 4.2 Help & Onboarding (`/start`, `/help`)
+
 ```
 /start                    # Welcome, role detection, quick menu
 /help                     # Command reference
@@ -189,6 +220,7 @@ KhodroJu (خودروجو) is a marketplace for **brand-new, zero-kilometer facto
 ```
 
 #### 4.3 Profile & Settings (`/profile`)
+
 ```
 /profile                  # View profile, subscription tier, limits
 /profile notifications    # Toggle notification types
@@ -196,6 +228,7 @@ KhodroJu (خودروجو) is a marketplace for **brand-new, zero-kilometer facto
 ```
 
 #### 4.4 Share & Deep Linking
+
 - `https://t.me/khodroju_bot?start=listing_<id>` → opens listing detail
 - `https://t.me/khodroju_bot?start=request_<id>` → pre-fills buy request
 - `https://t.me/khodroju_bot?start=alert_<brand>_<model>` → pre-fills price alert
@@ -265,42 +298,58 @@ telegram-bot/
 ### Supabase Integration
 
 **Service Role Client** (bypasses RLS for bot operations):
+
 ```typescript
 // services/supabase.ts
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@supabase/supabase-js";
 
 export const supabaseAdmin = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } }
+  { auth: { autoRefreshToken: false, persistSession: false } },
 );
 ```
 
 **Realtime Subscriptions** (for instant notifications):
+
 ```typescript
 // services/notifications.ts
 supabaseAdmin
-  .channel('user_notifications')
-  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'user_notifications' }, payload => {
-    const notification = payload.new as UserNotification;
-    bot.telegram.sendMessage(notification.user_id, formatNotification(notification));
-  })
+  .channel("user_notifications")
+  .on(
+    "postgres_changes",
+    { event: "INSERT", schema: "public", table: "user_notifications" },
+    (payload) => {
+      const notification = payload.new as UserNotification;
+      bot.telegram.sendMessage(
+        notification.user_id,
+        formatNotification(notification),
+      );
+    },
+  )
   .subscribe();
 ```
 
 **User Resolution** (Telegram ID → Supabase UUID):
+
 ```typescript
 // middlewares/auth.ts
 // profiles table needs: telegram_id (unique), role (buyer/seller/admin), seller_id (nullable)
 async function resolveUser(ctx: BotContext) {
   const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('id, role, seller_id, subscription_tier, monthly_request_count, request_limit')
-    .eq('telegram_id', ctx.from.id)
+    .from("profiles")
+    .select(
+      "id, role, seller_id, subscription_tier, monthly_request_count, request_limit",
+    )
+    .eq("telegram_id", ctx.from.id)
     .single();
   ctx.user = profile;
   if (profile?.seller_id) {
-    const { data: seller } = await supabaseAdmin.from('sellers').select('*').eq('id', profile.seller_id).single();
+    const { data: seller } = await supabaseAdmin
+      .from("sellers")
+      .select("*")
+      .eq("id", profile.seller_id)
+      .single();
     ctx.seller = seller;
   }
 }
@@ -360,25 +409,39 @@ CREATE TABLE bot_sessions (
 
 ```typescript
 // formatters/persian.ts
-export const faDigits = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
-export const toFa = (str: string | number) => String(str).replace(/\d/g, d => faDigits[+d]);
+export const faDigits = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"];
+export const toFa = (str: string | number) =>
+  String(str).replace(/\d/g, (d) => faDigits[+d]);
 
 export const formatPriceFa = (price: number): string => {
-  if (price >= 1_000_000_000) return `${toFa((price/1_000_000_000).toFixed(3))} میلیارد`;
-  if (price >= 1_000_000) return `${toFa((price/1_000_000).toFixed(0))} میلیون`;
+  if (price >= 1_000_000_000)
+    return `${toFa((price / 1_000_000_000).toFixed(3))} میلیارد`;
+  if (price >= 1_000_000)
+    return `${toFa((price / 1_000_000).toFixed(0))} میلیون`;
   return toFa(price.toLocaleString());
 };
 
-export const formatJalali = (iso: string) => new Intl.DateTimeFormat('fa-IR', {
-  year: 'numeric', month: 'long', day: 'numeric'
-}).format(new Date(iso));
+export const formatJalali = (iso: string) =>
+  new Intl.DateTimeFormat("fa-IR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(new Date(iso));
 
-export const statusEmoji: Record<Listing['status'], string> = {
-  active: '✅', pending: '⏳', sold: '🔴', negotiable: '💜', reserved: '🔵'
+export const statusEmoji: Record<Listing["status"], string> = {
+  active: "✅",
+  pending: "⏳",
+  sold: "🔴",
+  negotiable: "💜",
+  reserved: "🔵",
 };
 
-export const statusLabelFa: Record<Listing['status'], string> = {
-  active: 'موجود', pending: 'در انتظار', sold: 'فروخته شد', negotiable: 'قابل مذاکره', reserved: 'رزرو شده'
+export const statusLabelFa: Record<Listing["status"], string> = {
+  active: "موجود",
+  pending: "در انتظار",
+  sold: "فروخته شد",
+  negotiable: "قابل مذاکره",
+  reserved: "رزرو شده",
 };
 ```
 
@@ -387,6 +450,7 @@ export const statusLabelFa: Record<Listing['status'], string> = {
 ## Key Implementation Flows
 
 ### Flow 1: Buyer Searches & Submits Buy Request
+
 ```
 User: /search Toyota Camry 2026 Tehran
 Bot:  [Inline results carousel]
@@ -403,6 +467,7 @@ Bot:  ✅ درخواست ثبت شد (محدودیت ماهانه: ۲ باقی�
 ```
 
 ### Flow 2: Seller Receives & Responds to Request
+
 ```
 Bot (push to seller): 🔔 درخواست خرید جدید
       🚗 Toyota Camry XLE 2.5L 2026
@@ -417,6 +482,7 @@ Bot:  ✅ مذاکره ارسال شد. شماره تماس خریدار: 0912xx
 ```
 
 ### Flow 3: Price Alert Triggered
+
 ```
 Cron (every 15 min): Checks active price_alerts
   → Joins car_market_insights + listings
@@ -433,6 +499,7 @@ Bot (push to user): 🔔 هشدار قیمت!
 ## Deployment & Operations
 
 ### Environment Variables
+
 ```env
 BOT_TOKEN=123456:ABC-DEF...
 SUPABASE_URL=https://xxx.supabase.co
@@ -444,6 +511,7 @@ CRON_SECRET=random-secret-for-scheduler-webhook
 ```
 
 ### Docker Compose (Production)
+
 ```yaml
 services:
   bot:
@@ -471,9 +539,12 @@ services:
 ```
 
 ### Health Check Endpoint
+
 ```typescript
 // src/routes/health.ts (if using webhook mode)
-app.get('/health', (req, res) => res.json({ status: 'ok', uptime: process.uptime() }));
+app.get("/health", (req, res) =>
+  res.json({ status: "ok", uptime: process.uptime() }),
+);
 ```
 
 ---
@@ -481,6 +552,7 @@ app.get('/health', (req, res) => res.json({ status: 'ok', uptime: process.uptime
 ## Development Roadmap
 
 ### Phase 1: Foundation (Week 1-2)
+
 - [ ] Bot scaffold (Telegraf + TypeScript + Supabase client)
 - [ ] Auth middleware (Telegram ID ↔ Supabase profile)
 - [ ] Persian localization (digits, dates, RTL MarkdownV2)
@@ -488,6 +560,7 @@ app.get('/health', (req, res) => res.json({ status: 'ok', uptime: process.uptime
 - [ ] `/start`, `/help`, `/profile`, `/lang`
 
 ### Phase 2: Buyer Core (Week 2-3)
+
 - [ ] `/search` with inline query + carousel results
 - [ ] Listing detail view + action buttons
 - [ ] `/buy` wizard (buy request submission)
@@ -497,6 +570,7 @@ app.get('/health', (req, res) => res.json({ status: 'ok', uptime: process.uptime
 - [ ] `/fav` favorites
 
 ### Phase 3: Seller Core (Week 3-4)
+
 - [ ] `/dashboard` with tabs (listings, requests, analytics)
 - [ ] `/listing create` wizard (multi-step, validation)
 - [ ] `/listing edit|delete|status|renew`
@@ -504,6 +578,7 @@ app.get('/health', (req, res) => res.json({ status: 'ok', uptime: process.uptime
 - [ ] Real-time push for new requests (Supabase Realtime)
 
 ### Phase 4: Admin & Polish (Week 4-5)
+
 - [ ] `/admin` moderation commands
 - [ ] Broadcast with confirmation
 - [ ] System stats
@@ -512,6 +587,7 @@ app.get('/health', (req, res) => res.json({ status: 'ok', uptime: process.uptime
 - [ ] Webhook mode + health checks
 
 ### Phase 5: Advanced (Week 5+)
+
 - [ ] Market insights charts (rendered as images via quickchart.io)
 - [ ] Subscription tier management (premium limits)
 - [ ] Referral program
@@ -523,12 +599,12 @@ app.get('/health', (req, res) => res.json({ status: 'ok', uptime: process.uptime
 
 ## Testing Strategy
 
-| Layer | Tool | Coverage |
-|-------|------|----------|
-| Unit | Vitest | Formatters, filters, price calculation, Persian utils |
-| Integration | Vitest + Supabase local | Services (listings, requests, alerts) |
-| E2E | Telegraf test context | Wizard flows, command handlers, callbacks |
-| Load | k6 | 1000 concurrent users, notification throughput |
+| Layer       | Tool                    | Coverage                                              |
+| ----------- | ----------------------- | ----------------------------------------------------- |
+| Unit        | Vitest                  | Formatters, filters, price calculation, Persian utils |
+| Integration | Vitest + Supabase local | Services (listings, requests, alerts)                 |
+| E2E         | Telegraf test context   | Wizard flows, command handlers, callbacks             |
+| Load        | k6                      | 1000 concurrent users, notification throughput        |
 
 ---
 
@@ -553,6 +629,7 @@ app.get('/health', (req, res) => res.json({ status: 'ok', uptime: process.uptime
 > **Bot Stack:** TypeScript, Telegraf.js (or grammy.js), Supabase service-role client.
 >
 > **Implement:**
+>
 > 1. **Project scaffold** with config, middlewares (auth, i18n, rateLimit), scene-based wizards
 > 2. **Buyer features:** `/search` (inline query + carousel), `/buy` wizard, `/alert` CRUD + cron scheduler, `/notifications`, `/save` (saved searches), `/fav`, `/market` insights
 > 3. **Seller features:** `/dashboard`, `/listing` CRUD wizard, `/respond` accept/negotiate/reject, real-time request push via Supabase Realtime
@@ -570,26 +647,26 @@ app.get('/health', (req, res) => res.json({ status: 'ok', uptime: process.uptime
 
 ## Quick Reference: Command Map
 
-| Command | Role | Description |
-|---------|------|-------------|
-| `/start` | All | Welcome, role detection, main menu |
-| `/help` | All | Command reference |
-| `/lang` | All | Switch language (fa/en) |
-| `/profile` | All | View profile, subscription, limits |
-| `/search` | Buyer | Smart search with filters |
-| `/buy` | Buyer | Submit buy request |
-| `/alert` | Buyer | Price alert management |
-| `/save` | Buyer | Saved searches |
-| `/fav` | Buyer | Favorites/watchlist |
-| `/notifications` | Buyer | View notifications |
-| `/request` | Buyer | Vehicle request (custom order) |
-| `/market` | Buyer | Market insights |
-| `/dashboard` | Seller | Seller dashboard |
-| `/listing` | Seller | Listing CRUD |
-| `/respond` | Seller | Respond to buy request |
-| `/stats` | Seller | Quick analytics |
-| `/admin` | Admin | Moderation panel |
-| `/admin stats` | Admin | System statistics |
+| Command          | Role   | Description                        |
+| ---------------- | ------ | ---------------------------------- |
+| `/start`         | All    | Welcome, role detection, main menu |
+| `/help`          | All    | Command reference                  |
+| `/lang`          | All    | Switch language (fa/en)            |
+| `/profile`       | All    | View profile, subscription, limits |
+| `/search`        | Buyer  | Smart search with filters          |
+| `/buy`           | Buyer  | Submit buy request                 |
+| `/alert`         | Buyer  | Price alert management             |
+| `/save`          | Buyer  | Saved searches                     |
+| `/fav`           | Buyer  | Favorites/watchlist                |
+| `/notifications` | Buyer  | View notifications                 |
+| `/request`       | Buyer  | Vehicle request (custom order)     |
+| `/market`        | Buyer  | Market insights                    |
+| `/dashboard`     | Seller | Seller dashboard                   |
+| `/listing`       | Seller | Listing CRUD                       |
+| `/respond`       | Seller | Respond to buy request             |
+| `/stats`         | Seller | Quick analytics                    |
+| `/admin`         | Admin  | Moderation panel                   |
+| `/admin stats`   | Admin  | System statistics                  |
 
 ---
 
