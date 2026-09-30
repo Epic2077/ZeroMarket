@@ -993,7 +993,7 @@ export async function sendAddFileCategorySelection(chatId: string | number) {
   const text = "📁 لطفاً دسته‌بندی مورد نظر برای افزودن فایل را انتخاب کنید:";
 
   const inline_keyboard = categories.map((cat) => [
-    { text: cat.title, callback_data: `a_select_cat_${cat.key}` },
+    { text: cat.title, callback_data: `sc_${cat.key}` },
   ]);
 
   inline_keyboard.push([{ text: "🔙 بازگشت به مدیریت", callback_data: "a_back" }]);
@@ -1008,10 +1008,10 @@ export async function sendFileSaveLocationPrompt(chatId: string | number, parent
   const text = `📂 دسته‌بندی: ${parent.title}\n\nاین دسته زیرمجموعه دارد. فایل را کجا ذخیره کنیم؟`;
 
   const inline_keyboard = [
-    [{ text: `📁 در همین دسته (${parent.title})`, callback_data: `a_save_in_cat_${parentKey}` }],
+    [{ text: `📁 در همین دسته (${parent.title})`, callback_data: `sf_c_${parentKey}` }],
     ...subcategories.map((sub) => [
-      { text: `📂 در زیرمجموعه: ${sub.title}`, callback_data: `a_save_in_subcat_${sub.key}` },
-    ]),
+      { text: `📂 در زیرمجموعه: ${sub.title}`, callback_data: `sf_s_${sub.key}` }],
+    ),
     [{ text: "🔙 بازگشت به انتخاب دسته", callback_data: "a_add_file" }],
   ];
 
@@ -1213,9 +1213,9 @@ export async function handleAdminCallback(chatId: number, buttonData: string) {
     const parentKey = buttonData.replace("a_select_parent_cat_", "");
     await setAdminState(chatId, "add_subcategory_name", { selectedParentCategory: parentKey });
     await sendAddSubcategoryNamePrompt(chatId, parentKey);
-  } else if (buttonData.startsWith("a_select_cat_")) {
+  } else if (buttonData.startsWith("sc_")) {
     console.log("Admin select cat for file upload:", chatId, buttonData);
-    const categoryKey = buttonData.replace("a_select_cat_", "");
+    const categoryKey = buttonData.replace("sc_", "");
     const subcategories = await getSubcategories(categoryKey);
     console.log("Subcategories for", categoryKey, ":", subcategories);
     if (subcategories.length > 0) {
@@ -1227,12 +1227,12 @@ export async function handleAdminCallback(chatId: number, buttonData: string) {
       await setAdminState(chatId, "add_file_description", { selectedCategory: categoryKey });
       await sendAddFileDescriptionPrompt(chatId, categoryKey);
     }
-  } else if (buttonData.startsWith("a_save_in_cat_")) {
-    const categoryKey = buttonData.replace("a_save_in_cat_", "");
+  } else if (buttonData.startsWith("sf_c_")) {
+    const categoryKey = buttonData.replace("sf_c_", "");
     await setAdminState(chatId, "add_file_description", { selectedCategory: categoryKey });
     await sendAddFileDescriptionPrompt(chatId, categoryKey);
-  } else if (buttonData.startsWith("a_save_in_subcat_")) {
-    const subcategoryKey = buttonData.replace("a_save_in_subcat_", "");
+  } else if (buttonData.startsWith("sf_s_")) {
+    const subcategoryKey = buttonData.replace("sf_s_", "");
     await setAdminState(chatId, "add_file_description", { selectedCategory: subcategoryKey });
     await sendAddFileDescriptionPrompt(chatId, subcategoryKey);
   } else if (buttonData.startsWith("a_skip_desc_")) {
