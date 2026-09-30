@@ -87,7 +87,8 @@ interface AdminSession {
     | 'add_subcategory_name'
     | 'stats' 
     | 'users'
-    | 'waiting_for_phone';
+    | 'waiting_for_phone'
+    | 'edit_category_name';
   data: Record<string, any>;
   updated_at: string;
 }
@@ -581,7 +582,7 @@ export async function sendAdminWelcomeMessage(chatId: string | number) {
     { text: cat.title, callback_data: `cat_${cat.key}` },
   ]);
 
-  inline_keyboard.push([{ text: "⚙️ مدیریت", callback_data: "admin_management" }]);
+  inline_keyboard.push([{ text: "⚙️ مدیریت", callback_data: "a_mgmt" }]);
 
   inline_keyboard.push([
     { text: "🌐 ورود به وب‌سایت", url: "https://khodroju.ir" } as any,
@@ -595,44 +596,68 @@ export async function sendAdminManagementMenu(chatId: string | number) {
   const text = "📋 منوی مدیریت:\n\nلطفاً یکی از گزینه‌های زیر را انتخاب کنید:";
 
   const inline_keyboard = [
-    [{ text: "➕ افزودن فایل", callback_data: "admin_add_file" }],
-    [{ text: "🗂️ مدیریت فایل‌ها (حذف)", callback_data: "admin_manage_files" }],
-    [{ text: "📁 افزودن دسته‌بندی", callback_data: "admin_add_category" }],
-    [{ text: "📂 افزودن زیرمجموعه", callback_data: "admin_add_subcategory" }],
-    [{ text: "🗑️ حذف دسته/زیرمجموعه", callback_data: "admin_delete_category" }],
-    [{ text: "📊 آمار دانلودها", callback_data: "admin_stats" }],
-    [{ text: "👥 لیست کاربران", callback_data: "admin_users" }],
-    [{ text: "🔙 بازگشت", callback_data: "admin_back_main" }],
+    [{ text: "➕ افزودن فایل", callback_data: "a_add_file" }],
+    [{ text: "🗂️ مدیریت فایل‌ها (حذف)", callback_data: "a_manage_files" }],
+    [{ text: "📁 افزودن دسته‌بندی", callback_data: "a_add_cat" }],
+    [{ text: "📂 افزودن زیرمجموعه", callback_data: "a_add_sub" }],
+    [{ text: "🗑️ حذف دسته/زیرمجموعه", callback_data: "a_del_cat" }],
+    [{ text: "✏️ ویرایش دسته/زیرمجموعه", callback_data: "a_edit_cat" }],
+    [{ text: "📊 آمار دانلودها", callback_data: "a_stats" }],
+    [{ text: "👥 لیست کاربران", callback_data: "a_users" }],
+    [{ text: "🔙 بازگشت", callback_data: "a_back" }],
   ];
 
   await sendMessage(chatId, text, { inline_keyboard });
 }
 
-export async function sendDeleteCategorySelection(chatId: string | number) {
-  const categories = await getAllCategoriesWithFiles();
+export async function sendDeleteCategorySelection(chatId: string | number, parentKey?: string) {
+  let categories: Category[];
+  let text: string;
+  let backCallback: string;
 
-  const text = "🗑️ حذف دسته‌بندی یا زیرمجموعه:\n\nروی دسته‌بندی برای حذف کلیک کنید. (زیرمجموعه‌ها با ➤ نشان داده شده‌اند)";
+  if (parentKey) {
+    // Show subcategories of a specific category
+    const parent = await getCategory(parentKey);
+    if (!parent) return;
+    categories = parent.subcategories || [];
+    text = `🗑️ حذف زیرمجموعه در: ${parent.title}\n\nانتخاب کنید:`;
+    backCallback = `dc_${parentKey}`;
+  } else {
+    // Show root categories
+    categories = await getAllCategoriesWithFiles();
+    text = "🗑️ حذف دسته‌بندی:\n\nانتخاب کنید:";
+    backCallback = "a_back";
+  }
 
   const inline_keyboard = [];
 
-  for (const cat of categories) {
-    inline_keyboard.push([
-      { text: `📂 ${cat.title}`, callback_data: `admin_confirm_delete_cat_${cat.key}` },
-    ]);
-    if (cat.subcategories && cat.subcategories.length > 0) {
-      for (const sub of cat.subcategories) {
-        inline_keyboard.push([
-          { text: `  ➤ ${sub.title}`, callback_data: `admin_confirm_delete_cat_${sub.key}` },
-        ]);
-      }
+  if (!parentKey) {
+    // At root level, show categories with "manage" button
+    for (const cat of categories) {
+      inline_keyboard.push([
+        { text: `📂 ${cat.title}`, callback_data: `dc_view_${cat.key}` },
+      ]);
+    }
+  } else {
+    // At subcategory level, show "delete this category" + subcategories
+    const parent = await getCategory(parentKey);
+    if (parent) {
+      inline_keyboard.push([
+        { text: `🗑️ حذف "${parent.title}" و تمام زیرمجموعه‌ها`, callback_data: `dd_${parentKey}` },
+      ]);
+    }
+    for (const sub of categories) {
+      inline_keyboard.push([
+        { text: `  ➤ ${sub.title}`, callback_data: `dc_view_${sub.key}` },
+      ]);
     }
   }
 
   if (inline_keyboard.length === 0) {
-    inline_keyboard.push([{ text: "هیچ دسته‌بندی وجود ندارد", callback_data: "noop" }]);
+    inline_keyboard.push([{ text: "هیچ زیرمجموعه‌ای وجود ندارد", callback_data: "noop" }]);
   }
 
-  inline_keyboard.push([{ text: "🔙 بازگشت به مدیریت", callback_data: "admin_management" }]);
+  inline_keyboard.push([{ text: "🔙 بازگشت", callback_data: backCallback }]);
 
   await sendMessage(chatId, text, { inline_keyboard });
 }
@@ -679,14 +704,161 @@ export async function sendConfirmDeleteCategory(chatId: string | number, categor
   warningText += `❗ تمام موارد بالا حذف خواهند شد. این کار غیرقابل بازگشت است.`;
 
   const inline_keyboard = [
-    [{ text: "✅ بله، حذف شود", callback_data: `admin_do_delete_cat_${categoryKey}` }],
-    [{ text: "🔙 انصراف", callback_data: "admin_delete_category" }],
+    [{ text: "✅ بله، حذف شود", callback_data: `dd_${categoryKey}` }],
+    [{ text: "🔙 انصراف", callback_data: "a_del_cat" }],
   ];
 
   await sendMessage(chatId, warningText, { inline_keyboard });
 }
 
+export async function sendEditCategorySelection(chatId: string | number, parentKey?: string) {
+  let categories: Category[];
+  let text: string;
+  let backCallback: string;
+
+  if (parentKey) {
+    // Show subcategories of a specific category
+    const parent = await getCategory(parentKey);
+    if (!parent) return;
+    categories = parent.subcategories || [];
+    text = `✏️ ویرایش زیرمجموعه در: ${parent.title}\n\nانتخاب کنید:`;
+    backCallback = `ec_view_${parentKey}`;
+  } else {
+    // Show root categories
+    categories = await getAllCategoriesWithFiles();
+    text = "✏️ ویرایش دسته‌بندی:\n\nانتخاب کنید:";
+    backCallback = "a_back";
+  }
+
+  const inline_keyboard = [];
+
+  if (!parentKey) {
+    // At root level, show categories with "manage" button
+    for (const cat of categories) {
+      inline_keyboard.push([
+        { text: `📂 ${cat.title}`, callback_data: `ec_view_${cat.key}` },
+      ]);
+    }
+  } else {
+    // At subcategory level, show "edit this category" + subcategories
+    const parent = await getCategory(parentKey);
+    if (parent) {
+      inline_keyboard.push([
+        { text: `✏️ ویرایش "${parent.title}"`, callback_data: `ec_edit_${parentKey}` },
+      ]);
+    }
+    for (const sub of categories) {
+      inline_keyboard.push([
+        { text: `  ➤ ${sub.title}`, callback_data: `ec_view_${sub.key}` },
+      ]);
+    }
+  }
+
+  if (inline_keyboard.length === 0) {
+    inline_keyboard.push([{ text: "هیچ زیرمجموعه‌ای وجود ندارد", callback_data: "noop" }]);
+  }
+
+  inline_keyboard.push([{ text: "🔙 بازگشت", callback_data: backCallback }]);
+
+  await sendMessage(chatId, text, { inline_keyboard });
+}
+
+export async function sendEditCategoryPrompt(chatId: string | number, categoryKey: string) {
+  const category = await getCategory(categoryKey);
+  if (!category) return;
+
+  const isSub = !!category.parent_key;
+  const typeText = isSub ? "زیرمجموعه" : "دسته‌بندی";
+
+  const text = `✏️ ویرایش ${typeText}: ${category.title}\n\n📝 نام جدید را وارد کنید:\n\nبرای انصراف، دکمه بازگشت را بزنید.`;
+
+  const inline_keyboard = [[{ text: "🔙 بازگشت", callback_data: "a_edit_cat" }]];
+
+  await sendMessage(chatId, text, { inline_keyboard });
+}
+
+export async function handleEditCategory(chatId: number, categoryKey: string, newName: string) {
+  console.log("handleEditCategory called:", { chatId, categoryKey, newName });
+  const category = await getCategory(categoryKey);
+  if (!category) {
+    await sendMessage(chatId, "❌ دسته‌بندی یافت نشد.");
+    return;
+  }
+
+  const newKey = newName
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, "_")
+    .substring(0, 30);
+
+  if (newKey !== categoryKey && await categoryExists(newKey)) {
+    await sendMessage(chatId, "❌ دسته‌بندی با این نام از قبل وجود دارد.");
+    return;
+  }
+
+  try {
+    // If key is changing, we need to handle foreign keys carefully
+    if (newKey !== categoryKey) {
+      // First update files to reference new key
+      const { error: filesError } = await getSupabase()
+        .from("files")
+        .update({ category_key: newKey })
+        .eq("category_key", categoryKey);
+      
+      if (filesError) {
+        console.error("Error updating files:", filesError);
+        await sendMessage(chatId, `❌ خطا در به‌روزرسانی فایل‌ها: ${filesError.message}`);
+        return;
+      }
+
+      // Then update subcategories' parent_key
+      const { error: subError } = await getSupabase()
+        .from("categories")
+        .update({ parent_key: newKey })
+        .eq("parent_key", categoryKey);
+      
+      if (subError) {
+        console.error("Error updating subcategories:", subError);
+        await sendMessage(chatId, `❌ خطا در به‌روزرسانی زیرمجموعه‌ها: ${subError.message}`);
+        return;
+      }
+
+      // Finally update the category itself (key and title)
+      const { error: catError } = await getSupabase()
+        .from("categories")
+        .update({ key: newKey, title: newName })
+        .eq("key", categoryKey);
+      
+      if (catError) {
+        console.error("Error updating category:", catError);
+        await sendMessage(chatId, `❌ خطا در ویرایش دسته‌بندی: ${catError.message}`);
+        return;
+      }
+    } else {
+      // Only title changed
+      const { error: catError } = await getSupabase()
+        .from("categories")
+        .update({ title: newName })
+        .eq("key", categoryKey);
+      
+      if (catError) {
+        console.error("Error updating category title:", catError);
+        await sendMessage(chatId, `❌ خطا در ویرایش عنوان: ${catError.message}`);
+        return;
+      }
+    }
+
+    invalidateCategoriesCache();
+    await sendMessage(chatId, `✅ ${category.parent_key ? "زیرمجموعه" : "دسته‌بندی"} "${newName}" با موفقیت ویرایش شد!`);
+    await clearAdminState(chatId);
+    await sendEditCategorySelection(chatId);
+  } catch (err) {
+    console.error("Unexpected error in handleEditCategory:", err);
+    await sendMessage(chatId, `❌ خطای غیرمنتظره: ${err instanceof Error ? err.message : "نامشخص"}`);
+  }
+}
+
 export async function handleDeleteCategory(chatId: number, categoryKey: string) {
+  console.log("handleDeleteCategory called:", { chatId, categoryKey });
   const category = await getCategory(categoryKey);
   if (!category) {
     await sendMessage(chatId, "❌ دسته‌بندی یافت نشد.");
@@ -725,10 +897,10 @@ export async function sendAddSubcategoryParentSelection(chatId: string | number)
   const text = "📂 لطفاً دسته‌بندی والد را برای افزودن زیرمجموعه انتخاب کنید:";
 
   const inline_keyboard = categories.map((cat) => [
-    { text: cat.title, callback_data: `admin_select_parent_cat_${cat.key}` },
+    { text: cat.title, callback_data: `a_select_parent_cat_${cat.key}` },
   ]);
 
-  inline_keyboard.push([{ text: "🔙 بازگشت به مدیریت", callback_data: "admin_management" }]);
+  inline_keyboard.push([{ text: "🔙 بازگشت به مدیریت", callback_data: "a_back" }]);
 
   await sendMessage(chatId, text, { inline_keyboard });
 }
@@ -739,7 +911,7 @@ export async function sendAddSubcategoryNamePrompt(chatId: string | number, pare
 
   const text = `📂 دسته‌بندی والد: ${parent.title}\n\n📝 لطفاً نام زیرمجموعه جدید را وارد کنید:\n\nبرای انصراف، دکمه بازگشت را بزنید.`;
 
-  const inline_keyboard = [[{ text: "🔙 بازگشت به انتخاب والد", callback_data: "admin_add_subcategory" }]];
+  const inline_keyboard = [[{ text: "🔙 بازگشت به انتخاب والد", callback_data: "a_add_sub" }]];
 
   await sendMessage(chatId, text, { inline_keyboard });
 }
@@ -768,14 +940,14 @@ export async function sendManageFilesView(chatId: string | number) {
 
   for (const cat of categories) {
     if (cat.files.length === 0) continue;
-    inline_keyboard.push([{ text: `📂 ${cat.title}`, callback_data: `admin_files_cat_${cat.key}` }]);
+    inline_keyboard.push([{ text: `📂 ${cat.title}`, callback_data: `a_files_cat_${cat.key}` }]);
   }
 
   if (inline_keyboard.length === 0) {
     inline_keyboard.push([{ text: "هیچ فایلی وجود ندارد", callback_data: "noop" }]);
   }
 
-  inline_keyboard.push([{ text: "🔙 بازگشت به مدیریت", callback_data: "admin_management" }]);
+  inline_keyboard.push([{ text: "🔙 بازگشت به مدیریت", callback_data: "a_back" }]);
 
   await sendMessage(chatId, "🗂️ مدیریت فایل‌ها:\nانتخاب دسته‌بندی برای مشاهده و حذف فایل‌ها:", { inline_keyboard });
 }
@@ -788,11 +960,11 @@ export async function sendFilesInCategoryForDeletion(chatId: string | number, ca
 
   for (const file of category.files) {
     inline_keyboard.push([
-      { text: `🗑️ ${file.title}`, callback_data: `admin_delete_file_${file.id}` },
+      { text: `🗑️ ${file.title}`, callback_data: `a_delete_file_${file.id}` },
     ]);
   }
 
-  inline_keyboard.push([{ text: "🔙 بازگشت به لیست دسته‌ها", callback_data: "admin_manage_files" }]);
+  inline_keyboard.push([{ text: "🔙 بازگشت به لیست دسته‌ها", callback_data: "a_manage_files" }]);
 
   await sendMessage(chatId, `📂 ${category.title}\n\nروی فایل برای حذف کلیک کنید:`, { inline_keyboard });
 }
@@ -821,10 +993,10 @@ export async function sendAddFileCategorySelection(chatId: string | number) {
   const text = "📁 لطفاً دسته‌بندی مورد نظر برای افزودن فایل را انتخاب کنید:";
 
   const inline_keyboard = categories.map((cat) => [
-    { text: cat.title, callback_data: `admin_select_cat_${cat.key}` },
+    { text: cat.title, callback_data: `a_select_cat_${cat.key}` },
   ]);
 
-  inline_keyboard.push([{ text: "🔙 بازگشت به مدیریت", callback_data: "admin_management" }]);
+  inline_keyboard.push([{ text: "🔙 بازگشت به مدیریت", callback_data: "a_back" }]);
 
   await sendMessage(chatId, text, { inline_keyboard });
 }
@@ -836,11 +1008,11 @@ export async function sendFileSaveLocationPrompt(chatId: string | number, parent
   const text = `📂 دسته‌بندی: ${parent.title}\n\nاین دسته زیرمجموعه دارد. فایل را کجا ذخیره کنیم؟`;
 
   const inline_keyboard = [
-    [{ text: `📁 در همین دسته (${parent.title})`, callback_data: `admin_save_in_cat_${parentKey}` }],
+    [{ text: `📁 در همین دسته (${parent.title})`, callback_data: `a_save_in_cat_${parentKey}` }],
     ...subcategories.map((sub) => [
-      { text: `📂 در زیرمجموعه: ${sub.title}`, callback_data: `admin_save_in_subcat_${sub.key}` },
+      { text: `📂 در زیرمجموعه: ${sub.title}`, callback_data: `a_save_in_subcat_${sub.key}` },
     ]),
-    [{ text: "🔙 بازگشت به انتخاب دسته", callback_data: "admin_add_file" }],
+    [{ text: "🔙 بازگشت به انتخاب دسته", callback_data: "a_add_file" }],
   ];
 
   await sendMessage(chatId, text, { inline_keyboard });
@@ -853,8 +1025,8 @@ export async function sendAddFileDescriptionPrompt(chatId: string | number, cate
   const text = `📤 دسته‌بندی: ${category.title}\n\n📄 لطفاً توضیحات فایل را وارد کنید (اختیاری):\n\nبرای رد کردن توضیحات، دکمه "⏭️ بدون توضیحات" را بزنید.`;
 
   const inline_keyboard = [
-    [{ text: "⏭️ بدون توضیحات", callback_data: `admin_skip_desc_${categoryKey}` }],
-    [{ text: "🔙 بازگشت به انتخاب دسته", callback_data: "admin_add_file" }],
+    [{ text: "⏭️ بدون توضیحات", callback_data: `a_skip_desc_${categoryKey}` }],
+    [{ text: "🔙 بازگشت به انتخاب دسته", callback_data: "a_add_file" }],
   ];
 
   await sendMessage(chatId, text, { inline_keyboard });
@@ -867,7 +1039,7 @@ export async function sendAddFileUploadPrompt(chatId: string | number, categoryK
   const descText = description ? `\n📄 توضیحات: ${description}` : "";
   const text = `📤 دسته‌بندی: ${category.title}${descText}\n\n📎 لطفاً فایل را ارسال کنید (به عنوان Document).\n\nبرای انصراف، دکمه بازگشت را بزنید.`;
 
-  const inline_keyboard = [[{ text: "🔙 بازگشت به توضیحات", callback_data: `admin_enter_desc_${categoryKey}` }]];
+  const inline_keyboard = [[{ text: "🔙 بازگشت به توضیحات", callback_data: `a_enter_desc_${categoryKey}` }]];
 
   await sendMessage(chatId, text, { inline_keyboard });
 }
@@ -875,7 +1047,7 @@ export async function sendAddFileUploadPrompt(chatId: string | number, categoryK
 export async function sendAddCategoryPrompt(chatId: string | number) {
   const text = "📝 لطفاً نام دسته‌بندی جدید را ارسال کنید:\n\nمثال: اسناد رسمی\n\nبرای انصراف، دکمه بازگشت را بزنید.";
 
-  const inline_keyboard = [[{ text: "🔙 بازگشت به مدیریت", callback_data: "admin_management" }]];
+  const inline_keyboard = [[{ text: "🔙 بازگشت به مدیریت", callback_data: "a_back" }]];
 
   await sendMessage(chatId, text, { inline_keyboard });
 }
@@ -904,7 +1076,7 @@ export async function sendStatsView(chatId: string | number) {
     text += "هنوز هیچ دانلودی ثبت نشده است.";
   }
 
-  const inline_keyboard = [[{ text: "🔙 بازگشت به مدیریت", callback_data: "admin_management" }]];
+  const inline_keyboard = [[{ text: "🔙 بازگشت به مدیریت", callback_data: "a_back" }]];
 
   await sendMessage(chatId, text, { inline_keyboard });
 }
@@ -929,7 +1101,7 @@ export async function sendUsersView(chatId: string | number) {
     }
   }
 
-  const inline_keyboard = [[{ text: "🔙 بازگشت به مدیریت", callback_data: "admin_management" }]];
+  const inline_keyboard = [[{ text: "🔙 بازگشت به مدیریت", callback_data: "a_back" }]];
 
   await sendMessage(chatId, text, { inline_keyboard });
 }
@@ -1007,43 +1179,43 @@ export async function handleAddCategory(chatId: number, categoryName: string) {
 export async function handleAdminCallback(chatId: number, buttonData: string) {
   const step = await getAdminState(chatId);
 
-  if (buttonData === "admin_management") {
-    await clearAdminState(chatId);
-    await sendAdminManagementMenu(chatId);
-  } else if (buttonData === "admin_add_file") {
+  if (buttonData === "a_add_file") {
     await setAdminState(chatId, "add_file_category");
     await sendAddFileCategorySelection(chatId);
-  } else if (buttonData === "admin_manage_files") {
+  } else if (buttonData === "a_manage_files") {
     await clearAdminState(chatId);
     await sendManageFilesView(chatId);
-  } else if (buttonData.startsWith("admin_files_cat_")) {
-    const categoryKey = buttonData.replace("admin_files_cat_", "");
+  } else if (buttonData.startsWith("a_files_cat_")) {
+    const categoryKey = buttonData.replace("a_files_cat_", "");
     await sendFilesInCategoryForDeletion(chatId, categoryKey);
-  } else if (buttonData.startsWith("admin_delete_file_")) {
-    const fileId = buttonData.replace("admin_delete_file_", "");
+  } else if (buttonData.startsWith("a_delete_file_")) {
+    const fileId = buttonData.replace("a_delete_file_", "");
     await handleDeleteFile(chatId, fileId);
-  } else if (buttonData === "admin_add_category") {
+  } else if (buttonData === "a_add_cat") {
     await setAdminState(chatId, "add_category_name");
     await sendAddCategoryPrompt(chatId);
-  } else if (buttonData === "admin_stats") {
+  } else if (buttonData === "a_stats") {
     await setAdminState(chatId, "stats");
     await sendStatsView(chatId);
-  } else if (buttonData === "admin_users") {
+  } else if (buttonData === "a_users") {
     await setAdminState(chatId, "users");
     await sendUsersView(chatId);
-  } else if (buttonData === "admin_back_main") {
+  } else if (buttonData === "a_mgmt") {
+    await clearAdminState(chatId);
+    await sendAdminManagementMenu(chatId);
+  } else if (buttonData === "a_back") {
     await clearAdminState(chatId);
     await sendAdminWelcomeMessage(chatId);
-  } else if (buttonData === "admin_add_subcategory") {
+  } else if (buttonData === "a_add_sub") {
     await setAdminState(chatId, "add_subcategory_parent");
     await sendAddSubcategoryParentSelection(chatId);
-  } else if (buttonData.startsWith("admin_select_parent_cat_")) {
-    const parentKey = buttonData.replace("admin_select_parent_cat_", "");
+  } else if (buttonData.startsWith("a_select_parent_cat_")) {
+    const parentKey = buttonData.replace("a_select_parent_cat_", "");
     await setAdminState(chatId, "add_subcategory_name", { selectedParentCategory: parentKey });
     await sendAddSubcategoryNamePrompt(chatId, parentKey);
-  } else if (buttonData.startsWith("admin_select_cat_")) {
+  } else if (buttonData.startsWith("a_select_cat_")) {
     console.log("Admin select cat for file upload:", chatId, buttonData);
-    const categoryKey = buttonData.replace("admin_select_cat_", "");
+    const categoryKey = buttonData.replace("a_select_cat_", "");
     const subcategories = await getSubcategories(categoryKey);
     console.log("Subcategories for", categoryKey, ":", subcategories);
     if (subcategories.length > 0) {
@@ -1055,33 +1227,47 @@ export async function handleAdminCallback(chatId: number, buttonData: string) {
       await setAdminState(chatId, "add_file_description", { selectedCategory: categoryKey });
       await sendAddFileDescriptionPrompt(chatId, categoryKey);
     }
-  } else if (buttonData.startsWith("admin_save_in_cat_")) {
-    const categoryKey = buttonData.replace("admin_save_in_cat_", "");
+  } else if (buttonData.startsWith("a_save_in_cat_")) {
+    const categoryKey = buttonData.replace("a_save_in_cat_", "");
     await setAdminState(chatId, "add_file_description", { selectedCategory: categoryKey });
     await sendAddFileDescriptionPrompt(chatId, categoryKey);
-  } else if (buttonData.startsWith("admin_save_in_subcat_")) {
-    const subcategoryKey = buttonData.replace("admin_save_in_subcat_", "");
+  } else if (buttonData.startsWith("a_save_in_subcat_")) {
+    const subcategoryKey = buttonData.replace("a_save_in_subcat_", "");
     await setAdminState(chatId, "add_file_description", { selectedCategory: subcategoryKey });
     await sendAddFileDescriptionPrompt(chatId, subcategoryKey);
-  } else if (buttonData.startsWith("admin_skip_desc_")) {
-    const categoryKey = buttonData.replace("admin_skip_desc_", "");
+  } else if (buttonData.startsWith("a_skip_desc_")) {
+    const categoryKey = buttonData.replace("a_skip_desc_", "");
     await setAdminState(chatId, "add_file_upload", { selectedCategory: categoryKey, description: "" });
     await sendAddFileUploadPrompt(chatId, categoryKey, "");
-  } else if (buttonData.startsWith("admin_enter_desc_")) {
-    const categoryKey = buttonData.replace("admin_enter_desc_", "");
+  } else if (buttonData.startsWith("a_enter_desc_")) {
+    const categoryKey = buttonData.replace("a_enter_desc_", "");
     await setAdminState(chatId, "add_file_description", { selectedCategory: categoryKey });
     await sendAddFileDescriptionPrompt(chatId, categoryKey);
-  } else if (buttonData === "admin_delete_category") {
+  } else if (buttonData === "a_edit_cat") {
+    await clearAdminState(chatId);
+    await sendEditCategorySelection(chatId);
+  } else if (buttonData.startsWith("ec_view_")) {
+    const categoryKey = buttonData.replace("ec_view_", "");
+    await sendEditCategorySelection(chatId, categoryKey);
+  } else if (buttonData.startsWith("ec_edit_")) {
+    const categoryKey = buttonData.replace("ec_edit_", "");
+    await setAdminState(chatId, "edit_category_name", { selectedCategory: categoryKey });
+    await sendEditCategoryPrompt(chatId, categoryKey);
+  } else if (buttonData.startsWith("ec_")) {
+    // Legacy support
+    const categoryKey = buttonData.replace("ec_", "");
+    await setAdminState(chatId, "edit_category_name", { selectedCategory: categoryKey });
+    await sendEditCategoryPrompt(chatId, categoryKey);
+  } else if (buttonData === "a_del_cat") {
     console.log("Admin delete category clicked:", chatId);
     await clearAdminState(chatId);
     await sendDeleteCategorySelection(chatId);
-  } else if (buttonData.startsWith("admin_confirm_delete_cat_")) {
-    console.log("Admin confirm delete:", chatId, buttonData);
-    const categoryKey = buttonData.replace("admin_confirm_delete_cat_", "");
-    await sendConfirmDeleteCategory(chatId, categoryKey);
-  } else if (buttonData.startsWith("admin_do_delete_cat_")) {
+  } else if (buttonData.startsWith("dc_view_")) {
+    const categoryKey = buttonData.replace("dc_view_", "");
+    await sendDeleteCategorySelection(chatId, categoryKey);
+  } else if (buttonData.startsWith("dd_")) {
     console.log("Admin do delete:", chatId, buttonData);
-    const categoryKey = buttonData.replace("admin_do_delete_cat_", "");
+    const categoryKey = buttonData.replace("dd_", "");
     await handleDeleteCategory(chatId, categoryKey);
   }
 }

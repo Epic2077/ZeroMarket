@@ -18,6 +18,7 @@ import {
   handleAdminFileUpload,
   handleAddCategory,
   handleAddSubcategory,
+  handleEditCategory,
   sendAdminWelcomeMessage,
   getFile,
   seedInitialData,
@@ -201,6 +202,12 @@ export async function POST(req: Request) {
       // Handle admin text input for category name
       if (adminCheck && update.message.text && step === "add_category_name") {
         await handleAddCategory(chatId, update.message.text);
+        return NextResponse.json({ success: true });
+      }
+
+      // Handle admin text input for edit category name
+      if (adminCheck && update.message.text && step === "edit_category_name" && sessionData.selectedCategory) {
+        await handleEditCategory(chatId, sessionData.selectedCategory, update.message.text.trim());
         return NextResponse.json({ success: true });
       }
 
