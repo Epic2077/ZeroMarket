@@ -416,42 +416,9 @@ export function isAdmin(chatId: number): boolean {
 // 🌱 Seed Initial Data
 // ==========================================
 
-const INITIAL_CATEGORIES = [
-  {
-    key: "contracts",
-    title: "📝 قراردادها و قولنامه‌ها",
-    files: [
-      { id: "gholnameh", title: "قولنامه دستی خودرو", filename: "gholnameh.pdf" },
-      { id: "vekalat", title: "وکالت‌نامه تعویض پلاک", filename: "vekalat.pdf" },
-    ],
-  },
-  {
-    key: "forms",
-    title: "📋 فرم‌های اداری و مالیاتی",
-    files: [
-      { id: "maliat", title: "فرم مالیات نقل و انتقال", filename: "maliat.pdf" },
-      { id: "asnad", title: "فرم درخواست استعلام", filename: "asnad.pdf" },
-    ],
-  },
-  {
-    key: "guides",
-    title: "📚 راهنمای مراحل قانونی",
-    files: [
-      { id: "guide_pelak", title: "مراحل فک پلاک", filename: "guide_pelak.pdf" },
-    ],
-  },
-];
-
 export async function seedInitialData(): Promise<void> {
-  for (const cat of INITIAL_CATEGORIES) {
-    const exists = await categoryExists(cat.key);
-    if (!exists) {
-      await createCategory(cat.key, cat.title);
-      for (const file of cat.files) {
-        await createFile({ ...file, category_key: cat.key, downloads: 0 });
-      }
-    }
-  }
+  // No hardcoded categories - admin creates them
+  return;
 }
 
 // ==========================================
@@ -1075,8 +1042,10 @@ export async function handleAdminCallback(chatId: number, buttonData: string) {
     await setAdminState(chatId, "add_subcategory_name", { selectedParentCategory: parentKey });
     await sendAddSubcategoryNamePrompt(chatId, parentKey);
   } else if (buttonData.startsWith("admin_select_cat_")) {
+    console.log("Admin select cat for file upload:", chatId, buttonData);
     const categoryKey = buttonData.replace("admin_select_cat_", "");
     const subcategories = await getSubcategories(categoryKey);
+    console.log("Subcategories for", categoryKey, ":", subcategories);
     if (subcategories.length > 0) {
       // Category has subcategories, show option to save in category or subcategory
       await setAdminState(chatId, "add_file_category", { selectedCategory: categoryKey });
@@ -1103,12 +1072,15 @@ export async function handleAdminCallback(chatId: number, buttonData: string) {
     await setAdminState(chatId, "add_file_description", { selectedCategory: categoryKey });
     await sendAddFileDescriptionPrompt(chatId, categoryKey);
   } else if (buttonData === "admin_delete_category") {
+    console.log("Admin delete category clicked:", chatId);
     await clearAdminState(chatId);
     await sendDeleteCategorySelection(chatId);
   } else if (buttonData.startsWith("admin_confirm_delete_cat_")) {
+    console.log("Admin confirm delete:", chatId, buttonData);
     const categoryKey = buttonData.replace("admin_confirm_delete_cat_", "");
     await sendConfirmDeleteCategory(chatId, categoryKey);
   } else if (buttonData.startsWith("admin_do_delete_cat_")) {
+    console.log("Admin do delete:", chatId, buttonData);
     const categoryKey = buttonData.replace("admin_do_delete_cat_", "");
     await handleDeleteCategory(chatId, categoryKey);
   }
