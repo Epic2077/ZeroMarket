@@ -1199,13 +1199,19 @@ export async function handleAdminFileUpload(
     return;
   }
 
-  const generatedFileId = document.file_name
-    .replace(/\.[^/.]+$/, "")
+  // Generate unique file ID to avoid collisions
+  const baseName = (fileName || document.file_name.replace(/\.[^/.]+$/, ""))
     .toLowerCase()
-    .replace(/[^a-z0-9_]/g, "_");
+    .replace(/[^a-z0-9_]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "")
+    .substring(0, 20);
+  
+  const uniqueSuffix = Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
+  const generatedFileId = baseName ? `${baseName}_${uniqueSuffix}` : `file_${uniqueSuffix}`;
 
   if (await fileExists(generatedFileId)) {
-    await sendMessage(chatId, "❌ فایلی با این نام از قبل وجود دارد. لطفاً فایل را با نام دیگر آپلود کنید.");
+    await sendMessage(chatId, "❌ فایلی با این شناسه از قبل وجود دارد. لطفاً دوباره تلاش کنید.");
     return;
   }
 
