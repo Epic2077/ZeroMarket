@@ -88,7 +88,8 @@ interface AdminSession {
     | 'stats' 
     | 'users'
     | 'waiting_for_phone'
-    | 'edit_category_name';
+    | 'edit_category_name'
+    | 'edit_file_description';
   data: Record<string, any>;
   updated_at: string;
 }
@@ -598,6 +599,7 @@ export async function sendAdminManagementMenu(chatId: string | number) {
   const inline_keyboard = [
     [{ text: "➕ افزودن فایل", callback_data: "a_add_file" }],
     [{ text: "🗂️ مدیریت فایل‌ها (حذف)", callback_data: "a_manage_files" }],
+    [{ text: "✏️ ویرایش توضیحات فایل", callback_data: "a_edit_file_desc" }],
     [{ text: "📁 افزودن دسته‌بندی", callback_data: "a_add_cat" }],
     [{ text: "📂 افزودن زیرمجموعه", callback_data: "a_add_sub" }],
     [{ text: "🗑️ حذف دسته/زیرمجموعه", callback_data: "a_del_cat" }],
@@ -993,6 +995,76 @@ export async function handleDeleteFile(chatId: number, fileId: string) {
   await sendManageFilesView(chatId);
 }
 
+// ==========================================
+// 📝 Edit File Description
+// ==========================================
+
+export async function sendEditFileDescCategorySelection(chatId: string | number) {
+  const categories = await getAllCategoriesWithFiles();
+
+  const text = "📝 ویرایش توضیحات فایل:\n\nلطفاً دسته‌بندی مورد نظر را انتخاب کنید:";
+
+  const inline_keyboard = categories.map((cat) => [
+    { text: cat.title, callback_data: `efd_cat_${cat.key}` },
+  ]);
+
+  inline_keyboard.push([{ text: "🔙 بازگشت به مدیریت", callback_data: "a_back" }]);
+
+  await sendMessage(chatId, text, { inline_keyboard });
+}
+
+export async function sendEditFileDescFileSelection(chatId: string | number, categoryKey: string) {
+  const category = await getCategory(categoryKey);
+  if (!category) return;
+
+  const text = `📂 ${category.title}\n\nفایل مورد نظر برای ویرایش توضیحات را انتخاب کنید:`;
+
+  const inline_keyboard = category.files.map((file) => [
+    { text: `✏️ ${file.title}`, callback_data: `efd_file_${file.id}` },
+  ]);
+
+  inline_keyboard.push([{ text: "🔙 بازگشت به دسته‌ها", callback_data: "a_edit_file_desc" }]);
+
+  await sendMessage(chatId, text, { inline_keyboard });
+}
+
+export async function sendEditFileDescPrompt(chatId: string | number, fileId: string) {
+  const file = await getFile(fileId);
+  if (!file) return;
+
+  const currentDesc = file.description ? `\n\nتوضیحات فعلی:\n${file.description}` : "";
+  const text = `✏️ ویرایش توضیحات فایل: ${file.title}${currentDesc}\n\n📝 توضیحات جدید را وارد کنید (برای حذف توضیحات، "حذف" بنویسید):`;
+
+  const inline_keyboard = [[{ text: "🔙 بازگشت به فایل‌ها", callback_data: `efd_cat_${file.category_key}` }]];
+
+  await sendMessage(chatId, text, { inline_keyboard });
+}
+
+export async function handleEditFileDescription(chatId: number, fileId: string, newDescription: string) {
+  const file = await getFile(fileId);
+  if (!file) {
+    await sendMessage(chatId, "❌ فایل یافت نشد.");
+    return;
+  }
+
+  const description = newDescription === "حذف" ? "" : newDescription;
+
+  const { error } = await getSupabase()
+    .from("files")
+    .update({ description })
+    .eq("id", fileId);
+
+  if (error) {
+    await sendMessage(chatId, `❌ خطا در به‌روزرسانی: ${error.message}`);
+    return;
+  }
+
+  invalidateCategoriesCache();
+  await sendMessage(chatId, `✅ توضیحات فایل "${file.title}" با موفقیت ${description ? "به‌روزرسانی" : "حذف"} شد!`);
+  await clearAdminState(chatId);
+  await sendEditFileDescCategorySelection(chatId);
+}
+
 export async function sendAddFileCategorySelection(chatId: string | number) {
   const categories = await getAllCategoriesWithFiles();
 
@@ -1199,12 +1271,16 @@ export async function handleAdminCallback(chatId: number, buttonData: string) {
   } else if (buttonData === "a_manage_files") {
     await clearAdminState(chatId);
     await sendManageFilesView(chatId);
-  } else if (buttonData.startsWith("a_files_cat_")) {
-    const categoryKey = buttonData.replace("a_files_cat_", "");
-    await sendFilesInCategoryForDeletion(chatId, categoryKey);
-  } else if (buttonData.startsWith("a_delete_file_")) {
-    const fileId = buttonData.replace("a_delete_file_", "");
-    await handleDeleteFile(chatId, fileId);
+  } else if (buttonData === "a_edit_file_desc") {
+    await clearAdminState(chatId);
+    await sendEditFileDescCategorySelection(chatId);
+  } else if (buttonData.startsWith("efd_cat_")) {
+    const categoryKey = buttonData.replace("efd_cat_", "");
+    await sendEditFileDescFileSelection(chatId, categoryKey);
+  } else if (buttonData.startsWith("efd_file_")) {
+    const fileId = buttonData.replace("efd_file_", "");
+    await setAdminState(chatId, "edit_file_description", { selectedFileId: fileId });
+    await sendEditFileDescPrompt(chatId, fileId);
   } else if (buttonData === "a_add_cat") {
     await setAdminState(chatId, "add_category_name");
     await sendAddCategoryPrompt(chatId);
