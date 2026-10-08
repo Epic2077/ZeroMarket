@@ -127,7 +127,7 @@ export async function POST(req: Request) {
         const targetFile = await getFile(fileId);
         console.log("File found:", targetFile);
         if (targetFile) {
-          await incrementDownload(fileId);
+          await incrementDownload(fileId, chatId);
           
           // Generate download link
           let downloadUrl: string;

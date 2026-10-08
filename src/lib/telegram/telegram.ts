@@ -272,8 +272,33 @@ export async function fileExists(fileId: string): Promise<boolean> {
   return !!data;
 }
 
-export async function incrementDownload(fileId: string): Promise<void> {
-  await getSupabase().rpc("increment_download", { file_id: fileId });
+export async function incrementDownload(fileId: string, userId?: number): Promise<void> {
+  // Try RPC first, fall back to read-then-write (avoids dependency on custom function)
+  try {
+    const { error } = await getSupabase().rpc("increment_download", { file_id: fileId });
+    if (error) throw error;
+  } catch (err) {
+    console.log("RPC increment failed, using fallback:", err);
+    const { data: current } = await getSupabase()
+      .from("files")
+      .select("downloads")
+      .eq("id", fileId)
+      .single();
+    await getSupabase()
+      .from("files")
+      .update({ downloads: (current?.downloads || 0) + 1 })
+      .eq("id", fileId);
+  }
+
+  // Log download for detailed analytics (silent fail if table missing)
+  if (userId) {
+    try {
+      await getSupabase().from("downloads").insert({ file_id: fileId, user_id: userId });
+    } catch (e) {
+      console.log("downloads log insert skipped");
+    }
+  }
+
   invalidateCategoriesCache();
 }
 
@@ -1134,24 +1159,37 @@ export async function sendStatsView(chatId: string | number) {
   const categories = await getAllCategoriesWithFiles();
 
   let text = "📊 آمار دانلود فایل‌ها:\n\n";
-  let hasData = false;
+  let grandTotal = 0;
+  let fileCount = 0;
 
-  for (const category of categories) {
-    let categoryText = "";
-    for (const file of category.files) {
-      const count = await getDownloadCount(file.id);
-      if (count > 0) {
-        hasData = true;
-        categoryText += `  📄 ${file.title}: ${count} دانلود\n`;
+  // Recursive walker that includes subcategories
+  const walk = (cats: Category[], prefix = "") => {
+    for (const category of cats) {
+      const files = category.files || [];
+      if (files.length > 0) {
+        let catTotal = 0;
+        let catText = "";
+        for (const file of files) {
+          const count = file.downloads || 0;
+          catTotal += count;
+          fileCount++;
+          catText += `${prefix}  📄 ${file.title}: ${count} دانلود\n`;
+        }
+        text += `${prefix}📂 ${category.title} (${catTotal} دانلود):\n${catText}\n`;
+        grandTotal += catTotal;
+      }
+      if (category.subcategories && category.subcategories.length > 0) {
+        walk(category.subcategories, `${prefix}  `);
       }
     }
-    if (categoryText) {
-      text += `📂 ${category.title}:\n${categoryText}\n`;
-    }
-  }
+  };
 
-  if (!hasData) {
-    text += "هنوز هیچ دانلودی ثبت نشده است.";
+  walk(categories);
+
+  if (fileCount === 0) {
+    text += "هنوز هیچ فایلی ثبت نشده است.";
+  } else {
+    text += `─────────────────────\n📈 مجموع کل: ${grandTotal} دانلود از ${fileCount} فایل`;
   }
 
   const inline_keyboard = [[{ text: "🔙 بازگشت به مدیریت", callback_data: "a_back" }]];
