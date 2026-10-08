@@ -917,10 +917,16 @@ export async function sendAddSubcategoryNamePrompt(chatId: string | number, pare
 }
 
 export async function handleAddSubcategory(chatId: number, parentKey: string, subcategoryName: string) {
-  const subcategoryKey = `${parentKey}_${subcategoryName
+  // Generate unique key for subcategory
+  const baseName = subcategoryName
     .toLowerCase()
     .replace(/[^a-z0-9_]/g, "_")
-    .substring(0, 20)}`;
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "")
+    .substring(0, 15);
+  
+  const uniqueSuffix = Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
+  const subcategoryKey = `${parentKey}_${baseName || "sub"}_${uniqueSuffix}`;
 
   if (await categoryExists(subcategoryKey)) {
     await sendMessage(chatId, "❌ زیرمجموعه با این نام از قبل وجود دارد.");
@@ -1160,12 +1166,20 @@ export async function handleAdminFileUpload(
 }
 
 export async function handleAddCategory(chatId: number, categoryName: string) {
-  const categoryKey = categoryName
+  // Generate unique key: use timestamp + random suffix to avoid collisions
+  const baseKey = categoryName
     .toLowerCase()
     .replace(/[^a-z0-9_]/g, "_")
-    .substring(0, 30);
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "")
+    .substring(0, 20);
+  
+  // Add unique suffix to avoid collisions from Persian names
+  const uniqueSuffix = Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
+  const categoryKey = baseKey ? `${baseKey}_${uniqueSuffix}` : `cat_${uniqueSuffix}`;
 
   if (await categoryExists(categoryKey)) {
+    // Extremely unlikely, but handle just in case
     await sendMessage(chatId, "❌ دسته‌بندی با این نام از قبل وجود دارد.");
     return;
   }
