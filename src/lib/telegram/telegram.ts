@@ -290,13 +290,12 @@ export async function incrementDownload(fileId: string, userId?: number): Promis
       .eq("id", fileId);
   }
 
-  // Log download for detailed analytics (silent fail if table missing)
+  // Log download for detailed analytics (warns if table missing)
   if (userId) {
-    try {
-      await getSupabase().from("downloads").insert({ file_id: fileId, user_id: userId });
-    } catch (e) {
-      console.log("downloads log insert skipped");
-    }
+    const { error: logError } = await getSupabase()
+      .from("downloads")
+      .insert({ file_id: fileId, user_id: userId });
+    if (logError) console.log("downloads log skipped:", logError.message);
   }
 
   invalidateCategoriesCache();
@@ -1200,20 +1199,68 @@ export async function sendStatsView(chatId: string | number) {
 export async function sendUsersView(chatId: string | number) {
   const users = await getAllUsers();
 
-  let text = `👥 لیست کاربران (${users.length} کاربر):\n\n`;
+  // Fetch download logs (silent fallback if table doesn't exist yet)
+  let downloadLogs: { file_id: string; user_id: number }[] = [];
+  const { data: logs, error: logsError } = await getSupabase()
+    .from("downloads")
+    .select("file_id, user_id")
+    .order("created_at", { ascending: false });
+  if (logsError) {
+    console.log("downloads table not available:", logsError.message);
+  } else {
+    downloadLogs = logs || [];
+  }
+
+  // Build file id -> title map (includes subcategories)
+  const categories = await getAllCategoriesWithFiles();
+  const fileMap = new Map<string, string>();
+  const walk = (cats: Category[]) => {
+    for (const c of cats) {
+      for (const f of c.files) fileMap.set(f.id, f.title);
+      if (c.subcategories) walk(c.subcategories);
+    }
+  };
+  walk(categories);
+
+  // Group downloads per user
+  const userDownloads = new Map<number, { title: string; count: number }[]>();
+  for (const log of downloadLogs) {
+    if (!userDownloads.has(log.user_id)) userDownloads.set(log.user_id, []);
+    const list = userDownloads.get(log.user_id)!;
+    const title = fileMap.get(log.file_id) || log.file_id;
+    const existing = list.find((x) => x.title === title);
+    if (existing) existing.count++;
+    else list.push({ title, count: 1 });
+  }
+
+  let text = `👥 لیست کاربران (${users.length} کاربر):`;
 
   if (users.length === 0) {
-    text += "هنوز کاربری ثبت نشده است.";
+    text += `\n\nهنوز کاربری ثبت نشده است.`;
   } else {
-    users.slice(0, 50).forEach((user, index) => {
+    users.slice(0, 25).forEach((user, index) => {
       const name = [user.first_name, user.last_name].filter(Boolean).join(" ") || "نامشخص";
-      const username = user.username ? `@${user.username}` : "بدون یوزرنیم";
+      const username = user.username ? `@${user.username}` : "—";
+      const phone = user.phone_number || "ثبت نشده";
       const adminBadge = user.is_admin ? " 👑" : "";
-      text += `${index + 1}. ${name}${adminBadge} (${username}) - ID: ${user.chat_id}\n`;
+
+      text += `\n\n${index + 1}. ${name}${adminBadge}`;
+      text += `\n   📱 ${phone}`;
+      text += `\n   👤 ${username} | 🆔 ${user.chat_id}`;
+
+      const downloads = userDownloads.get(user.chat_id);
+      if (downloads && downloads.length > 0) {
+        text += `\n   📥 دانلودها:`;
+        for (const d of downloads) {
+          text += `\n     • ${d.title} ×${d.count}`;
+        }
+      } else {
+        text += `\n   📥 دانلودها: ندارد`;
+      }
     });
 
-    if (users.length > 50) {
-      text += `\n... و ${users.length - 50} کاربر دیگر`;
+    if (users.length > 25) {
+      text += `\n\n... و ${users.length - 25} کاربر دیگر`;
     }
   }
 
