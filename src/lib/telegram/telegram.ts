@@ -24,6 +24,20 @@ function getSupabase(): SupabaseClient {
   return _supabase;
 }
 
+// Compact key generator — keeps callback_data well under Telegram's 64-byte limit
+function generateKey(prefix: string): string {
+  const ts = Date.now().toString(36);
+  const rnd = Math.random().toString(36).slice(2, 6);
+  return `${prefix}${ts}${rnd}`;
+}
+
+// Escape HTML entities (all messages use parse_mode: "HTML")
+export function esc(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+const SEP = "━━━━━━━━━━━━━━━━━━━";
+
 // ==========================================
 // 🤖 Bot Commands (for Telegram suggestions menu)
 // ==========================================
@@ -443,8 +457,34 @@ export function isAdmin(chatId: number): boolean {
 // ==========================================
 
 export async function seedInitialData(): Promise<void> {
-  // No hardcoded categories - admin creates them
-  return;
+  // Migrate over-long category keys (legacy keys could exceed Telegram's 64-byte callback limit)
+  try {
+    const { data: cats } = await getSupabase().from("categories").select("key");
+    for (const c of cats || []) {
+      if (c.key.length <= 30) continue;
+
+      const newKey = generateKey("cat");
+      const { data: full } = await getSupabase()
+        .from("categories")
+        .select("*")
+        .eq("key", c.key)
+        .single();
+      if (!full) continue;
+
+      // Insert new row first so FKs (files.category_key) can be repointed
+      await getSupabase()
+        .from("categories")
+        .insert({ key: newKey, title: full.title, parent_key: full.parent_key });
+      await getSupabase().from("files").update({ category_key: newKey }).eq("category_key", c.key);
+      await getSupabase().from("categories").update({ parent_key: newKey }).eq("parent_key", c.key);
+      await getSupabase().from("categories").delete().eq("key", c.key);
+
+      console.log(`Migrated long category key: ${c.key} -> ${newKey}`);
+    }
+    invalidateCategoriesCache();
+  } catch (err) {
+    console.error("Key migration failed:", err);
+  }
 }
 
 // ==========================================
@@ -550,7 +590,7 @@ export async function sendCategoryMenu(chatId: string | number, categoryKey: str
   const subcategories = category.subcategories || [];
   const files = category.files || [];
 
-  let text = `📂 بخش: ${category.title}\n\n`;
+  let text = `📂 بخش: ${esc(category.title)}\n\n`;
   const inline_keyboard = [];
 
   if (subcategories.length > 0) {
@@ -646,7 +686,7 @@ export async function sendDeleteCategorySelection(chatId: string | number, paren
     const parent = await getCategory(parentKey);
     if (!parent) return;
     categories = parent.subcategories || [];
-    text = `🗑️ حذف زیرمجموعه در: ${parent.title}\n\nانتخاب کنید:`;
+    text = `🗑️ حذف زیرمجموعه در: ${esc(parent.title)}\n\nانتخاب کنید:`;
     backCallback = `dc_${parentKey}`;
   } else {
     // Show root categories
@@ -697,12 +737,12 @@ export async function sendConfirmDeleteCategory(chatId: string | number, categor
   const subCount = subcategories.length;
   const fileCount = files.length;
 
-  let warningText = `⚠️ آیا از حذف "${category.title}" مطمئن هستید؟\n\n`;
+  let warningText = `⚠️ آیا از حذف "${esc(category.title)}" مطمئن هستید؟\n\n`;
 
   if (fileCount > 0) {
     warningText += `📄 فایل‌ها (${fileCount}):\n`;
     for (const f of files) {
-      warningText += `  • ${f.title}\n`;
+      warningText += `  • ${esc(f.title)}\n`;
     }
     warningText += `\n`;
   }
@@ -712,7 +752,7 @@ export async function sendConfirmDeleteCategory(chatId: string | number, categor
     for (const sub of subcategories) {
       const subFileCount = sub.files?.length || 0;
       const subSubCount = sub.subcategories?.length || 0;
-      warningText += `  ➤ ${sub.title}`;
+      warningText += `  ➤ ${esc(sub.title)}`;
       if (subFileCount > 0 || subSubCount > 0) {
         warningText += ` (${subFileCount} فایل`;
         if (subSubCount > 0) warningText += `, ${subSubCount} زیرمجموعه`;
@@ -747,7 +787,7 @@ export async function sendEditCategorySelection(chatId: string | number, parentK
     const parent = await getCategory(parentKey);
     if (!parent) return;
     categories = parent.subcategories || [];
-    text = `✏️ ویرایش زیرمجموعه در: ${parent.title}\n\nانتخاب کنید:`;
+    text = `✏️ ویرایش زیرمجموعه در: ${esc(parent.title)}\n\nانتخاب کنید:`;
     backCallback = `ec_view_${parentKey}`;
   } else {
     // Show root categories
@@ -796,7 +836,7 @@ export async function sendEditCategoryPrompt(chatId: string | number, categoryKe
   const isSub = !!category.parent_key;
   const typeText = isSub ? "زیرمجموعه" : "دسته‌بندی";
 
-  const text = `✏️ ویرایش ${typeText}: ${category.title}\n\n📝 نام جدید را وارد کنید:\n\nبرای انصراف، دکمه بازگشت را بزنید.`;
+  const text = `✏️ ویرایش ${typeText}: ${esc(category.title)}\n\n📝 نام جدید را وارد کنید:\n\nبرای انصراف، دکمه بازگشت را بزنید.`;
 
   const inline_keyboard = [[{ text: "🔙 بازگشت", callback_data: "a_edit_cat" }]];
 
@@ -811,70 +851,48 @@ export async function handleEditCategory(chatId: number, categoryKey: string, ne
     return;
   }
 
-  const newKey = newName
-    .toLowerCase()
-    .replace(/[^a-z0-9_]/g, "_")
-    .substring(0, 30);
-
-  if (newKey !== categoryKey && await categoryExists(newKey)) {
-    await sendMessage(chatId, "❌ دسته‌بندی با این نام از قبل وجود دارد.");
-    return;
-  }
-
   try {
-    // If key is changing, we need to handle foreign keys carefully
-    if (newKey !== categoryKey) {
-      // First update files to reference new key
-      const { error: filesError } = await getSupabase()
-        .from("files")
-        .update({ category_key: newKey })
-        .eq("category_key", categoryKey);
-      
-      if (filesError) {
-        console.error("Error updating files:", filesError);
-        await sendMessage(chatId, `❌ خطا در به‌روزرسانی فایل‌ها: ${filesError.message}`);
-        return;
-      }
+    // Always regenerate a compact key (never derive from the name — Persian names become underscores)
+    const newKey = generateKey("cat");
 
-      // Then update subcategories' parent_key
-      const { error: subError } = await getSupabase()
-        .from("categories")
-        .update({ parent_key: newKey })
-        .eq("parent_key", categoryKey);
-      
-      if (subError) {
-        console.error("Error updating subcategories:", subError);
-        await sendMessage(chatId, `❌ خطا در به‌روزرسانی زیرمجموعه‌ها: ${subError.message}`);
-        return;
-      }
+    // First update files to reference new key
+    const { error: filesError } = await getSupabase()
+      .from("files")
+      .update({ category_key: newKey })
+      .eq("category_key", categoryKey);
 
-      // Finally update the category itself (key and title)
-      const { error: catError } = await getSupabase()
-        .from("categories")
-        .update({ key: newKey, title: newName })
-        .eq("key", categoryKey);
-      
-      if (catError) {
-        console.error("Error updating category:", catError);
-        await sendMessage(chatId, `❌ خطا در ویرایش دسته‌بندی: ${catError.message}`);
-        return;
-      }
-    } else {
-      // Only title changed
-      const { error: catError } = await getSupabase()
-        .from("categories")
-        .update({ title: newName })
-        .eq("key", categoryKey);
-      
-      if (catError) {
-        console.error("Error updating category title:", catError);
-        await sendMessage(chatId, `❌ خطا در ویرایش عنوان: ${catError.message}`);
-        return;
-      }
+    if (filesError) {
+      console.error("Error updating files:", filesError);
+      await sendMessage(chatId, `❌ خطا در به‌روزرسانی فایل‌ها: ${filesError.message}`);
+      return;
+    }
+
+    // Then update subcategories' parent_key
+    const { error: subError } = await getSupabase()
+      .from("categories")
+      .update({ parent_key: newKey })
+      .eq("parent_key", categoryKey);
+
+    if (subError) {
+      console.error("Error updating subcategories:", subError);
+      await sendMessage(chatId, `❌ خطا در به‌روزرسانی زیرمجموعه‌ها: ${subError.message}`);
+      return;
+    }
+
+    // Finally update the category itself (key and title)
+    const { error: catError } = await getSupabase()
+      .from("categories")
+      .update({ key: newKey, title: newName })
+      .eq("key", categoryKey);
+
+    if (catError) {
+      console.error("Error updating category:", catError);
+      await sendMessage(chatId, `❌ خطا در ویرایش دسته‌بندی: ${catError.message}`);
+      return;
     }
 
     invalidateCategoriesCache();
-    await sendMessage(chatId, `✅ ${category.parent_key ? "زیرمجموعه" : "دسته‌بندی"} "${newName}" با موفقیت ویرایش شد!`);
+    await sendMessage(chatId, `✅ ${category.parent_key ? "زیرمجموعه" : "دسته‌بندی"} "${esc(newName)}" با موفقیت ویرایش شد!`);
     await clearAdminState(chatId);
     await sendEditCategorySelection(chatId);
   } catch (err) {
@@ -913,7 +931,7 @@ export async function handleDeleteCategory(chatId: number, categoryKey: string) 
   }
 
   invalidateCategoriesCache();
-  await sendMessage(chatId, `✅ دسته‌بندی "${category.title}" و تمام محتوای آن حذف شد.`);
+  await sendMessage(chatId, `✅ دسته‌بندی "${esc(category.title)}" و تمام محتوای آن حذف شد.`);
   await sendDeleteCategorySelection(chatId);
 }
 
@@ -935,7 +953,7 @@ export async function sendAddSubcategoryNamePrompt(chatId: string | number, pare
   const parent = await getCategory(parentKey);
   if (!parent) return;
 
-  const text = `📂 دسته‌بندی والد: ${parent.title}\n\n📝 لطفاً نام زیرمجموعه جدید را وارد کنید:\n\nبرای انصراف، دکمه بازگشت را بزنید.`;
+  const text = `📂 دسته‌بندی والد: ${esc(parent.title)}\n\n📝 لطفاً نام زیرمجموعه جدید را وارد کنید:\n\nبرای انصراف، دکمه بازگشت را بزنید.`;
 
   const inline_keyboard = [[{ text: "🔙 بازگشت به انتخاب والد", callback_data: "a_add_sub" }]];
 
@@ -943,24 +961,16 @@ export async function sendAddSubcategoryNamePrompt(chatId: string | number, pare
 }
 
 export async function handleAddSubcategory(chatId: number, parentKey: string, subcategoryName: string) {
-  // Generate unique key for subcategory
-  const baseName = subcategoryName
-    .toLowerCase()
-    .replace(/[^a-z0-9_]/g, "_")
-    .replace(/_+/g, "_")
-    .replace(/^_|_$/g, "")
-    .substring(0, 15);
-  
-  const uniqueSuffix = Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
-  const subcategoryKey = `${parentKey}_${baseName || "sub"}_${uniqueSuffix}`;
+  // Compact unique key — hierarchy comes from parent_key column, not the key itself
+  const subcategoryKey = generateKey("sub");
 
   if (await categoryExists(subcategoryKey)) {
-    await sendMessage(chatId, "❌ زیرمجموعه با این نام از قبل وجود دارد.");
+    await sendMessage(chatId, "❌ خطا در ایجاد زیرمجموعه. لطفاً دوباره تلاش کنید.");
     return;
   }
 
   await createCategory(subcategoryKey, subcategoryName, parentKey);
-  await sendMessage(chatId, `✅ زیرمجموعه "${subcategoryName}" در دسته "${(await getCategory(parentKey))?.title}" ایجاد شد!`);
+  await sendMessage(chatId, `✅ زیرمجموعه "${esc(subcategoryName)}" در دسته "${esc((await getCategory(parentKey))?.title || "")}" ایجاد شد!`);
   await clearAdminState(chatId);
   await sendAdminManagementMenu(chatId);
 }
@@ -998,7 +1008,7 @@ export async function sendFilesInCategoryForDeletion(chatId: string | number, ca
 
   inline_keyboard.push([{ text: "🔙 بازگشت به لیست دسته‌ها", callback_data: "a_manage_files" }]);
 
-  await sendMessage(chatId, `📂 ${category.title}\n\nروی فایل برای حذف کلیک کنید:`, { inline_keyboard });
+  await sendMessage(chatId, `📂 ${esc(category.title)}\n\nروی فایل برای حذف کلیک کنید:`, { inline_keyboard });
 }
 
 export async function handleDeleteFile(chatId: number, fileId: string) {
@@ -1015,7 +1025,7 @@ export async function handleDeleteFile(chatId: number, fileId: string) {
   }
 
   invalidateCategoriesCache();
-  await sendMessage(chatId, `✅ فایل "${file.title}" حذف شد.`);
+  await sendMessage(chatId, `✅ فایل "${esc(file.title)}" حذف شد.`);
   await sendManageFilesView(chatId);
 }
 
@@ -1041,7 +1051,7 @@ export async function sendEditFileDescFileSelection(chatId: string | number, cat
   const category = await getCategory(categoryKey);
   if (!category) return;
 
-  const text = `📂 ${category.title}\n\nفایل مورد نظر برای ویرایش توضیحات را انتخاب کنید:`;
+  const text = `📂 ${esc(category.title)}\n\nفایل مورد نظر برای ویرایش توضیحات را انتخاب کنید:`;
 
   const inline_keyboard = category.files.map((file) => [
     { text: `✏️ ${file.title}`, callback_data: `efd_file_${file.id}` },
@@ -1056,8 +1066,8 @@ export async function sendEditFileDescPrompt(chatId: string | number, fileId: st
   const file = await getFile(fileId);
   if (!file) return;
 
-  const currentDesc = file.description ? `\n\nتوضیحات فعلی:\n${file.description}` : "";
-  const text = `✏️ ویرایش توضیحات فایل: ${file.title}${currentDesc}\n\n📝 توضیحات جدید را وارد کنید (برای حذف توضیحات، "حذف" بنویسید):`;
+  const currentDesc = file.description ? `\n\nتوضیحات فعلی:\n${esc(file.description)}` : "";
+  const text = `✏️ ویرایش توضیحات فایل: ${esc(file.title)}${currentDesc}\n\n📝 توضیحات جدید را وارد کنید (برای حذف توضیحات، "حذف" بنویسید):`;
 
   const inline_keyboard = [[{ text: "🔙 بازگشت به فایل‌ها", callback_data: `efd_cat_${file.category_key}` }]];
 
@@ -1084,7 +1094,7 @@ export async function handleEditFileDescription(chatId: number, fileId: string, 
   }
 
   invalidateCategoriesCache();
-  await sendMessage(chatId, `✅ توضیحات فایل "${file.title}" با موفقیت ${description ? "به‌روزرسانی" : "حذف"} شد!`);
+  await sendMessage(chatId, `✅ توضیحات فایل "${esc(file.title)}" با موفقیت ${description ? "به‌روزرسانی" : "حذف"} شد!`);
   await clearAdminState(chatId);
   await sendEditFileDescCategorySelection(chatId);
 }
@@ -1107,7 +1117,7 @@ export async function sendFileSaveLocationPrompt(chatId: string | number, parent
   const parent = await getCategory(parentKey);
   if (!parent) return;
 
-  const text = `📂 دسته‌بندی: ${parent.title}\n\nاین دسته زیرمجموعه دارد. فایل را کجا ذخیره کنیم؟`;
+  const text = `📂 دسته‌بندی: ${esc(parent.title)}\n\nاین دسته زیرمجموعه دارد. فایل را کجا ذخیره کنیم؟`;
 
   const inline_keyboard = [
     [{ text: `📁 در همین دسته (${parent.title})`, callback_data: `sf_c_${parentKey}` }],
@@ -1124,7 +1134,7 @@ export async function sendAddFileDescriptionPrompt(chatId: string | number, cate
   const category = await getCategory(categoryKey);
   if (!category) return;
 
-  const text = `📤 دسته‌بندی: ${category.title}\n\n📄 لطفاً توضیحات فایل را وارد کنید (اختیاری):\n\nبرای رد کردن توضیحات، دکمه "⏭️ بدون توضیحات" را بزنید.`;
+  const text = `📤 دسته‌بندی: ${esc(category.title)}\n\n📄 لطفاً توضیحات فایل را وارد کنید (اختیاری):\n\nبرای رد کردن توضیحات، دکمه "⏭️ بدون توضیحات" را بزنید.`;
 
   const inline_keyboard = [
     [{ text: "⏭️ بدون توضیحات", callback_data: `a_skip_desc_${categoryKey}` }],
@@ -1138,8 +1148,8 @@ export async function sendAddFileUploadPrompt(chatId: string | number, categoryK
   const category = await getCategory(categoryKey);
   if (!category) return;
 
-  const descText = description ? `\n📄 توضیحات: ${description}` : "";
-  const text = `📤 دسته‌بندی: ${category.title}${descText}\n\n📎 لطفاً فایل را ارسال کنید (به عنوان Document).\n\nبرای انصراف، دکمه بازگشت را بزنید.`;
+  const descText = description ? `\n📄 توضیحات: ${esc(description)}` : "";
+  const text = `📤 دسته‌بندی: ${esc(category.title)}${descText}\n\n📎 لطفاً فایل را ارسال کنید (به عنوان Document).\n\nبرای انصراف، دکمه بازگشت را بزنید.`;
 
   const inline_keyboard = [[{ text: "🔙 بازگشت به توضیحات", callback_data: `a_enter_desc_${categoryKey}` }]];
 
@@ -1177,7 +1187,7 @@ export async function sendStatsView(chatId: string | number) {
             fileCount++;
             catText += `${prefix}  📄 ${esc(file.title)}: ${count} دانلود\n`;
           }
-          text += `\n${prefix}📂 ${esc(category.title)} (${catTotal} دانلود):\n${catText}`;
+          text += `\n${SEP}\n${prefix}📂 ${esc(category.title)} (${catTotal} دانلود):\n${catText}`;
           grandTotal += catTotal;
         }
         if (category.subcategories && category.subcategories.length > 0) {
@@ -1260,7 +1270,7 @@ export async function sendUsersView(chatId: string | number) {
         const phone = user.phone_number || "ثبت نشده";
         const adminBadge = user.is_admin ? " 👑" : "";
 
-        let block = `\n\n${shown + 1}. ${esc(name)}${adminBadge}`;
+        let block = `\n${SEP}\n${shown + 1}. ${esc(name)}${adminBadge}`;
         block += `\n   📱 ${esc(phone)}`;
         block += `\n   👤 ${esc(username)} | 🆔 ${user.chat_id}`;
 
@@ -1308,19 +1318,11 @@ export async function handleAdminFileUpload(
     return;
   }
 
-  // Generate unique file ID to avoid collisions
-  const baseName = (fileName || document.file_name.replace(/\.[^/.]+$/, ""))
-    .toLowerCase()
-    .replace(/[^a-z0-9_]/g, "_")
-    .replace(/_+/g, "_")
-    .replace(/^_|_$/g, "")
-    .substring(0, 20);
-  
-  const uniqueSuffix = Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
-  const generatedFileId = baseName ? `${baseName}_${uniqueSuffix}` : `file_${uniqueSuffix}`;
+  // Compact unique file ID to avoid collisions and keep callbacks short
+  const generatedFileId = generateKey("f");
 
   if (await fileExists(generatedFileId)) {
-    await sendMessage(chatId, "❌ فایلی با این شناسه از قبل وجود دارد. لطفاً دوباره تلاش کنید.");
+    await sendMessage(chatId, "❌ خطا در افزودن فایل. لطفاً دوباره تلاش کنید.");
     return;
   }
 
@@ -1339,12 +1341,12 @@ export async function handleAdminFileUpload(
   if (fileUrl) {
     await sendMessage(
       chatId,
-      `✅ فایل "${displayTitle}" با موفقیت به دسته "${category.title}" اضافه شد!\n\n📎 شناسه فایل: ${generatedFileId}\n📥 لینک مستقیم: ${fileUrl}`,
+      `✅ فایل "${esc(displayTitle)}" با موفقیت به دسته "${esc(category.title)}" اضافه شد!\n\n📎 شناسه فایل: ${generatedFileId}\n📥 لینک مستقیم: ${fileUrl}`,
     );
   } else {
     await sendMessage(
       chatId,
-      `✅ فایل "${displayTitle}" به دسته "${category.title}" اضافه شد (لینک مستقیم در دسترس نیست).`,
+      `✅ فایل "${esc(displayTitle)}" به دسته "${esc(category.title)}" اضافه شد (لینک مستقیم در دسترس نیست).`,
     );
   }
 
@@ -1353,26 +1355,16 @@ export async function handleAdminFileUpload(
 }
 
 export async function handleAddCategory(chatId: number, categoryName: string) {
-  // Generate unique key: use timestamp + random suffix to avoid collisions
-  const baseKey = categoryName
-    .toLowerCase()
-    .replace(/[^a-z0-9_]/g, "_")
-    .replace(/_+/g, "_")
-    .replace(/^_|_$/g, "")
-    .substring(0, 20);
-  
-  // Add unique suffix to avoid collisions from Persian names
-  const uniqueSuffix = Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
-  const categoryKey = baseKey ? `${baseKey}_${uniqueSuffix}` : `cat_${uniqueSuffix}`;
+  // Compact unique key (keeps callback_data short enough for Telegram)
+  const categoryKey = generateKey("cat");
 
   if (await categoryExists(categoryKey)) {
-    // Extremely unlikely, but handle just in case
-    await sendMessage(chatId, "❌ دسته‌بندی با این نام از قبل وجود دارد.");
+    await sendMessage(chatId, "❌ خطا در ایجاد دسته‌بندی. لطفاً دوباره تلاش کنید.");
     return;
   }
 
   await createCategory(categoryKey, categoryName);
-  await sendMessage(chatId, `✅ دسته‌بندی "${categoryName}" با موفقیت ایجاد شد!`);
+  await sendMessage(chatId, `✅ دسته‌بندی "${esc(categoryName)}" با موفقیت ایجاد شد!`);
   await clearAdminState(chatId);
   await sendAdminManagementMenu(chatId);
 }

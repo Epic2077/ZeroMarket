@@ -31,6 +31,7 @@ import {
   sendPhoneRequest,
   updateUserPhone,
   getTelegramFileUrl,
+  esc,
 } from "@/lib/telegram/telegram";
 import { NextResponse } from "next/server";
 
@@ -140,9 +141,8 @@ export async function POST(req: Request) {
           
           await sendMessage(
             chatId,
-            `📄 ${targetFile.title}\n\n🔗 لینک دانلود:\n${downloadUrl}\n\nبرای دانلود روی لینک بالا کلیک کنید.`
-          );
-        } else {
+            `📄 ${esc(targetFile.title)}\n\n🔗 لینک دانلود:\n${downloadUrl}\n\nبرای دانلود روی لینک بالا کلیک کنید.`
+          );        } else {
           await sendMessage(chatId, "❌ فایل مورد نظر یافت نشد.");
         }
         return NextResponse.json({ success: true });
