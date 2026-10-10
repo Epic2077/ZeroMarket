@@ -398,6 +398,57 @@ export async function sendPhoneRequest(chatId: string | number) {
   await sendMessage(chatId, text);
 }
 
+// ==========================================
+// 📢 Channel Membership Gate
+// ==========================================
+const CHANNEL_ID = process.env.TELEGRAM_CHANNEL_ID || "";
+const CHANNEL_INVITE = process.env.TELEGRAM_CHANNEL_INVITE || "";
+
+function getChannelInviteLink(): string {
+  if (CHANNEL_INVITE) return CHANNEL_INVITE;
+  if (CHANNEL_ID.startsWith("@")) return `https://t.me/${CHANNEL_ID.slice(1)}`;
+  return "https://telegram.org/";
+}
+
+// Fails OPEN (returns true) when channel isn't configured or bot can't verify,
+// so a misconfiguration never locks users out of the bot.
+export async function isChannelMember(chatId: number): Promise<boolean> {
+  if (!CHANNEL_ID) return true;
+
+  try {
+    const response = await fetch(
+      `https://api.telegram.org/bot${BOT_TOKEN}/getChatMember?chat_id=${encodeURIComponent(CHANNEL_ID)}&user_id=${chatId}`,
+    );
+    const data = await response.json();
+
+    if (!data.ok) {
+      console.error("getChatMember failed:", data.description);
+      return true;
+    }
+
+    const status = data.result?.status;
+    // "left" and "kicked" are not members
+    return status === "creator" || status === "administrator" || status === "member" || status === "restricted";
+  } catch (error) {
+    console.error("isChannelMember error:", error);
+    return true;
+  }
+}
+
+export async function sendChannelJoinRequest(chatId: string | number) {
+  const text =
+    `📢 برای استفاده از ربات، لطفاً ابتدا در کانال ما عضو شوید:\n\n` +
+    `۱. روی دکمه «📢 عضویت در کانال» کلیک کنید\n` +
+    `۲. پس از عضویت، دکمه «✅ عضو شدم» را بزنید`;
+
+  const inline_keyboard = [
+    [{ text: "📢 عضویت در کانال", url: getChannelInviteLink() }],
+    [{ text: "✅ عضو شدم، بررسی کن", callback_data: "check_membership" }],
+  ];
+
+  await sendMessage(chatId, text, { inline_keyboard });
+}
+
 // Admin Sessions
 export async function getAdminState(
   chatId: number,
