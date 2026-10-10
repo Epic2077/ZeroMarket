@@ -20,7 +20,9 @@ import {
   handleAddSubcategory,
   handleEditCategory,
   handleEditFileDescription,
+  handlePurgeAll,
   sendAdminWelcomeMessage,
+  sendAdminManagementMenu,
   getFile,
   seedInitialData,
   sendAddFileDescriptionPrompt,
@@ -216,6 +218,19 @@ export async function POST(req: Request) {
       const adminCheck = isAdmin(chatId);
       const step = await getAdminState(chatId);
       const sessionData = await getAdminSessionData(chatId);
+
+      // Handle purge-all confirmation (requires typing delete_all exactly)
+      if (adminCheck && update.message.text && step === "purge_all_confirm") {
+        const text = update.message.text.trim();
+        if (text === "delete_all") {
+          await handlePurgeAll(chatId);
+        } else {
+          await clearAdminState(chatId);
+          await sendMessage(chatId, "❌ پاکسازی لغو شد.");
+          await sendAdminManagementMenu(chatId);
+        }
+        return NextResponse.json({ success: true });
+      }
 
       // Handle admin document upload
       if (adminCheck && update.message.document) {

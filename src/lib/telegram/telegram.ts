@@ -103,7 +103,8 @@ interface AdminSession {
     | 'users'
     | 'waiting_for_phone'
     | 'edit_category_name'
-    | 'edit_file_description';
+    | 'edit_file_description'
+    | 'purge_all_confirm';
   data: Record<string, any>;
   updated_at: string;
 }
@@ -536,6 +537,34 @@ export async function seedInitialData(): Promise<void> {
   } catch (err) {
     console.error("Key migration failed:", err);
   }
+
+  // Migrate over-long file IDs (legacy IDs came from raw filenames with no length cap)
+  try {
+    const { data: files } = await getSupabase().from("files").select("*");
+    for (const f of files || []) {
+      if (f.id.length <= 30) continue;
+
+      const newId = generateKey("f");
+      // Copy the row under a compact ID
+      await getSupabase().from("files").insert({
+        id: newId,
+        title: f.title,
+        filename: f.filename,
+        category_key: f.category_key,
+        telegram_file_id: f.telegram_file_id,
+        downloads: f.downloads || 0,
+        description: f.description || "",
+      });
+      // Repoint download logs so analytics survive the rename
+      await getSupabase().from("downloads").update({ file_id: newId }).eq("file_id", f.id);
+      await getSupabase().from("files").delete().eq("id", f.id);
+
+      console.log(`Migrated long file id: ${f.id} -> ${newId}`);
+    }
+    invalidateCategoriesCache();
+  } catch (err) {
+    console.error("File id migration failed:", err);
+  }
 }
 
 // ==========================================
@@ -718,6 +747,7 @@ export async function sendAdminManagementMenu(chatId: string | number) {
     [{ text: "📁 افزودن دسته‌بندی", callback_data: "a_add_cat" }],
     [{ text: "📂 افزودن زیرمجموعه", callback_data: "a_add_sub" }],
     [{ text: "🗑️ حذف دسته/زیرمجموعه", callback_data: "a_del_cat" }],
+    [{ text: "💥 پاکسازی کامل", callback_data: "a_purge_all" }],
     [{ text: "✏️ ویرایش دسته/زیرمجموعه", callback_data: "a_edit_cat" }],
     [{ text: "📊 آمار دانلودها", callback_data: "a_stats" }],
     [{ text: "👥 لیست کاربران", callback_data: "a_users" }],
@@ -986,8 +1016,49 @@ export async function handleDeleteCategory(chatId: number, categoryKey: string) 
   await sendDeleteCategorySelection(chatId);
 }
 
-export async function sendAddSubcategoryParentSelection(chatId: string | number) {
-  const categories = await getAllCategoriesWithFiles();
+export async function sendPurgeAllPrompt(chatId: number) {
+  const categoryList = await getAllCategoriesWithFiles();
+  let totalFiles = 0;
+  let totalCats = 0;
+  const walk = (cats: Category[]) => {
+    for (const c of cats) {
+      totalFiles += c.files.length;
+      totalCats++;
+      if (c.subcategories) walk(c.subcategories);
+    }
+  };
+  walk(categoryList);
+
+  const text =
+    `⚠️⚠️ هشدار ⚠️⚠️\n\n` +
+    `این عملیات همه چیز را حذف می‌کند:\n` +
+    `📂 ${totalCats} دسته‌بندی و زیرمجموعه\n` +
+    `📄 ${totalFiles} فایل\n` +
+    `📊 آمار دانلودها\n\n` +
+    `برای تایید، این عبارت را دقیقاً تایپ کنید:\n` +
+    `delete_all\n\n` +
+    `هر چیز دیگری عملیات را لغو می‌کند.`;
+
+  const inline_keyboard = [[{ text: "🔙 انصراف", callback_data: "a_mgmt" }]];
+
+  await setAdminState(chatId, "purge_all_confirm");
+  await sendMessage(chatId, text, { inline_keyboard });
+}
+
+export async function handlePurgeAll(chatId: number) {
+  console.log("PURGE ALL started by:", chatId);
+
+  // .neq with an impossible value is the documented way to match all rows
+  await getSupabase().from("files").delete().neq("id", "");
+  await getSupabase().from("categories").delete().neq("key", "");
+
+  invalidateCategoriesCache();
+  await clearAdminState(chatId);
+  await sendMessage(chatId, "✅ پاکسازی کامل انجام شد. تمام فایل‌ها و دسته‌بندی‌ها حذف شدند.");
+  await sendAdminManagementMenu(chatId);
+}
+
+export async function sendAddSubcategoryParentSelection(chatId: string | number) {  const categories = await getAllCategoriesWithFiles();
 
   const text = "📂 لطفاً دسته‌بندی والد را برای افزودن زیرمجموعه انتخاب کنید:";
 
@@ -1548,6 +1619,9 @@ export async function handleAdminCallback(chatId: number, buttonData: string) {
     console.log("Admin delete category clicked:", chatId);
     await clearAdminState(chatId);
     await sendDeleteCategorySelection(chatId);
+  } else if (buttonData === "a_purge_all") {
+    console.log("Admin purge all clicked:", chatId);
+    await sendPurgeAllPrompt(chatId);
   } else if (buttonData.startsWith("dc_view_")) {
     const categoryKey = buttonData.replace("dc_view_", "");
     await sendDeleteCategorySelection(chatId, categoryKey);
