@@ -980,10 +980,23 @@ export async function sendManageFilesView(chatId: string | number) {
 
   const inline_keyboard = [];
 
-  for (const cat of categories) {
-    if (cat.files.length === 0) continue;
-    inline_keyboard.push([{ text: `📂 ${cat.title}`, callback_data: `a_files_cat_${cat.key}` }]);
-  }
+  // Recursive walk — include subcategories that contain files
+  const walk = (cats: Category[], prefix = "") => {
+    for (const cat of cats) {
+      if (cat.files.length > 0) {
+        inline_keyboard.push([
+          {
+            text: `${prefix}📂 ${esc(cat.title)} (${cat.files.length} فایل)`,
+            callback_data: `a_files_cat_${cat.key}`,
+          },
+        ]);
+      }
+      if (cat.subcategories && cat.subcategories.length > 0) {
+        walk(cat.subcategories, `${prefix}  ➤ `);
+      }
+    }
+  };
+  walk(categories);
 
   if (inline_keyboard.length === 0) {
     inline_keyboard.push([{ text: "هیچ فایلی وجود ندارد", callback_data: "noop" }]);
@@ -1038,9 +1051,26 @@ export async function sendEditFileDescCategorySelection(chatId: string | number)
 
   const text = "📝 ویرایش توضیحات فایل:\n\nلطفاً دسته‌بندی مورد نظر را انتخاب کنید:";
 
-  const inline_keyboard = categories.map((cat) => [
-    { text: cat.title, callback_data: `efd_cat_${cat.key}` },
-  ]);
+  const inline_keyboard = [];
+
+  // Recursive walk — include subcategories that contain files
+  const walk = (cats: Category[], prefix = "") => {
+    for (const cat of cats) {
+      if (cat.files.length > 0) {
+        inline_keyboard.push([
+          { text: `${prefix}📂 ${esc(cat.title)} (${cat.files.length} فایل)`, callback_data: `efd_cat_${cat.key}` },
+        ]);
+      }
+      if (cat.subcategories && cat.subcategories.length > 0) {
+        walk(cat.subcategories, `${prefix}  ➤ `);
+      }
+    }
+  };
+  walk(categories);
+
+  if (inline_keyboard.length === 0) {
+    inline_keyboard.push([{ text: "هیچ فایلی وجود ندارد", callback_data: "noop" }]);
+  }
 
   inline_keyboard.push([{ text: "🔙 بازگشت به مدیریت", callback_data: "a_back" }]);
 
