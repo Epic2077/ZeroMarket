@@ -1408,6 +1408,14 @@ export async function handleAdminCallback(chatId: number, buttonData: string) {
   } else if (buttonData === "a_manage_files") {
     await clearAdminState(chatId);
     await sendManageFilesView(chatId);
+  } else if (buttonData.startsWith("a_files_cat_")) {
+    console.log("Admin files in category:", chatId, buttonData);
+    const categoryKey = buttonData.replace("a_files_cat_", "");
+    await sendFilesInCategoryForDeletion(chatId, categoryKey);
+  } else if (buttonData.startsWith("a_delete_file_")) {
+    console.log("Admin delete file:", chatId, buttonData);
+    const fileId = buttonData.replace("a_delete_file_", "");
+    await handleDeleteFile(chatId, fileId);
   } else if (buttonData === "a_edit_file_desc") {
     await clearAdminState(chatId);
     await sendEditFileDescCategorySelection(chatId);
