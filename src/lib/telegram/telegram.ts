@@ -31,9 +31,14 @@ function generateKey(prefix: string): string {
   return `${prefix}${ts}${rnd}`;
 }
 
-// Escape HTML entities (all messages use parse_mode: "HTML")
-export function esc(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+// Escape HTML entities (all messages use parse_mode: "HTML").
+// Null/undefined-safe — DB columns may legitimately be null.
+export function esc(s: string | null | undefined): string {
+  if (s === null || s === undefined) return "";
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 const SEP = "━━━━━━━━━━━━━━━━━━━";
@@ -1383,27 +1388,29 @@ export async function sendUsersView(chatId: string | number) {
       downloadLogs = logs || [];
     }
 
-    // Build file id -> title map (includes subcategories)
-    const categories = await getAllCategoriesWithFiles();
-    const fileMap = new Map<string, string>();
-    const walk = (cats: Category[]) => {
-      for (const c of cats) {
-        for (const f of c.files) fileMap.set(f.id, f.title);
-        if (c.subcategories) walk(c.subcategories);
-      }
-    };
-    walk(categories);
-
-    // Group downloads per user
-    const userDownloads = new Map<number, { title: string; count: number }[]>();
-    for (const log of downloadLogs) {
-      if (!userDownloads.has(log.user_id)) userDownloads.set(log.user_id, []);
-      const list = userDownloads.get(log.user_id)!;
-      const title = fileMap.get(log.file_id) || log.file_id;
-      const existing = list.find((x) => x.title === title);
-      if (existing) existing.count++;
-      else list.push({ title, count: 1 });
+  // Build file id -> title map (includes subcategories)
+  const categories = await getAllCategoriesWithFiles();
+  const fileMap = new Map<string, string>();
+  const walk = (cats: Category[]) => {
+    for (const c of cats) {
+      for (const f of c.files) if (f.id) fileMap.set(f.id, f.title);
+      if (c.subcategories) walk(c.subcategories);
     }
+  };
+  walk(categories);
+
+  // Group downloads per user
+  const userDownloads = new Map<number, { title: string; count: number }[]>();
+  for (const log of downloadLogs) {
+    // Skip malformed rows (null file_id / user_id)
+    if (!log.file_id || !log.user_id) continue;
+    if (!userDownloads.has(log.user_id)) userDownloads.set(log.user_id, []);
+    const list = userDownloads.get(log.user_id)!;
+    const title = fileMap.get(log.file_id) || log.file_id || "نامشخص";
+    const existing = list.find((x) => x.title === title);
+    if (existing) existing.count++;
+    else list.push({ title, count: 1 });
+  }
 
     // Escape HTML entities (parse_mode is HTML)
     const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
