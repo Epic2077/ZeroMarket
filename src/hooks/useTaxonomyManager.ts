@@ -5,7 +5,8 @@ import { useSession } from "@/context/SessionProvider";
 import { useUserInfo } from "@/context/UserInfoProvider";
 import { useTaxonomyOptions } from "@/hooks/useTaxonomyOptions";
 import {
-  fetchModelsGroupedByBrand,
+  fetchFamiliesGroupedByBrand,
+  fetchModelsGroupedByFamily,
   ownerAddOption,
   ownerDeleteOption,
   ownerRenameOption,
@@ -30,9 +31,12 @@ interface UseTaxonomyManagerReturn {
   expandedBrands: Set<string>;
   setExpandedBrands: React.Dispatch<React.SetStateAction<Set<string>>>;
   modelsByBrand: Record<string, string[]>;
+  familiesByBrand: Record<string, string[]>;
   modelsLoading: boolean;
   modelDrafts: Record<string, string>;
+  familyDrafts: Record<string, string>;
   setModelDrafts: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  setFamilyDrafts: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   canEdit: boolean;
   isOwner: boolean;
   isAdmin: boolean;
@@ -41,6 +45,7 @@ interface UseTaxonomyManagerReturn {
   handleRename: (oldValue: string, newValue: string, category?: TaxonomyCategory) => Promise<void>;
   handleUpdateHex: (value: string, newHex: string, category?: TaxonomyCategory) => Promise<void>;
   handleAddModel: (brand: string) => Promise<void>;
+  handleAddFamily: (brand: string) => Promise<void>;
   loadModels: () => Promise<void>;
   toggleBrand: (brand: string) => void;
 }
@@ -55,8 +60,10 @@ export function useTaxonomyManager(): UseTaxonomyManagerReturn {
   const [saving, setSaving] = useState(false);
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set());
   const [modelsByBrand, setModelsByBrand] = useState<Record<string, string[]>>({});
+  const [familiesByBrand, setFamiliesByBrand] = useState<Record<string, string[]>>({});
   const [modelsLoading, setModelsLoading] = useState(false);
   const [modelDrafts, setModelDrafts] = useState<Record<string, string>>({});
+  const [familyDrafts, setFamilyDrafts] = useState<Record<string, string>>({});
 
   const isOwner = role === "owner";
   const isAdmin = role === "admin";
@@ -65,8 +72,12 @@ export function useTaxonomyManager(): UseTaxonomyManagerReturn {
   const loadModels = useCallback(async () => {
     setModelsLoading(true);
     try {
-      const grouped = await fetchModelsGroupedByBrand();
-      setModelsByBrand(grouped);
+      const [families, models] = await Promise.all([
+        fetchFamiliesGroupedByBrand(),
+        fetchModelsGroupedByFamily(),
+      ]);
+      setFamiliesByBrand(families);
+      setModelsByBrand(models);
     } catch {
       setModelsByBrand({});
     } finally {
@@ -187,6 +198,7 @@ export function useTaxonomyManager(): UseTaxonomyManagerReturn {
   }, [active, isOwner, user, refresh]);
 
   const handleAddModel = useCallback(async (brand: string) => {
+    const [brandValue, family] = brand.split("|");
     const value = (modelDrafts[brand] ?? "").trim();
     if (!value) return;
     setSaving(true);
@@ -195,7 +207,7 @@ export function useTaxonomyManager(): UseTaxonomyManagerReturn {
         await ownerAddOption({
           category: "MODEL",
           value,
-          metadata: { brand },
+          metadata: { brand: brandValue, family },
         });
         toast.success(`«${value}» به «${brand}» افزوده شد`);
       } else {
@@ -203,7 +215,7 @@ export function useTaxonomyManager(): UseTaxonomyManagerReturn {
           category: "MODEL",
           action: "ADD",
           value,
-          metadata: { brand },
+          metadata: { brand: brandValue, family },
           requestedBy: user?.id ?? "",
         });
         toast.success("درخواست افزودن مدل برای تایید مالک ثبت شد");
@@ -216,6 +228,34 @@ export function useTaxonomyManager(): UseTaxonomyManagerReturn {
       setSaving(false);
     }
   }, [modelDrafts, isOwner, user, loadModels]);
+
+  const handleAddFamily = useCallback(async (brand: string) => {
+    const value = (familyDrafts[brand] ?? "").trim();
+    if (!value) return;
+    setSaving(true);
+    try {
+      const metadata = { brand };
+      if (isOwner) {
+        await ownerAddOption({ category: "FAMILY", value, metadata });
+        toast.success(`«${value}» به «${brand}» افزوده شد`);
+      } else {
+        await requestTaxonomyChange({
+          category: "FAMILY",
+          action: "ADD",
+          value,
+          metadata,
+          requestedBy: user?.id ?? "",
+        });
+        toast.success("درخواست افزودن خانواده برای تایید مالک ثبت شد");
+      }
+      setFamilyDrafts((prev) => ({ ...prev, [brand]: "" }));
+      loadModels();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "خطا در افزودن خانواده");
+    } finally {
+      setSaving(false);
+    }
+  }, [familyDrafts, isOwner, user, loadModels]);
 
   return {
     taxonomy,
@@ -231,9 +271,12 @@ export function useTaxonomyManager(): UseTaxonomyManagerReturn {
     expandedBrands,
     setExpandedBrands,
     modelsByBrand,
+    familiesByBrand,
     modelsLoading,
     modelDrafts,
     setModelDrafts,
+    familyDrafts,
+    setFamilyDrafts,
     canEdit,
     isOwner,
     isAdmin,
@@ -242,6 +285,7 @@ export function useTaxonomyManager(): UseTaxonomyManagerReturn {
     handleRename,
     handleUpdateHex,
     handleAddModel,
+    handleAddFamily,
     loadModels,
     toggleBrand,
   };

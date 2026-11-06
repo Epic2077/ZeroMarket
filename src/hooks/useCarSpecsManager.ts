@@ -213,13 +213,22 @@ export function useCarSpecsManager(): UseCarSpecsManagerReturn {
 
   // Group specs: Brand → Model → SpecEntry[]
   const grouped = useMemo((): BrandSpecGroup[] => {
-    const brandMap = new Map<string, Map<string, SpecEntry[]>>();
+    const brandMap = new Map<
+      string,
+      Map<string, Map<string, SpecEntry[]>>
+    >();
 
     for (const s of specs) {
-      let models = brandMap.get(s.brand);
+      let families = brandMap.get(s.brand);
+      if (!families) {
+        families = new Map();
+        brandMap.set(s.brand, families);
+      }
+      const familyKey = s.family ?? "";
+      let models = families.get(familyKey);
       if (!models) {
         models = new Map();
-        brandMap.set(s.brand, models);
+        families.set(familyKey, models);
       }
       let entries = models.get(s.model);
       if (!entries) {
@@ -238,18 +247,20 @@ export function useCarSpecsManager(): UseCarSpecsManagerReturn {
     }
 
     return Array.from(brandMap.entries())
-      .map(([brand, models]) => ({
+      .map(([brand, families]) => ({
         brand,
-        models: Array.from(models.entries())
-          .map(([model, specsArr]) => ({
-            model,
-            family: specsArr[0]?.family ?? null,
-            specs: specsArr.sort((a, b) => {
-              if (a.year === null) return -1;
-              if (b.year === null) return 1;
-              return b.year.localeCompare(a.year); // newest first
-            }),
-          }))
+        models: Array.from(families.entries()).flatMap(
+          ([family, models]) =>
+            Array.from(models.entries()).map(([model, specsArr]) => ({
+              model,
+              family: family || null,
+              specs: specsArr.sort((a, b) => {
+                if (a.year === null) return -1;
+                if (b.year === null) return 1;
+                return b.year.localeCompare(a.year);
+              }),
+            })),
+        )
           .sort((a, b) => a.model.localeCompare(b.model)),
       }))
       .sort((a, b) => a.brand.localeCompare(b.brand));
@@ -294,7 +305,7 @@ export function useCarSpecsManager(): UseCarSpecsManagerReturn {
     setSaving(true);
     const input: CarSpecInput = {
       brand: formBrand.trim(),
-      family: formFamily.trim() || null,
+      family: formFamily.trim(),
       model: formModel.trim(),
       year: formYear.trim() || null,
       engine: formEngine.trim(),

@@ -30,6 +30,7 @@ export interface CarSpecChangeRequest {
   fuel_type: string | null;
   body_type: string | null;
   old_brand?: string | null;
+  old_family?: string | null;
   old_model?: string | null;
   old_year?: string | null;
   requested_by: string;

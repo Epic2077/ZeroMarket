@@ -118,20 +118,41 @@ export async function fetchFamiliesByBrand(
 
   const { data, error } = await query.order("value", { ascending: true });
   if (error) throw error;
-  if (data?.length || !brand) return data ?? [];
-
-  // Keep the hierarchy usable while older/global FAMILY rows are migrated
-  // to brand-scoped metadata.
-  const { data: globalFamilies, error: globalError } = await supabase
-    .from("taxonomy_options")
-    .select("id, value, metadata, category")
-    .eq("category", "FAMILY")
-    .order("value", { ascending: true });
-  if (globalError) throw globalError;
-  return globalFamilies ?? [];
+  return data ?? [];
 }
 
-/** Fetch all models grouped by their brand (from metadata.brand). */
+/** Fetch all families grouped by their owning brand. */
+export async function fetchFamiliesGroupedByBrand(): Promise<
+  Record<string, string[]>
+> {
+  const rows = await fetchTaxonomy("FAMILY");
+  const grouped: Record<string, string[]> = {};
+  for (const row of rows) {
+    const brand = (row.metadata as { brand?: string } | null)?.brand;
+    if (brand) (grouped[brand] ??= []).push(row.value);
+  }
+  return grouped;
+}
+
+/** Fetch all models grouped by their brand and family. */
+export async function fetchModelsGroupedByFamily(): Promise<
+  Record<string, string[]>
+> {
+  const rows = await fetchModelsByBrand();
+  const grouped: Record<string, string[]> = {};
+  for (const row of rows) {
+    const metadata = row.metadata as
+      | { brand?: string; family?: string }
+      | null;
+    if (metadata?.brand && metadata.family) {
+      const key = `${metadata.brand}|${metadata.family}`;
+      (grouped[key] ??= []).push(row.value);
+    }
+  }
+  return grouped;
+}
+
+/** Fetch all models grouped by their brand (legacy display helper). */
 export async function fetchModelsGroupedByBrand(): Promise<
   Record<string, string[]>
 > {

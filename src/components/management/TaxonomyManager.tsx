@@ -30,9 +30,11 @@ export default function TaxonomyManager() {
     saving,
     expandedBrands,
     modelsByBrand,
+    familiesByBrand,
     modelsLoading,
     modelDrafts,
     setModelDrafts,
+    familyDrafts,
     canEdit,
     isOwner,
     isAdmin,
@@ -41,6 +43,7 @@ export default function TaxonomyManager() {
     handleRename,
     handleUpdateHex,
     handleAddModel,
+    handleAddFamily,
     toggleBrand,
   } = useTaxonomyManager();
 
@@ -48,7 +51,7 @@ export default function TaxonomyManager() {
 
   const meta = taxonomyCategoryMeta.find((c) => c.id === active)!;
   const options = values(active);
-  const isBrandView = active === "BRAND";
+  const isHierarchyView = active === "BRAND" || active === "FAMILY";
   const isColorView = active === "COLOR";
 
   const handleCategorySelect = (cat: TaxonomyCategory) => {
@@ -147,7 +150,7 @@ export default function TaxonomyManager() {
                 : `شما دسترسی ویرایش گزینه‌ها را ندارید.`}
           </p>
 
-          <AddOptionForm
+          {!isHierarchyView && <AddOptionForm
             value={draft}
             onChange={setDraft}
             onSubmit={handleAdd}
@@ -170,16 +173,20 @@ export default function TaxonomyManager() {
               <Plus size={14} />
               افزودن
             </button>
-          </AddOptionForm>
+          </AddOptionForm>}
 
-          {isBrandView ? (
+          {isHierarchyView ? (
             <BrandAccordion
-              brands={options}
+              brands={values("BRAND")}
+              familiesByBrand={familiesByBrand}
               modelsByBrand={modelsByBrand}
               modelsLoading={modelsLoading}
               expandedBrands={expandedBrands}
               onToggleBrand={toggleBrand}
               modelDrafts={modelDrafts}
+              familyDrafts={familyDrafts}
+              onFamilyDraftChange={handleModelDraftChange}
+              onAddFamily={handleAddFamily}
               onModelDraftChange={handleModelDraftChange}
               onAddModel={handleAddModel}
               canEdit={canEdit}

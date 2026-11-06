@@ -2,12 +2,16 @@ do $$
 declare
   category_type text;
 begin
-  select udt_name
+  select t.typname
     into category_type
-  from information_schema.columns
-  where table_schema = 'public'
-    and table_name = 'taxonomy_options'
-    and column_name = 'category';
+  from pg_catalog.pg_attribute a
+  join pg_catalog.pg_class c on c.oid = a.attrelid
+  join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+  join pg_catalog.pg_type t on t.oid = a.atttypid
+  where n.nspname = 'public'
+    and c.relname = 'taxonomy_options'
+    and a.attname = 'category'
+    and t.typtype = 'e';
 
   if category_type is not null then
     execute format(
