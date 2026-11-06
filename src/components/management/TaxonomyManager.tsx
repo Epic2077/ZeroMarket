@@ -35,6 +35,7 @@ export default function TaxonomyManager() {
     modelDrafts,
     setModelDrafts,
     familyDrafts,
+    setFamilyDrafts,
     canEdit,
     isOwner,
     isAdmin,
@@ -63,6 +64,10 @@ export default function TaxonomyManager() {
 
   const handleModelDraftChange = (brand: string, value: string) => {
     setModelDrafts((prev) => ({ ...prev, [brand]: value }));
+  };
+
+  const handleFamilyDraftChange = (brand: string, value: string) => {
+    setFamilyDrafts((prev) => ({ ...prev, [brand]: value }));
   };
 
   // ── Tab bar shared by both views ───────────────────────────────────
@@ -150,7 +155,7 @@ export default function TaxonomyManager() {
                 : `شما دسترسی ویرایش گزینه‌ها را ندارید.`}
           </p>
 
-          {!isHierarchyView && <AddOptionForm
+          {(active === "BRAND" || !isHierarchyView) && <AddOptionForm
             value={draft}
             onChange={setDraft}
             onSubmit={handleAdd}
@@ -185,7 +190,7 @@ export default function TaxonomyManager() {
               onToggleBrand={toggleBrand}
               modelDrafts={modelDrafts}
               familyDrafts={familyDrafts}
-              onFamilyDraftChange={handleModelDraftChange}
+              onFamilyDraftChange={handleFamilyDraftChange}
               onAddFamily={handleAddFamily}
               onModelDraftChange={handleModelDraftChange}
               onAddModel={handleAddModel}

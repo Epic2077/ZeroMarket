@@ -132,7 +132,7 @@ export function IdentitySection({
                   }
                   emptyText="مدلی یافت نشد"
                   loading={modelsLoading}
-                  disabled={!selectedBrand || modelsLoading}
+                  disabled={!selectedBrand || !selectedFamily || modelsLoading}
                   onChange={field.onChange}
                 />
               )}
