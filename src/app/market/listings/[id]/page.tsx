@@ -126,6 +126,7 @@ export default async function SinglePage({ params }: PageProps) {
     getMarketInsight(
       supabase,
       listingRow.brand,
+      listingRow.family,
       listingRow.model,
       listingRow.year,
       listingRow.price,

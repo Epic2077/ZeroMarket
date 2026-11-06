@@ -11,6 +11,7 @@ export interface TaxonomyRow {
 /** Supabase taxonomy category enum values. */
 export type TaxonomyCategory =
   | "BRAND"
+  | "FAMILY"
   | "MODEL"
   | "YEAR"
   | "COLOR"
@@ -26,6 +27,7 @@ export const taxonomyCategoryMeta: {
   noun: string;
 }[] = [
   { id: "BRAND", label: "برندها", noun: "برند" },
+  { id: "FAMILY", label: "خانواده‌ها", noun: "خانواده" },
   { id: "YEAR", label: "سال تولید", noun: "سال" },
   { id: "COLOR", label: "رنگ‌ها", noun: "رنگ" },
   { id: "CITY", label: "شهرها", noun: "شهر" },
@@ -82,6 +84,7 @@ export async function fetchTaxonomyValues(
  */
 export async function fetchModelsByBrand(
   brand?: string,
+  family?: string,
 ): Promise<TaxonomyRow[]> {
   let query = supabase
     .from("taxonomy_options")
@@ -91,10 +94,41 @@ export async function fetchModelsByBrand(
   if (brand) {
     query = query.eq("metadata->>brand", brand);
   }
+  if (family) {
+    query = query.eq("metadata->>family", family);
+  }
 
   const { data, error } = await query.order("value", { ascending: true });
   if (error) throw error;
   return data ?? [];
+}
+
+/** Fetch families scoped to a brand (stored in metadata.brand). */
+export async function fetchFamiliesByBrand(
+  brand?: string,
+): Promise<TaxonomyRow[]> {
+  let query = supabase
+    .from("taxonomy_options")
+    .select("id, value, metadata, category")
+    .eq("category", "FAMILY");
+
+  if (brand) {
+    query = query.eq("metadata->>brand", brand);
+  }
+
+  const { data, error } = await query.order("value", { ascending: true });
+  if (error) throw error;
+  if (data?.length || !brand) return data ?? [];
+
+  // Keep the hierarchy usable while older/global FAMILY rows are migrated
+  // to brand-scoped metadata.
+  const { data: globalFamilies, error: globalError } = await supabase
+    .from("taxonomy_options")
+    .select("id, value, metadata, category")
+    .eq("category", "FAMILY")
+    .order("value", { ascending: true });
+  if (globalError) throw globalError;
+  return globalFamilies ?? [];
 }
 
 /** Fetch all models grouped by their brand (from metadata.brand). */

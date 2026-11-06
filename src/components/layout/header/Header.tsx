@@ -51,7 +51,8 @@ export default function Header() {
           <Button
             variant="outline"
             className="lg:hidden p-2 rounded-lg text-muted-foreground hover:bg-muted transition-colors duration-150"
-            onClick={() => setMobileOpen(!mobileOpen)}
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={() => setMobileOpen((open) => !open)}
             aria-label="Toggle menu"
           >
             {mobileOpen ? <X size={20} /> : <Menu size={20} />}

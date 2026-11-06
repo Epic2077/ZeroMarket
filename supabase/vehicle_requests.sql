@@ -20,7 +20,7 @@ create table public.vehicle_requests (
 -- Auto-update timestamp
 create trigger set_vehicle_requests_updated_at
   before update on public.vehicle_requests
-  for each row execute function public.handle_updated_at();@
+  for each row execute function public.handle_updated_at();
 
 -- Enable Row Level Security
 alter table public.vehicle_requests enable row level security;

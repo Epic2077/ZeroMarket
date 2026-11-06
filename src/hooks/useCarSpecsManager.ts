@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSession } from "@/context/SessionProvider";
 import { useUserInfo } from "@/context/UserInfoProvider";
 import { useTaxonomyOptions } from "@/hooks/useTaxonomyOptions";
-import { fetchModelsByBrand } from "@/lib/supabase/taxonomy";
+import { fetchFamiliesByBrand, fetchModelsByBrand } from "@/lib/supabase/taxonomy";
 import {
   fetchAllCarSpecs,
   ownerUpsertCarSpec,
@@ -18,6 +18,7 @@ import { toast } from "sonner";
 /** A spec entry grouped under a model. */
 export interface SpecEntry {
   id: string;
+  family: string | null;
   year: string | null;
   engine: string;
   transmission: string;
@@ -33,6 +34,7 @@ export interface BrandSpecGroup {
 
 export interface ModelSpecGroup {
   model: string;
+  family: string | null;
   specs: SpecEntry[];
 }
 
@@ -45,6 +47,8 @@ interface UseCarSpecsManagerReturn {
   yearOptions: string[];
   /** Model options filtered by selected brand (fetched async). */
   modelOptions: string[];
+  familyOptions: string[];
+  familiesLoading: boolean;
   /** Whether model options are still loading. */
   modelsLoading: boolean;
   /** Flat list of transmission options from taxonomy. */
@@ -72,6 +76,8 @@ interface UseCarSpecsManagerReturn {
   setFormBrand: (v: string) => void;
   formModel: string;
   setFormModel: (v: string) => void;
+  formFamily: string;
+  setFormFamily: (v: string) => void;
   formYear: string;
   setFormYear: (v: string) => void;
   formEngine: string;
@@ -91,7 +97,6 @@ interface UseCarSpecsManagerReturn {
 
 export function useCarSpecsManager(): UseCarSpecsManagerReturn {
   const {
-    taxonomy,
     values,
     loading: taxLoading,
     error: taxError,
@@ -110,6 +115,7 @@ export function useCarSpecsManager(): UseCarSpecsManagerReturn {
   const [editingSpec, setEditingSpec] = useState<SpecEntry | null>(null);
   const [formBrand, setFormBrand] = useState("");
   const [formModel, setFormModel] = useState("");
+  const [formFamily, setFormFamily] = useState("");
   const [formYear, setFormYear] = useState("");
   const [formEngine, setFormEngine] = useState("");
   const [formTransmission, setFormTransmission] = useState("");
@@ -122,6 +128,8 @@ export function useCarSpecsManager(): UseCarSpecsManagerReturn {
 
   // Derived options from taxonomy
   const brandOptions = useMemo(() => values("BRAND"), [values]);
+  const [familyOptions, setFamilyOptions] = useState<string[]>([]);
+  const [familiesLoading, setFamiliesLoading] = useState(false);
   const yearOptions = useMemo(() => values("YEAR"), [values]);
   const transmissionOptions = useMemo(() => values("TRANSMISSION"), [values]);
   const fuelTypeOptions = useMemo(() => values("FUEL_TYPE"), [values]);
@@ -138,7 +146,7 @@ export function useCarSpecsManager(): UseCarSpecsManagerReturn {
       return;
     }
     setModelsLoading(true);
-    fetchModelsByBrand(formBrand)
+    fetchModelsByBrand(formBrand, formFamily || undefined)
       .then((rows) => {
         if (cancelled) return;
         const opts = rows.map((r) => r.value);
@@ -157,7 +165,29 @@ export function useCarSpecsManager(): UseCarSpecsManagerReturn {
     return () => {
       cancelled = true;
     };
-  }, [formBrand, formModel]);
+  }, [formBrand, formFamily, formModel]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!formBrand) {
+      setFamilyOptions([]);
+      return;
+    }
+    setFamiliesLoading(true);
+    fetchFamiliesByBrand(formBrand)
+      .then((rows) => {
+        if (!cancelled) setFamilyOptions(rows.map((row) => row.value));
+      })
+      .catch(() => {
+        if (!cancelled) setFamilyOptions([]);
+      })
+      .finally(() => {
+        if (!cancelled) setFamiliesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [formBrand]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -199,6 +229,7 @@ export function useCarSpecsManager(): UseCarSpecsManagerReturn {
       entries.push({
         id: s.id,
         year: s.year,
+        family: s.family,
         engine: s.engine,
         transmission: s.transmission,
         fuelType: s.fuel_type,
@@ -212,6 +243,7 @@ export function useCarSpecsManager(): UseCarSpecsManagerReturn {
         models: Array.from(models.entries())
           .map(([model, specsArr]) => ({
             model,
+            family: specsArr[0]?.family ?? null,
             specs: specsArr.sort((a, b) => {
               if (a.year === null) return -1;
               if (b.year === null) return 1;
@@ -236,6 +268,7 @@ export function useCarSpecsManager(): UseCarSpecsManagerReturn {
     setEditingSpec(null);
     setFormBrand("");
     setFormModel("");
+    setFormFamily("");
     setFormYear("");
     setFormEngine("");
     setFormTransmission("");
@@ -244,8 +277,8 @@ export function useCarSpecsManager(): UseCarSpecsManagerReturn {
   }, []);
 
   const handleSaveSpec = useCallback(async () => {
-    if (!formBrand.trim() || !formModel.trim()) {
-      toast.error("برند و مدل الزامی است");
+    if (!formBrand.trim() || !formFamily.trim() || !formModel.trim()) {
+      toast.error("برند، خانواده و مدل الزامی است");
       return;
     }
     if (
@@ -261,6 +294,7 @@ export function useCarSpecsManager(): UseCarSpecsManagerReturn {
     setSaving(true);
     const input: CarSpecInput = {
       brand: formBrand.trim(),
+      family: formFamily.trim() || null,
       model: formModel.trim(),
       year: formYear.trim() || null,
       engine: formEngine.trim(),
@@ -279,6 +313,7 @@ export function useCarSpecsManager(): UseCarSpecsManagerReturn {
         await requestCarSpecChange({
           action: editingSpec ? "UPDATE" : "ADD",
           brand: input.brand,
+          family: input.family,
           model: input.model,
           year: input.year,
           engine: input.engine,
@@ -298,6 +333,7 @@ export function useCarSpecsManager(): UseCarSpecsManagerReturn {
     }
   }, [
     formBrand,
+    formFamily,
     formModel,
     formYear,
     formEngine,
@@ -328,6 +364,7 @@ export function useCarSpecsManager(): UseCarSpecsManagerReturn {
           await requestCarSpecChange({
             action: "DELETE",
             brand: target.brand,
+            family: target.family,
             model: target.model,
             year: target.year,
             requestedBy: user?.id ?? "",
@@ -350,6 +387,8 @@ export function useCarSpecsManager(): UseCarSpecsManagerReturn {
     brandOptions,
     yearOptions,
     modelOptions,
+    familyOptions,
+    familiesLoading,
     modelsLoading,
     transmissionOptions,
     fuelTypeOptions,
@@ -369,6 +408,8 @@ export function useCarSpecsManager(): UseCarSpecsManagerReturn {
     setFormBrand,
     formModel,
     setFormModel,
+    formFamily,
+    setFormFamily,
     formYear,
     setFormYear,
     formEngine,

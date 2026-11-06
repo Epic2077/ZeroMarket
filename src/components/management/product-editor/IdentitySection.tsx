@@ -22,11 +22,17 @@ interface IdentitySectionProps {
   errors: ProductFormErrors;
   listing?: {
     brand?: string;
+    family?: string | null;
     model?: string;
     year?: number;
     bodyType?: string;
   };
   selectedBrand: string;
+  selectedFamily: string;
+  familyValues: string[];
+  familiesLoading?: boolean;
+  onBrandChange: (brand: string) => void;
+  onFamilyChange: (family: string) => void;
   modelValues: string[];
   modelsLoading?: boolean;
   brandOptions: string[];
@@ -39,6 +45,11 @@ export function IdentitySection({
   errors,
   listing,
   selectedBrand,
+  selectedFamily,
+  familyValues,
+  familiesLoading = false,
+  onBrandChange,
+  onFamilyChange,
   modelValues,
   modelsLoading = false,
   brandOptions,
@@ -51,7 +62,7 @@ export function IdentitySection({
       title="مشخصات خودرو"
     >
       <FieldGroup>
-        <Field className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Field className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Field data-invalid={!!errors.brand}>
             <Controller
               control={control}
@@ -63,11 +74,42 @@ export function IdentitySection({
                   value={field.value ?? ""}
                   options={brandOptions}
                   placeholder="انتخاب برند"
-                  onChange={field.onChange}
+                  onChange={(value) => {
+                    field.onChange(value);
+                    onBrandChange(value);
+                  }}
                 />
               )}
             />
             <FieldError>{errors.brand?.message}</FieldError>
+          </Field>
+          <Field>
+            <Controller
+              control={control}
+              name="family"
+              render={({ field }) => (
+                <SearchSelect
+                  id="p-family"
+                  label="خانواده"
+                  value={field.value ?? ""}
+                  options={withCurrent(familyValues, listing?.family ?? undefined)}
+                  placeholder={
+                    familiesLoading
+                      ? "در حال بارگذاری…"
+                      : !selectedBrand
+                        ? "ابتدا برند را انتخاب کنید"
+                        : "انتخاب خانواده"
+                  }
+                  loading={familiesLoading}
+                  disabled={!selectedBrand || familiesLoading}
+                  onChange={(value) => {
+                    field.onChange(value);
+                    onFamilyChange(value);
+                  }}
+                />
+              )}
+            />
+            <FieldError>{errors.family?.message}</FieldError>
           </Field>
           <Field data-invalid={!!errors.model}>
             <Controller

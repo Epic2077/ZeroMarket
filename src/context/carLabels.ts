@@ -76,8 +76,12 @@ export const sellerFa: Record<string, string> = {
 /* ----------------------------- Label getters ----------------------------- */
 // Each falls back to the latin source when no Persian label is registered.
 
-export const brandModelLabel = (listing: Pick<Listing, "brand" | "model">): string => {
-  const key = `${listing.brand} ${listing.model}`;
+export const brandModelLabel = (
+  listing: Pick<Listing, "brand" | "family" | "model">,
+): string => {
+  const key = [listing.brand, listing.family, listing.model]
+    .filter(Boolean)
+    .join(" ");
   return brandModelFa[key] ?? key;
 };
 

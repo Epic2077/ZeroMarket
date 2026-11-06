@@ -90,6 +90,8 @@ export default function CarSpecsManager() {
     brandOptions,
     yearOptions,
     modelOptions,
+    familyOptions,
+    familiesLoading,
     modelsLoading,
     transmissionOptions,
     fuelTypeOptions,
@@ -109,6 +111,8 @@ export default function CarSpecsManager() {
     setFormBrand,
     formModel,
     setFormModel,
+    formFamily,
+    setFormFamily,
     formYear,
     setFormYear,
     formEngine,
@@ -134,6 +138,7 @@ export default function CarSpecsManager() {
         const found = m.specs.find((s) => s.id === spec.id);
         if (found) {
           setFormBrand(g.brand);
+          setFormFamily(m.family ?? "");
           setFormModel(m.model);
           break;
         }
@@ -229,7 +234,7 @@ export default function CarSpecsManager() {
             </button>
           </div>
 
-          {/* Row 1: brand, model, year */}
+          {/* Row 1: brand, family, model */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="space-y-1">
               <label className="text-2xs text-muted-foreground">برند</label>
@@ -237,6 +242,7 @@ export default function CarSpecsManager() {
                 value={formBrand}
                 onChange={(e) => {
                   setFormBrand(e.target.value);
+                  setFormFamily("");
                   setFormModel("");
                 }}
                 className="w-full h-9 rounded-lg border border-border bg-card px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -251,6 +257,31 @@ export default function CarSpecsManager() {
               </select>
             </div>
             <div className="space-y-1">
+              <label className="text-2xs text-muted-foreground">خانواده</label>
+              <select
+                value={formFamily}
+                onChange={(e) => {
+                  setFormFamily(e.target.value);
+                  setFormModel("");
+                }}
+                className="w-full h-9 rounded-lg border border-border bg-card px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
+                disabled={saving || !!editingSpec || !formBrand || familiesLoading}
+              >
+                <option value="">
+                  {!formBrand
+                    ? "ابتدا برند را انتخاب کنید"
+                    : familiesLoading
+                      ? "در حال بارگذاری…"
+                      : "انتخاب خانواده…"}
+                </option>
+                {familyOptions.map((family) => (
+                  <option key={family} value={family}>
+                    {family}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1">
               <label className="text-2xs text-muted-foreground">مدل</label>
               <select
                 value={formModel}
@@ -258,6 +289,7 @@ export default function CarSpecsManager() {
                 className="w-full h-9 rounded-lg border border-border bg-card px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
                 disabled={
                   saving || !!editingSpec || !formBrand || modelsLoading
+                  || !formFamily
                 }
               >
                 <option value="">
@@ -397,7 +429,7 @@ export default function CarSpecsManager() {
         </div>
       )}
 
-      {/* Brand → Model → Spec accordion */}
+      {/* Brand → Family → Model → Spec accordion */}
       {grouped.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border py-16 text-center">
           <p className="text-sm text-muted-foreground mb-3">
@@ -450,9 +482,14 @@ export default function CarSpecsManager() {
                 {/* Expanded: models & specs */}
                 {expanded && (
                   <div className="border-t border-border px-4 py-3 space-y-4">
-                    {models.map(({ model, specs: modelSpecs }) => (
+                    {models.map(({ model, family, specs: modelSpecs }) => (
                       <div key={model}>
                         <p className="text-sm font-600 text-foreground mb-2">
+                          {family && (
+                            <span className="text-muted-foreground ml-2">
+                              {family} /
+                            </span>
+                          )}
                           {model}
                           <span className="text-2xs text-muted-foreground font-500 mr-1.5">
                             ({modelSpecs.length.toLocaleString("fa-IR")})

@@ -4,6 +4,7 @@ export interface Listing {
   seller_id?: string;
   ownerId?: string;
   brand: string;
+  family?: string | null;
   model: string;
   trim: string;
   year: number;
@@ -68,6 +69,7 @@ export interface SellerSummary {
 export interface CarMarketInsight {
   id: string;
   brand: string;
+  family?: string | null;
   model: string;
   year: string; // text in DB
   totalActiveListings: number;

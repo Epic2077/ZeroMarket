@@ -10,6 +10,7 @@ export interface ListingRow {
   seller_id: string;
   slug: string;
   brand: string;
+  family: string | null;
   model: string;
   is_custom_model: boolean;
   trim: string;
@@ -187,6 +188,7 @@ export async function checkDuplicateListing(
   client: SupabaseClient,
   sellerId: string,
   brand: string,
+  family: string | null | undefined,
   model: string,
   year: number,
   trim: string,
@@ -197,7 +199,16 @@ export async function checkDuplicateListing(
   let query = client
     .from("listings")
     .select("id")
-    .match({ seller_id: sellerId, brand, model, year, trim, color, city })
+    .match({
+      seller_id: sellerId,
+      brand,
+      family: family ?? null,
+      model,
+      year,
+      trim,
+      color,
+      city,
+    })
     .in("status", ["WAITING", "AVAILABLE", "NEGOTIABLE", "RESERVED"]);
 
   if (excludeId) query = query.neq("id", excludeId);
@@ -217,18 +228,21 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export async function getMarketInsight(
   client: SupabaseClient,
   brand: string,
+  family: string | null | undefined,
   model: string,
   year: number,
   listingPrice: number,
 ): Promise<MarketDisplayFields | null> {
-  const { data, error } = await client
+  let query = client
     .from("car_market_insights")
     .select("avg_listed_price, avg_price_7d_ago, avg_sold_price")
     .eq("brand", brand)
     .eq("model", model)
-    .eq("year", String(year)) // year is text in car_market_insights
-    .maybeSingle();
+    .eq("year", String(year)); // year is text in car_market_insights
 
+  if (family) query = query.eq("family", family);
+
+  const { data, error } = await query.maybeSingle();
   if (error || !data) return null;
 
   const avg = Number(data.avg_listed_price);
@@ -269,6 +283,7 @@ export function listingRowToListing(
     seller_id: row.seller_id,
     ownerId: row.seller_id,
     brand: row.brand,
+    family: row.family,
     model: row.model,
     trim: row.trim,
     year: row.year,

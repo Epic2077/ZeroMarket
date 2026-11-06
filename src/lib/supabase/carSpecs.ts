@@ -5,6 +5,7 @@ import { supabase } from "./client";
 export interface CarSpecRow {
   id: string;
   brand: string;
+  family: string | null;
   model: string;
   year: string | null; // null = global default for all years
   engine: string;
@@ -21,6 +22,7 @@ export interface CarSpecChangeRequest {
   id: string;
   action: CarSpecChangeAction;
   brand: string;
+  family: string | null;
   model: string;
   year: string | null;
   engine: string | null;
@@ -38,6 +40,7 @@ export interface CarSpecChangeRequest {
 
 export interface CarSpecInput {
   brand: string;
+  family: string | null;
   model: string;
   year: string | null;
   engine: string;
@@ -66,13 +69,15 @@ export async function fetchCarSpecsByBrandModel(
   brand: string,
   model: string,
   year?: string | null,
+  family?: string | null,
 ): Promise<CarSpecRow | null> {
-  const query = supabase
+  let query = supabase
     .from("car_specs")
     .select("*")
     .eq("brand", brand)
     .eq("model", model)
     .order("year", { ascending: false, nullsFirst: false });
+  if (family) query = query.eq("family", family);
 
   if (year) {
     // Try exact year match first
@@ -80,21 +85,24 @@ export async function fetchCarSpecsByBrandModel(
     if (exact) return exact as CarSpecRow;
 
     // Fallback: null-year (global default) for this model
-    const { data: fallback } = await supabase
+    let fallbackQuery = supabase
       .from("car_specs")
       .select("*")
       .eq("brand", brand)
       .eq("model", model)
-      .is("year", null)
-      .maybeSingle();
+      .is("year", null);
+    if (family) fallbackQuery = fallbackQuery.eq("family", family);
+    const { data: fallback } = await fallbackQuery.maybeSingle();
     if (fallback) return fallback as CarSpecRow;
 
     // Last resort: any year for this model (newest first)
-    const { data: anyYear } = await supabase
+    let anyYearQuery = supabase
       .from("car_specs")
       .select("*")
       .eq("brand", brand)
-      .eq("model", model)
+      .eq("model", model);
+    if (family) anyYearQuery = anyYearQuery.eq("family", family);
+    const { data: anyYear } = await anyYearQuery
       .order("year", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -121,6 +129,7 @@ export async function ownerUpsertCarSpec(
       .from("car_specs")
       .update({
         brand: input.brand,
+        family: input.family,
         model: input.model,
         year: input.year,
         engine: input.engine,
@@ -134,6 +143,7 @@ export async function ownerUpsertCarSpec(
   } else {
     const { error } = await supabase.from("car_specs").insert({
       brand: input.brand,
+      family: input.family,
       model: input.model,
       year: input.year,
       engine: input.engine,
@@ -164,6 +174,7 @@ export async function ownerDeleteCarSpec(id: string): Promise<void> {
 export interface CarSpecChangeInput {
   action: CarSpecChangeAction;
   brand: string;
+  family: string | null;
   model: string;
   year: string | null;
   engine?: string | null;
@@ -171,6 +182,7 @@ export interface CarSpecChangeInput {
   fuel_type?: string | null;
   body_type?: string | null;
   oldBrand?: string;
+  oldFamily?: string | null;
   oldModel?: string;
   oldYear?: string | null;
   requestedBy: string;
@@ -183,6 +195,7 @@ export async function requestCarSpecChange(
   const { error } = await supabase.from("car_specs_change_requests").insert({
     action: input.action,
     brand: input.brand,
+    family: input.family,
     model: input.model,
     year: input.year,
     engine: input.engine ?? null,
@@ -190,6 +203,7 @@ export async function requestCarSpecChange(
     fuel_type: input.fuel_type ?? null,
     body_type: input.body_type ?? null,
     old_brand: input.oldBrand ?? null,
+    old_family: input.oldFamily ?? null,
     old_model: input.oldModel ?? null,
     old_year: input.oldYear ?? null,
     requested_by: input.requestedBy,

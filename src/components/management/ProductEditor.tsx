@@ -23,7 +23,11 @@ const STATUS_TO_DB: Record<string, string> = {
 };
 import { fromPersianYear, toPersianYear } from "@/lib/utils";
 import { useTaxonomyOptions } from "@/hooks/useTaxonomyOptions";
-import { fetchModelsByBrand, type TaxonomyRow } from "@/lib/supabase/taxonomy";
+import {
+  fetchFamiliesByBrand,
+  fetchModelsByBrand,
+  type TaxonomyRow,
+} from "@/lib/supabase/taxonomy";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   productSchema,
@@ -111,6 +115,7 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
     resolver: zodResolver(productSchema) as import("react-hook-form").Resolver<ProductFormValues>,
     defaultValues: {
       brand: listing?.brand ?? "",
+      family: listing?.family ?? "",
       model: listing?.model ?? "",
       trim: listing?.trim ?? "",
       year: listing ? toPersianYear(listing.year) : "",
@@ -130,6 +135,7 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
   });
 
   const selectedBrand = useWatch({ control, name: "brand" });
+  const selectedFamily = useWatch({ control, name: "family" });
   const selectedModel = useWatch({ control, name: "model" });
   const selectedYear = useWatch({ control, name: "year" });
 
@@ -156,13 +162,15 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
 
   // ── Async model fetch when brand changes ────────────────────────────
   const [modelValues, setModelValues] = useState<string[]>([]);
+  const [familyValues, setFamilyValues] = useState<string[]>([]);
+  const [familiesLoading, setFamiliesLoading] = useState(false);
   const [modelsLoading, setModelsLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     if (!selectedBrand) return;
     setModelsLoading(true);
-    fetchModelsByBrand(selectedBrand)
+    fetchModelsByBrand(selectedBrand, selectedFamily || undefined)
       .then((rows) => {
         if (cancelled) return;
         setModelValues(rows.map((r) => r.value));
@@ -173,6 +181,28 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
       })
       .finally(() => {
         if (!cancelled) setModelsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedBrand, selectedFamily]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!selectedBrand) {
+      setFamilyValues([]);
+      return;
+    }
+    setFamiliesLoading(true);
+    fetchFamiliesByBrand(selectedBrand)
+      .then((rows) => {
+        if (!cancelled) setFamilyValues(rows.map((row) => row.value));
+      })
+      .catch(() => {
+        if (!cancelled) setFamilyValues([]);
+      })
+      .finally(() => {
+        if (!cancelled) setFamiliesLoading(false);
       });
     return () => {
       cancelled = true;
@@ -199,6 +229,7 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
       selectedBrand,
       selectedModel,
       selectedYear || null,
+      selectedFamily || null,
     )
       .then((row) => {
         if (cancelled) return;
@@ -222,7 +253,7 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [selectedBrand, selectedModel, selectedYear]);
+  }, [selectedBrand, selectedFamily, selectedModel, selectedYear]);
 
   // Derive: clear specs when brand or model is empty
   const displayCarSpecs = selectedBrand && selectedModel ? carSpecs : null;
@@ -268,6 +299,7 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
 
     const basePayload = {
       brand: values.brand,
+      family: values.family || null,
       model: values.model,
       trim: values.trim,
       year: fromPersianYear(values.year),
@@ -292,6 +324,7 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
         supabase,
         userId,
         values.brand,
+        values.family || null,
         values.model,
         gYear,
         values.trim,
@@ -465,6 +498,18 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
             errors={errors}
             listing={listing}
             selectedBrand={selectedBrand}
+            selectedFamily={selectedFamily ?? ""}
+            familyValues={familyValues}
+            familiesLoading={familiesLoading}
+            onBrandChange={(brand) => {
+              setValue("brand", brand, { shouldValidate: true });
+              setValue("family", "", { shouldValidate: true });
+              setValue("model", "", { shouldValidate: true });
+            }}
+            onFamilyChange={(family) => {
+              setValue("family", family, { shouldValidate: true });
+              setValue("model", "", { shouldValidate: true });
+            }}
             modelValues={displayModelValues}
             modelsLoading={modelsLoading}
             brandOptions={brandOptions}
