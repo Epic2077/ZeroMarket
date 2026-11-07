@@ -27,7 +27,6 @@ export const taxonomyCategoryMeta: {
   noun: string;
 }[] = [
   { id: "BRAND", label: "برندها", noun: "برند" },
-  { id: "FAMILY", label: "خانواده‌ها", noun: "خانواده" },
   { id: "YEAR", label: "سال تولید", noun: "سال" },
   { id: "COLOR", label: "رنگ‌ها", noun: "رنگ" },
   { id: "CITY", label: "شهرها", noun: "شهر" },

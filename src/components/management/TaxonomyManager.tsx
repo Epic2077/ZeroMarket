@@ -52,7 +52,8 @@ export default function TaxonomyManager() {
 
   const meta = taxonomyCategoryMeta.find((c) => c.id === active)!;
   const options = values(active);
-  const isHierarchyView = active === "BRAND" || active === "FAMILY";
+  const isHierarchyView =
+    active === "BRAND" || active === "FAMILY" || active === "MODEL";
   const isColorView = active === "COLOR";
 
   const handleCategorySelect = (cat: TaxonomyCategory) => {
@@ -197,6 +198,10 @@ export default function TaxonomyManager() {
               canEdit={canEdit}
               onRemoveBrand={handleRemove}
               onRenameBrand={handleRename}
+              onRemoveFamily={(family) => handleRemove(family, "FAMILY")}
+              onRenameFamily={(oldVal, newVal) =>
+                handleRename(oldVal, newVal, "FAMILY")
+              }
               onRemoveModel={(model) => handleRemove(model, "MODEL")}
               onRenameModel={(oldVal, newVal) =>
                 handleRename(oldVal, newVal, "MODEL")

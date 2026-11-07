@@ -20,6 +20,8 @@ interface BrandAccordionProps {
   canEdit: boolean;
   onRemoveBrand: (brand: string) => Promise<void>;
   onRenameBrand: (oldVal: string, newVal: string) => Promise<void>;
+  onRemoveFamily: (family: string) => Promise<void>;
+  onRenameFamily: (oldVal: string, newVal: string) => Promise<void>;
   onRemoveModel: (model: string) => Promise<void>;
   onRenameModel: (oldVal: string, newVal: string) => Promise<void>;
 }
@@ -40,6 +42,8 @@ export function BrandAccordion({
   canEdit,
   onRemoveBrand,
   onRenameBrand,
+  onRemoveFamily,
+  onRenameFamily,
   onRemoveModel,
   onRenameModel,
 }: BrandAccordionProps) {
@@ -107,9 +111,20 @@ export function BrandAccordion({
                       const models = modelsByBrand[familyKey] ?? [];
                       return (
                         <div key={family} className="mb-4">
-                          <p className="mb-2 text-xs font-700 text-foreground">
-                            {family}
-                          </p>
+                          <div className="mb-2 flex items-center justify-between gap-2">
+                            <p className="text-xs font-700 text-foreground">
+                              {family}
+                            </p>
+                            {canEdit && (
+                              <OptionActions
+                                value={family}
+                                onRemove={() => onRemoveFamily(family)}
+                                onRename={(newVal) =>
+                                  onRenameFamily(family, newVal)
+                                }
+                              />
+                            )}
+                          </div>
                           {models.length > 0 && (
                             <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 mb-3">
                               {models.map((model) => (
@@ -131,65 +146,76 @@ export function BrandAccordion({
                               ))}
                             </div>
                           )}
-                          <AddOptionForm
-                            value={modelDrafts[familyKey] ?? ""}
-                            onChange={(v) => onModelDraftChange(familyKey, v)}
-                            onSubmit={() => onAddModel(familyKey)}
-                            placeholder={`افزودن مدل به ${family}…`}
-                            disabled={modelsLoading}
-                          >
-                            <input
+                          <div className="rounded-lg border border-accent/20 bg-accent/5 p-2.5">
+                            <p className="mb-2 text-2xs font-700 text-accent">
+                              افزودن مدل به خانواده «{family}»
+                            </p>
+                            <AddOptionForm
                               value={modelDrafts[familyKey] ?? ""}
-                              onChange={(e) =>
-                                onModelDraftChange(familyKey, e.target.value)
-                              }
-                              placeholder={`افزودن مدل به ${family}…`}
-                              className="flex-1 h-8 rounded-lg border border-border bg-card px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30"
+                              onChange={(v) => onModelDraftChange(familyKey, v)}
+                              onSubmit={() => onAddModel(familyKey)}
+                              placeholder="نام مدل را وارد کنید…"
                               disabled={modelsLoading}
-                            />
-                            <button
-                              type="submit"
-                              disabled={
-                                !(modelDrafts[familyKey] ?? "").trim() ||
-                                modelsLoading
-                              }
-                              className="btn-primary text-xs h-8 shrink-0 disabled:pointer-events-none disabled:opacity-40"
                             >
-                              <Plus size={12} />
-                              افزودن مدل
-                            </button>
-                          </AddOptionForm>
+                              <input
+                                value={modelDrafts[familyKey] ?? ""}
+                                onChange={(e) =>
+                                  onModelDraftChange(familyKey, e.target.value)
+                                }
+                                placeholder="نام مدل را وارد کنید…"
+                                className="flex-1 h-8 rounded-lg border border-accent/25 bg-card px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-accent/30"
+                                disabled={modelsLoading}
+                              />
+                              <button
+                                type="submit"
+                                disabled={
+                                  !(modelDrafts[familyKey] ?? "").trim() ||
+                                  modelsLoading
+                                }
+                                className="btn-primary text-xs h-8 shrink-0 disabled:pointer-events-none disabled:opacity-40"
+                              >
+                                <Plus size={12} />
+                                افزودن مدل
+                              </button>
+                            </AddOptionForm>
+                          </div>
                         </div>
                       );
                     })}
 
-                    <AddOptionForm
-                      value={familyDrafts[brand] ?? ""}
-                      onChange={(v) => onFamilyDraftChange(brand, v)}
-                      onSubmit={() => onAddFamily(brand)}
-                      placeholder={`افزودن خانواده به ${brand}…`}
-                      disabled={modelsLoading}
-                    >
-                      <input
+                    <div className="rounded-lg border border-primary/20 bg-primary/5 p-2.5">
+                      <p className="mb-2 text-2xs font-700 text-primary">
+                        افزودن خانواده به برند «{brand}»
+                      </p>
+                      <AddOptionForm
                         value={familyDrafts[brand] ?? ""}
-                        onChange={(e) =>
-                          onFamilyDraftChange(brand, e.target.value)
-                        }
-                        placeholder={`افزودن خانواده به ${brand}…`}
-                        className="flex-1 h-8 rounded-lg border border-border bg-card px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        onChange={(v) => onFamilyDraftChange(brand, v)}
+                        onSubmit={() => onAddFamily(brand)}
+                        placeholder="نام خانواده را وارد کنید…"
                         disabled={modelsLoading}
-                      />
-                      <button
-                        type="submit"
-                        disabled={
-                          !(familyDrafts[brand] ?? "").trim() || modelsLoading
-                        }
-                        className="btn-primary text-xs h-8 shrink-0 disabled:pointer-events-none disabled:opacity-40"
                       >
-                        <Plus size={12} />
-                        افزودن خانواده
-                      </button>
-                    </AddOptionForm>
+                        <input
+                          value={familyDrafts[brand] ?? ""}
+                          onChange={(e) =>
+                            onFamilyDraftChange(brand, e.target.value)
+                          }
+                          placeholder="نام خانواده را وارد کنید…"
+                          className="flex-1 h-9 rounded-lg border border-primary/25 bg-card px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                          disabled={modelsLoading}
+                        />
+                        <button
+                          type="submit"
+                          disabled={
+                            !(familyDrafts[brand] ?? "").trim() ||
+                            modelsLoading
+                          }
+                          className="btn-primary text-sm h-9 shrink-0 disabled:pointer-events-none disabled:opacity-40"
+                        >
+                          <Plus size={14} />
+                          افزودن خانواده
+                        </button>
+                      </AddOptionForm>
+                    </div>
                   </>
                 )}
               </div>
