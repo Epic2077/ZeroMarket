@@ -4,10 +4,11 @@ import VerifiedBadge from "@/components/shared/VerifiedBadeg";
 import { useUserInfo } from "@/context/UserInfoProvider";
 import { currentUser } from "@/context/userProfile";
 import type { SellerApplicationStatus } from "@/types/user";
-import { Clock, LayoutDashboard, LogOutIcon } from "lucide-react";
+import { Clock, LayoutDashboard, LogOutIcon, Send } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
+import TelegramConnectionDialog from "./TelegramConnectionModal";
 
 interface Props {
   appStatus: SellerApplicationStatus;
@@ -64,6 +65,7 @@ export default function ProfileHeader({ appStatus }: Props) {
         </div>
       </div>
       <div className="flex items-center gap-2">
+        <TelegramConnectionDialog />
         {/* Maps to this member's managed-platform record. */}
         <Button
           onClick={logout}

@@ -306,26 +306,34 @@ export async function POST(req: Request) {
         console.log("Text command:", { chatId, text, adminCheck });
 
         if (text === "/start") {
-          if (adminCheck) {
-            await clearAdminState(chatId);
-            await sendAdminWelcomeMessage(chatId);
-          } else {
-            const inChannel = await isChannelMember(chatId);
-            console.log("Channel check for /start:", { chatId, inChannel });
-            if (!inChannel) {
-              await sendChannelJoinRequest(chatId);
+          try {
+            if (adminCheck) {
+              await clearAdminState(chatId);
+              await sendAdminWelcomeMessage(chatId);
             } else {
-              const hasPhone = await hasPhoneNumber(chatId);
-              console.log("Phone check for /start:", { chatId, hasPhone });
-              if (!hasPhone) {
-                console.log("Calling sendPhoneRequest for:", chatId);
-                await setAdminState(chatId, "waiting_for_phone");
-                await sendPhoneRequest(chatId);
-                console.log("sendPhoneRequest completed for:", chatId);
+              const inChannel = await isChannelMember(chatId);
+              console.log("Channel check for /start:", { chatId, inChannel });
+              if (!inChannel) {
+                await sendChannelJoinRequest(chatId);
               } else {
-                await sendWelcomeMessage(chatId);
+                const hasPhone = await hasPhoneNumber(chatId);
+                console.log("Phone check for /start:", { chatId, hasPhone });
+                if (!hasPhone) {
+                  console.log("Calling sendPhoneRequest for:", chatId);
+                  await setAdminState(chatId, "waiting_for_phone");
+                  await sendPhoneRequest(chatId);
+                  console.log("sendPhoneRequest completed for:", chatId);
+                } else {
+                  await sendWelcomeMessage(chatId);
+                }
               }
             }
+          } catch (error) {
+            console.error("Error handling /start:", error);
+            await sendMessage(
+              chatId,
+              "❌ مشکلی پیش آمد. لطفاً چند لحظه بعد دوباره تلاش کنید.",
+            );
           }
         } else if (text === "/categories") {
           if (adminCheck) {
