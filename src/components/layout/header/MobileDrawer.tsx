@@ -16,9 +16,13 @@ import { useUserInfo } from "@/context/UserInfoProvider";
 
 interface MobileDrawerProps {
   setMobileOpen: (open: boolean) => void;
+  toggleRef: React.RefObject<HTMLButtonElement | null>;
 }
 
-export default function MobileDrawer({ setMobileOpen }: MobileDrawerProps) {
+export default function MobileDrawer({
+  setMobileOpen,
+  toggleRef,
+}: MobileDrawerProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const { user, profile } = useUserInfo();
   const pathname = usePathname();
@@ -44,10 +48,9 @@ export default function MobileDrawer({ setMobileOpen }: MobileDrawerProps) {
     };
 
     const handlePointerDown = (event: PointerEvent) => {
-      if (
-        drawerRef.current &&
-        !drawerRef.current.contains(event.target as Node)
-      ) {
+      const isDrawer = drawerRef.current?.contains(event.target as Node);
+      const isToggle = toggleRef.current?.contains(event.target as Node);
+      if (drawerRef.current && !isDrawer && !isToggle) {
         setMobileOpen(false);
       }
     };
@@ -58,7 +61,7 @@ export default function MobileDrawer({ setMobileOpen }: MobileDrawerProps) {
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("pointerdown", handlePointerDown);
     };
-  }, [setMobileOpen]);
+  }, [setMobileOpen, toggleRef]);
 
   return (
     <div
