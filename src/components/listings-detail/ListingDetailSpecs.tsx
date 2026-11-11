@@ -19,7 +19,7 @@ interface Props {
 const keySpecs = (listing: Listing) => [
   {
     label: "سال مدل",
-    value: `${String(listing.year)} / ${String(listing.year - 621)}`,
+    value: String(listing.year),
     icon: <Calendar size={15} />,
     color: "text-sky-600",
   },
@@ -59,7 +59,7 @@ const specGroups = (listing: Listing) => [
       { label: "تریم / نسخه", value: listing.trim },
       {
         label: "سال مدل",
-        value: `${String(listing.year)} / ${String(listing.year - 621)}`,
+        value: String(listing.year),
       },
       { label: "نوع بدنه", value: listing.bodyType },
       { label: "وضعیت", value: "۰ کیلومتر — کارخانه‌ای" },

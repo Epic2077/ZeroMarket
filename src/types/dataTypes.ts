@@ -7,7 +7,7 @@ export interface Listing {
   family?: string | null;
   model: string;
   trim: string;
-  year: number;
+  year: string;
   color: string;
   colorHex: string;
   engine: string;

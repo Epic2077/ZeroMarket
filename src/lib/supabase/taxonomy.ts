@@ -191,7 +191,16 @@ export async function ownerAddOption(input: AddTaxonomyInput): Promise<void> {
     metadata: input.metadata ?? null,
   });
 
-  if (error) throw error;
+  if (!error) return;
+  if (error.code !== "23505") throw error;
+
+  const { error: restoreError } = await supabase
+    .from("taxonomy_options")
+    .update({ metadata: input.metadata ?? null })
+    .eq("category", input.category)
+    .eq("value", input.value);
+
+  if (restoreError) throw restoreError;
 }
 
 /** Owner: rename an option within a given category. */
@@ -365,8 +374,13 @@ export async function approveTaxonomyChangeRequest(
           metadata: request.metadata ?? null,
         });
       if (addError) {
-        // If duplicate (23505), the value already exists - treat as success
         if (addError.code === "23505") {
+          const { error: restoreError } = await supabase
+            .from("taxonomy_options")
+            .update({ metadata: request.metadata ?? null })
+            .eq("category", request.category)
+            .eq("value", request.value);
+          if (restoreError) throw restoreError;
           applied = true;
           break;
         }

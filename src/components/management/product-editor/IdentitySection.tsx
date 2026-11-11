@@ -11,7 +11,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Controller, type Control } from "react-hook-form";
-import { toPersianYear, withCurrent } from "@/lib/utils";
+import { withCurrent } from "@/lib/utils";
 import type {
   ProductFormErrors,
   ProductFormValues,
@@ -24,11 +24,10 @@ interface IdentitySectionProps {
     brand?: string;
     family?: string | null;
     model?: string;
-    year?: number;
+    year?: string;
     bodyType?: string;
   };
   selectedBrand: string;
-  selectedFamily: string;
   familyValues: string[];
   familiesLoading?: boolean;
   onBrandChange: (brand: string) => void;
@@ -45,7 +44,6 @@ export function IdentitySection({
   errors,
   listing,
   selectedBrand,
-  selectedFamily,
   familyValues,
   familiesLoading = false,
   onBrandChange,
@@ -132,7 +130,7 @@ export function IdentitySection({
                   }
                   emptyText="مدلی یافت نشد"
                   loading={modelsLoading}
-                  disabled={!selectedBrand || !selectedFamily || modelsLoading}
+                  disabled={!selectedBrand || modelsLoading}
                   onChange={field.onChange}
                 />
               )}
@@ -159,7 +157,7 @@ export function IdentitySection({
                 id="p-year"
                 label="سال ساخت"
                 value={field.value ?? ""}
-                options={withCurrent(yearOptions, listing?.year ? toPersianYear(listing.year) : undefined)}
+                options={withCurrent(yearOptions, listing?.year)}
                 placeholder="انتخاب سال"
                 onChange={field.onChange}
               />

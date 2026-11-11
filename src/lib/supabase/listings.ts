@@ -14,7 +14,7 @@ export interface ListingRow {
   model: string;
   is_custom_model: boolean;
   trim: string;
-  year: number;
+  year: string;
   price: number;
   price_unit: string;
   body_type: string;
@@ -190,7 +190,7 @@ export async function checkDuplicateListing(
   brand: string,
   family: string | null | undefined,
   model: string,
-  year: number,
+  year: string,
   trim: string,
   color: string,
   city: string,
@@ -230,7 +230,7 @@ export async function getMarketInsight(
   brand: string,
   family: string | null | undefined,
   model: string,
-  year: number,
+  year: string,
   listingPrice: number,
 ): Promise<MarketDisplayFields | null> {
   let query = client
@@ -238,7 +238,7 @@ export async function getMarketInsight(
     .select("avg_listed_price, avg_price_7d_ago, avg_sold_price")
     .eq("brand", brand)
     .eq("model", model)
-    .eq("year", String(year)); // year is text in car_market_insights
+    .eq("year", year);
 
   if (family) query = query.eq("family", family);
 

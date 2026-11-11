@@ -4,7 +4,7 @@ import { requiredText } from "../validation";
 
 export const productSchema = z.object({
   brand: requiredText("برند را انتخاب کنید"),
-  family: requiredText("خانواده را انتخاب کنید"),
+  family: z.string(),
   model: requiredText("مدل الزامی است"),
   trim: requiredText("تریم الزامی است"),
   year: requiredText("سال را انتخاب کنید"),

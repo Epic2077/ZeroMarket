@@ -204,7 +204,7 @@ export default function NewPriceAlertModal({ onClose, onCreated }: Props) {
         userId: user.id,
         brand: values.brand,
         model: values.model,
-        year: values.year ? Number(values.year) : null,
+        year: values.year || null,
         targetPrice: Number(values.targetPrice.replace(/\D/g, "")),
       });
       toast.success("هشدار قیمت جدید ثبت شد");

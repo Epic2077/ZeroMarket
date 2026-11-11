@@ -254,7 +254,7 @@ export default function ListingTable({ data }: ListingTableProps) {
                   <div className="flex flex-col gap-0.5">
                     <span className="text-muted-foreground">سال ساخت</span>
                     <span className="font-medium font-mono">
-                      {listing.year} / {toFa(listing.year - 621)}
+                      {listing.year}
                     </span>
                   </div>
                   <div className="flex flex-col gap-0.5">

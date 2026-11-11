@@ -96,7 +96,7 @@ export async function POST(request: Request) {
     }));
     const { data, error } = await supabaseAdmin
       .from("taxonomy_options")
-      .insert(rows)
+      .upsert(rows, { onConflict: "category,value" })
       .select("id, category, value, metadata");
 
     if (error) throw error;

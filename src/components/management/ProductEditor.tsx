@@ -21,7 +21,6 @@ const STATUS_TO_DB: Record<string, string> = {
   sold: "SOLD",
   reserved: "RESERVED",
 };
-import { fromPersianYear, toPersianYear } from "@/lib/utils";
 import { useTaxonomyOptions } from "@/hooks/useTaxonomyOptions";
 import {
   fetchFamiliesByBrand,
@@ -44,6 +43,8 @@ import {
   FormActions,
 } from "./product-editor";
 import { Controller } from "react-hook-form";
+
+const DEFAULT_SPEC_VALUE = "-";
 
 /** Build a color-name → hex lookup from taxonomy COLOR rows. */
 function buildColorHexMap(colors: TaxonomyRow[]): Record<string, string> {
@@ -118,7 +119,7 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
       family: listing?.family ?? "",
       model: listing?.model ?? "",
       trim: listing?.trim ?? "",
-      year: listing ? toPersianYear(listing.year) : "",
+      year: listing?.year ?? "",
       color: listing?.color ?? "",
       colorHex: listing?.colorHex ?? "#1b4fd8",
       engine: listing?.engine ?? "",
@@ -224,6 +225,7 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
   useEffect(() => {
     let cancelled = false;
     if (!selectedBrand || !selectedModel) return;
+    setCarSpecs(null);
     setCarSpecsLoading(true);
     fetchCarSpecsByBrandModel(
       selectedBrand,
@@ -236,16 +238,28 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
         setCarSpecs(
           row
             ? {
-                engine: row.engine,
-                transmission: row.transmission,
-                fuelType: row.fuel_type,
-                bodyType: row.body_type,
+                engine: row.engine?.trim() || DEFAULT_SPEC_VALUE,
+                transmission: row.transmission?.trim() || DEFAULT_SPEC_VALUE,
+                fuelType: row.fuel_type?.trim() || DEFAULT_SPEC_VALUE,
+                bodyType: row.body_type?.trim() || DEFAULT_SPEC_VALUE,
               }
-            : null,
+            : {
+                engine: DEFAULT_SPEC_VALUE,
+                transmission: DEFAULT_SPEC_VALUE,
+                fuelType: DEFAULT_SPEC_VALUE,
+                bodyType: DEFAULT_SPEC_VALUE,
+              },
         );
       })
       .catch(() => {
-        if (!cancelled) setCarSpecs(null);
+        if (!cancelled) {
+          setCarSpecs({
+            engine: DEFAULT_SPEC_VALUE,
+            transmission: DEFAULT_SPEC_VALUE,
+            fuelType: DEFAULT_SPEC_VALUE,
+            bodyType: DEFAULT_SPEC_VALUE,
+          });
+        }
       })
       .finally(() => {
         if (!cancelled) setCarSpecsLoading(false);
@@ -302,7 +316,7 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
       family: values.family || null,
       model: values.model,
       trim: values.trim,
-      year: fromPersianYear(values.year),
+      year: values.year,
       price: Number(values.price.replace(/\D/g, "")),
       price_unit: "تومان",
       color: values.color,
@@ -319,7 +333,7 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
 
     try {
       // ── Duplicate check ──────────────────────────────────────────
-      const gYear = fromPersianYear(values.year);
+      const gYear = values.year;
       const duplicateId = await checkDuplicateListing(
         supabase,
         userId,
@@ -402,6 +416,13 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "خطا در ثبت محصول");
     }
+  }, (formErrors) => {
+    const firstError = Object.values(formErrors)[0];
+    toast.error(
+      typeof firstError?.message === "string"
+        ? firstError.message
+        : "لطفاً اطلاعات فرم را کامل کنید",
+    );
   });
 
   return (
@@ -498,7 +519,6 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
             errors={errors}
             listing={listing}
             selectedBrand={selectedBrand}
-            selectedFamily={selectedFamily ?? ""}
             familyValues={familyValues}
             familiesLoading={familiesLoading}
             onBrandChange={(brand) => {

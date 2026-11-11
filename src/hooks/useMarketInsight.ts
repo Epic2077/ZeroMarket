@@ -19,7 +19,7 @@ interface UseMarketInsightResult {
 export function useMarketInsight(
   brand: string,
   model: string,
-  year: number,
+  year: string,
   listingPrice: number,
 ): UseMarketInsightResult {
   const [market, setMarket] = useState<MarketDisplayFields | null>(null);
@@ -40,7 +40,7 @@ export function useMarketInsight(
         .select("avg_listed_price, avg_price_7d_ago, avg_sold_price")
         .eq("brand", brand)
         .eq("model", model)
-        .eq("year", String(year))
+        .eq("year", year)
         .maybeSingle();
 
       if (qError) throw qError;

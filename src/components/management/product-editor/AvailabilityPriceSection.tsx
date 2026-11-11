@@ -16,7 +16,7 @@ import {
   type Control,
   type UseFormSetValue,
 } from "react-hook-form";
-import { withCurrent, fromPersianYear } from "@/lib/utils";
+import { withCurrent } from "@/lib/utils";
 import { useMarketInsight } from "@/hooks/useMarketInsight";
 import type {
   ProductFormErrors,
@@ -63,12 +63,10 @@ export function AvailabilityPriceSection({
   year,
 }: AvailabilityPriceSectionProps) {
   // Convert Persian year to Gregorian for the market insight lookup
-  const gYear = fromPersianYear(year || "۱۴۰۴");
-
   const { market, loading: marketLoading } = useMarketInsight(
     brand,
     model,
-    gYear,
+    year,
     0, // price not needed — we only read marketAvgBuy
   );
   const [showModal, setShowModal] = useState(false);

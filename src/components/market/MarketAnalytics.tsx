@@ -104,7 +104,7 @@ export default function MarketAnalytics() {
             .select("avg_listed_price, avg_price_7d_ago, total_active_listings")
             .eq("brand", s.brand)
             .eq("model", s.model);
-          if (s.year) q = q.eq("year", Number(toEn(s.year)));
+          if (s.year) q = q.eq("year", toEn(s.year));
           const { data } = await q.maybeSingle();
           if (!data) return null;
           const avg = Number(data.avg_listed_price),
@@ -237,7 +237,7 @@ export default function MarketAnalytics() {
   }, [slots, insights]);
   const scatterListings = useMemo(() => {
     if (!scatterCar) return [];
-    const scatterYear = scatterCar.year ? Number(toEn(scatterCar.year)) : null;
+    const scatterYear = scatterCar.year ? toEn(scatterCar.year) : null;
     return allListings
       .filter(
         (l) =>

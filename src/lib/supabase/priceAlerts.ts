@@ -8,7 +8,7 @@ export interface PriceAlertRow {
   user_id: string;
   brand: string;
   model: string;
-  year: number | null;
+  year: string | null;
   target_price: number;
   is_active: boolean;
   created_at: string;
@@ -58,7 +58,7 @@ export async function createPriceAlert(params: {
   userId: string;
   brand: string;
   model: string;
-  year: number | null;
+  year: string | null;
   targetPrice: number;
 }): Promise<void> {
   const { error } = await supabase.from("price_alerts").insert({
@@ -99,7 +99,7 @@ export async function deletePriceAlert(id: string): Promise<void> {
 export async function fetchMatchingListings(
   brand: string,
   model: string,
-  year: number | null,
+  year: string | null,
   targetPrice: number,
 ): Promise<ListingRow[]> {
   let query = supabase
