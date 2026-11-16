@@ -223,6 +223,8 @@ async function HomeTableRender({
   const tableRows: LatestRow[] = latestListings.map((l) => ({
     id: l.id,
     brand: l.brand,
+    family: l.family,
+    model: l.model,
     trim: l.trim,
     year: l.year,
     color: l.color,

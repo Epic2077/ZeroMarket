@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { toFa } from "@/context/carLabels";
+import { brandModelLabel, toFa } from "@/context/carLabels";
 import { ColumnDef } from "@tanstack/react-table";
 import {
   ArrowUpDown,
@@ -14,6 +14,8 @@ import Link from "next/link";
 export type LatestRow = {
   id: string;
   brand: string;
+  family?: string | null;
+  model: string;
   trim: string;
   year: number;
   color: string;
@@ -108,7 +110,7 @@ export const LatestTableColumns: ColumnDef<LatestRow>[] = [
     ),
     cell: ({ row }) => (
       <div dir="rtl" className="flex flex-col gap-0.5">
-        <span className="font-600">{row.original.brand}</span>
+        <span className="font-600">{brandModelLabel(row.original)}</span>
         <span className="text-xs text-muted-foreground">
           {row.original.trim}
         </span>

@@ -75,7 +75,7 @@ export default function TableRender({ listings }: TableRenderProps) {
                   </div>
                   <div className="min-w-0">
                     <div className="text-sm font-semibold text-foreground">
-                      {row.brand}
+                      {brandModelLabel(row)}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {row.trim}

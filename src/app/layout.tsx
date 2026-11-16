@@ -31,8 +31,8 @@ const dynaPuff = DynaPuff({
 // });
 
 export const metadata: Metadata = {
-  title: "KhodroJu",
-  description: "بازار خودروهای صفرکیلومتر و وبلاگ تحلیل KhodroJu",
+  title: "خودروجو | Khodroju",
+  description: "خودروجو؛ خرید و فروش خودروی صفر | Khodroju",
 };
 
 export default function RootLayout({
