@@ -315,7 +315,7 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
       brand: values.brand,
       family: values.family || null,
       model: values.model,
-      trim: values.trim,
+      trim: values.trim || null,
       year: values.year,
       price: Number(values.price.replace(/\D/g, "")),
       price_unit: "تومان",
@@ -341,7 +341,7 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
         values.family || null,
         values.model,
         gYear,
-        values.trim,
+        values.trim || null,
         values.color,
         values.city,
         listing?.id, // exclude self when editing

@@ -173,7 +173,7 @@ export default function Notification() {
       {/* Hover dropdown */}
       {open && (
         <div
-          className="absolute top-full right-0 mt-2 w-80 bg-card border border-border rounded-xl shadow-xl z-50 vazir-matn"
+          className="fixed inset-x-3 top-16 mt-2 bg-card border border-border rounded-xl shadow-xl z-50 vazir-matn lg:absolute lg:inset-x-auto lg:top-full lg:right-0 lg:w-80"
           dir="rtl"
           onMouseEnter={() => setOpen(true)}
         >

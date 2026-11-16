@@ -13,7 +13,7 @@ export interface ListingRow {
   family: string | null;
   model: string;
   is_custom_model: boolean;
-  trim: string;
+  trim: string | null;
   year: string;
   price: number;
   price_unit: string;
@@ -191,7 +191,7 @@ export async function checkDuplicateListing(
   family: string | null | undefined,
   model: string,
   year: string,
-  trim: string,
+  trim: string | null | undefined,
   color: string,
   city: string,
   excludeId?: string,
@@ -205,7 +205,7 @@ export async function checkDuplicateListing(
       family: family ?? null,
       model,
       year,
-      trim,
+      trim: trim ?? null,
       color,
       city,
     })
@@ -285,7 +285,7 @@ export function listingRowToListing(
     brand: row.brand,
     family: row.family,
     model: row.model,
-    trim: row.trim,
+    trim: row.trim ?? "",
     year: row.year,
     color: row.color,
     colorHex: row.color_hex,
