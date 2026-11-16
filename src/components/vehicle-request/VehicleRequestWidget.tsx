@@ -12,12 +12,15 @@ interface VehicleRequestWidgetProps {
   className?: string;
   preselectedBrand?: string;
   preselectedModel?: string;
+  /** Optional prefix to keep control ids unique when rendered more than once. */
+  idPrefix?: string;
 }
 
 export function VehicleRequestWidget({
   className,
   preselectedBrand,
   preselectedModel,
+  idPrefix = "",
 }: VehicleRequestWidgetProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { values: taxonomyValues, loading: taxonomyLoading } =
@@ -93,7 +96,7 @@ export function VehicleRequestWidget({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
           <SearchSelect
-            id="widget-brand"
+            id={`${idPrefix}widget-brand`}
             label="برند"
             value={brandValue}
             options={brandOptions}
@@ -105,7 +108,7 @@ export function VehicleRequestWidget({
           />
 
           <SearchSelect
-            id="widget-model"
+            id={`${idPrefix}widget-model`}
             label="مدل"
             value={modelValue}
             options={modelValues}

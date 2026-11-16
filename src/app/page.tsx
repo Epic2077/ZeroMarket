@@ -6,8 +6,15 @@ import { fetchSellers } from "@/lib/supabase/sellers";
 import { fetchHomepageStats } from "@/lib/supabase/homepageStats";
 import { fetchAllTaxonomy } from "@/lib/supabase/taxonomy";
 import { listingRowToListing } from "@/lib/supabase/listings";
-import { fetchMarketPriceMap, computePriceVsMarket } from "@/lib/supabase/marketInsights";
-import { aggregateSellerListingStats, sellerRowToSummary, sellerRowToDisplayFields } from "@/lib/supabase/sellers";
+import {
+  fetchMarketPriceMap,
+  computePriceVsMarket,
+} from "@/lib/supabase/marketInsights";
+import {
+  aggregateSellerListingStats,
+  sellerRowToSummary,
+  sellerRowToDisplayFields,
+} from "@/lib/supabase/sellers";
 import Hero from "@/components/home/hero/Hero";
 import InfoSection from "@/components/home/info/InfoSection";
 import TableRender from "@/components/home/Latest/TableRender";
@@ -16,6 +23,7 @@ import VerifiedSellers from "@/components/home/verifiedSellers/VerifiedSellers";
 import HowItWorks from "@/components/home/howItWorks/HowItWorks";
 import HomeCTA from "@/components/home/cta/CTA";
 import Reveal from "@/components/shared/Reveal";
+import { VehicleRequestWidget } from "@/components/vehicle-request/VehicleRequestWidget";
 
 function createSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -41,7 +49,14 @@ async function getHomepageData() {
       stats: null,
       latestListings: [],
       verifiedSellers: [],
-      taxonomy: { BRAND: [], CITY: [], YEAR: [], MODEL: [], BODY_TYPE: [], FUEL_TYPE: [] },
+      taxonomy: {
+        BRAND: [],
+        CITY: [],
+        YEAR: [],
+        MODEL: [],
+        BODY_TYPE: [],
+        FUEL_TYPE: [],
+      },
     };
   }
 
@@ -63,7 +78,7 @@ async function getHomepageData() {
     .from("sellers")
     .select("*")
     .in("id", sellerIds);
-  
+
   // Get seller listing stats for all sellers
   const allListings = await supabase
     .from("listings")
@@ -106,9 +121,7 @@ async function getHomepageData() {
     .filter((s) => s.verified)
     .sort((a, b) => b.seller_score - a.seller_score)
     .slice(0, 4)
-    .map((seller) =>
-      sellerRowToSummary(seller, sellerStatsMap.get(seller.id)),
-    );
+    .map((seller) => sellerRowToSummary(seller, sellerStatsMap.get(seller.id)));
 
   // Extract taxonomy options for HeroFilter
   const taxonomy = {
@@ -151,6 +164,16 @@ export default async function Home() {
             <HomeTableRender dataPromise={dataPromise} />
           </Reveal>
         </Suspense>
+
+        {/* Vehicle request — mobile only, between latest listings and pricing insight */}
+        <Reveal>
+          <section
+            className="md:hidden max-w-screen-2xl mx-auto px-4 py-30 vazir-matn"
+            dir="rtl"
+          >
+            <VehicleRequestWidget idPrefix="mobile-" />
+          </section>
+        </Reveal>
 
         <Suspense fallback={<div className="h-96 animate-pulse bg-muted" />}>
           <Reveal>
@@ -218,7 +241,7 @@ async function HomeTableRender({
   }>;
 }) {
   const { latestListings } = await dataPromise;
-  
+
   // Map Listing to LatestRow format
   const tableRows: LatestRow[] = latestListings.map((l) => ({
     id: l.id,
@@ -235,7 +258,7 @@ async function HomeTableRender({
     listingType: l.listingType,
     priceVsMarket: l.priceVsMarket,
   }));
-  
+
   return <TableRender listings={tableRows} />;
 }
 
