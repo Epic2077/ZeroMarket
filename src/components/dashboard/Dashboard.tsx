@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useUserInfo } from "@/context/UserInfoProvider";
 import { useSeller } from "@/hooks/useSellers";
 import AnalyticsTab from "../seller-dashboard/AnalyticsTab";
@@ -16,24 +16,35 @@ import SavedListingsTab from "../user-dashboard/SavedListingsTab";
 import UserStatsGrid from "../user-dashboard/UserStatsGrid";
 import DashHeader from "./DashHeader";
 import DashTabs, { type DashTabId } from "./DashTabs";
+import { useHashTab } from "@/hooks/useHashTab";
+
+const DASH_TAB_IDS: DashTabId[] = [
+  "overview",
+  "saved",
+  "userRequests",
+  "vehicleRequests",
+  "notifications",
+  "alerts",
+  "listings",
+  "sellerRequests",
+  "analytics",
+];
+
+// Legacy deep link (`/dashboard/user#notif`) still opens the notifications tab.
+const DASH_TAB_ALIASES: Record<string, DashTabId> = {
+  notif: "notifications",
+};
 
 export default function Dashboard() {
   const { profile } = useUserInfo();
   const { seller } = useSeller(profile?.id ?? "");
-  const [activeTab, setActiveTab] = useState<DashTabId>("overview");
+  const [activeTab, setActiveTab] = useHashTab<DashTabId>(
+    "overview",
+    DASH_TAB_IDS,
+    DASH_TAB_ALIASES,
+  );
   const [showBulkImport, setShowBulkImport] = useState(false);
   const isSeller = seller !== null;
-
-  useEffect(() => {
-    const selectNotificationTab = () => {
-      if (window.location.hash === "#notif") setActiveTab("notifications");
-    };
-
-    selectNotificationTab();
-    window.addEventListener("hashchange", selectNotificationTab);
-    return () =>
-      window.removeEventListener("hashchange", selectNotificationTab);
-  }, []);
 
   return (
     <div className="max-w-screen-2xl mx-auto px-4 lg:px-8 xl:px-10 py-8">

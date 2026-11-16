@@ -12,6 +12,7 @@ import {
   Package,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
+import { useHashTab } from "@/hooks/useHashTab";
 import TaxonomyManager from "../management/TaxonomyManager";
 import UserManagementTable from "../management/UserManagementTable";
 import AdminNotifications from "./AdminNotifications";
@@ -37,10 +38,12 @@ const tabs = [
 
 type TabId = (typeof tabs)[number]["id"];
 
+const TAB_IDS = tabs.map((tab) => tab.id);
+
 export default function AdminDashboard() {
   const { setViewer } = useSession();
   const { user, profile } = useUserInfo();
-  const [active, setActive] = useState<TabId>("users");
+  const [active, setActive] = useHashTab<TabId>("users", TAB_IDS);
   const [unreadCount, setUnreadCount] = useState(0);
   const {
     users: apiUsers,

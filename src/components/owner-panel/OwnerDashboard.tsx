@@ -3,6 +3,7 @@
 import { CURRENT_ADMIN_ID } from "@/context/adminData";
 import { useSession } from "@/context/SessionProvider";
 import { useEffect, useState } from "react";
+import { useHashTab } from "@/hooks/useHashTab";
 import TaxonomyManager from "../management/TaxonomyManager";
 import UserManagementTable from "../management/UserManagementTable";
 import AdminAssignments from "./AdminAssignments";
@@ -36,10 +37,12 @@ const tabs = [
 
 type TabId = (typeof tabs)[number]["id"];
 
+const TAB_IDS = tabs.map((tab) => tab.id);
+
 export default function OwnerDashboard() {
   const { profile } = useUserInfo();
   const { setViewer } = useSession();
-  const [active, setActive] = useState<TabId>("overview");
+  const [active, setActive] = useHashTab<TabId>("overview", TAB_IDS);
   const [notifications, setNotifications] = useState<OwnerNotification[]>([]);
   const [notificationsLoading, setNotificationsLoading] = useState(true);
   const {
