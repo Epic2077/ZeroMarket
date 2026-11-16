@@ -84,6 +84,7 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
   const {
     taxonomy,
     values,
+    findId,
     loading: taxonomyLoading,
     error: taxonomyError,
   } = useTaxonomyOptions();
@@ -171,7 +172,12 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
     let cancelled = false;
     if (!selectedBrand) return;
     setModelsLoading(true);
-    fetchModelsByBrand(selectedBrand, selectedFamily || undefined)
+    fetchModelsByBrand(
+      selectedBrand,
+      selectedFamily || undefined,
+      findId("BRAND", selectedBrand),
+      findId("FAMILY", selectedFamily),
+    )
       .then((rows) => {
         if (cancelled) return;
         setModelValues(rows.map((r) => r.value));
@@ -186,7 +192,7 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [selectedBrand, selectedFamily]);
+  }, [selectedBrand, selectedFamily, findId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -195,7 +201,7 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
       return;
     }
     setFamiliesLoading(true);
-    fetchFamiliesByBrand(selectedBrand)
+    fetchFamiliesByBrand(selectedBrand, findId("BRAND", selectedBrand))
       .then((rows) => {
         if (!cancelled) setFamilyValues(rows.map((row) => row.value));
       })
@@ -208,7 +214,7 @@ export default function ProductEditor({ listing, owner, backHref }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [selectedBrand]);
+  }, [selectedBrand, findId]);
 
   // Derive: clear model values when brand is empty
   const displayModelValues = selectedBrand ? modelValues : [];

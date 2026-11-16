@@ -109,7 +109,7 @@ export const LatestTableColumns: ColumnDef<LatestRow>[] = [
       </Button>
     ),
     cell: ({ row }) => (
-      <div dir="rtl" className="flex flex-col gap-0.5">
+      <div dir="rtl" className="flex flex-col gap-0.5 text-center">
         <span className="font-600">{brandModelLabel(row.original)}</span>
         <span className="text-xs text-muted-foreground">
           {row.original.trim}

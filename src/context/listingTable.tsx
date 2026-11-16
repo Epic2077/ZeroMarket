@@ -174,7 +174,7 @@ export function listingColumns(
         const key = `${row.original.brand} ${row.original.model}`;
         const isBuy = row.original.listingType === "BUY";
         return (
-          <div dir="rtl" className="flex flex-col gap-0.5">
+          <div dir="rtl" className="flex flex-col gap-0.5 text-center">
             <span className="font-medium">
               {brandModelFa[key] ?? key}
               <Badge

@@ -98,6 +98,7 @@ interface UseCarSpecsManagerReturn {
 export function useCarSpecsManager(): UseCarSpecsManagerReturn {
   const {
     values,
+    findId,
     loading: taxLoading,
     error: taxError,
     refresh: refreshTax,
@@ -146,7 +147,12 @@ export function useCarSpecsManager(): UseCarSpecsManagerReturn {
       return;
     }
     setModelsLoading(true);
-    fetchModelsByBrand(formBrand, formFamily || undefined)
+    fetchModelsByBrand(
+      formBrand,
+      formFamily || undefined,
+      findId("BRAND", formBrand),
+      findId("FAMILY", formFamily),
+    )
       .then((rows) => {
         if (cancelled) return;
         const opts = rows.map((r) => r.value);
@@ -165,7 +171,7 @@ export function useCarSpecsManager(): UseCarSpecsManagerReturn {
     return () => {
       cancelled = true;
     };
-  }, [formBrand, formFamily, formModel]);
+  }, [formBrand, formFamily, formModel, findId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -174,7 +180,7 @@ export function useCarSpecsManager(): UseCarSpecsManagerReturn {
       return;
     }
     setFamiliesLoading(true);
-    fetchFamiliesByBrand(formBrand)
+    fetchFamiliesByBrand(formBrand, findId("BRAND", formBrand))
       .then((rows) => {
         if (!cancelled) setFamilyOptions(rows.map((row) => row.value));
       })
@@ -187,7 +193,7 @@ export function useCarSpecsManager(): UseCarSpecsManagerReturn {
     return () => {
       cancelled = true;
     };
-  }, [formBrand]);
+  }, [formBrand, findId]);
 
   const load = useCallback(async () => {
     setLoading(true);

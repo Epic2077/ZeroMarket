@@ -22,7 +22,7 @@ export function VehicleRequestStepVehicle({
   preselectedBrand,
   preselectedModel,
 }: VehicleRequestStepVehicleProps) {
-  const { values: taxonomyValues, loading: taxonomyLoading } = useTaxonomyOptions();
+  const { values: taxonomyValues, loading: taxonomyLoading, findId } = useTaxonomyOptions();
   const [modelValues, setModelValues] = useState<string[]>([]);
   const [modelsLoading, setModelsLoading] = useState(false);
   const [selectedBrand, setSelectedBrand] = useState(preselectedBrand ?? "");
@@ -69,7 +69,7 @@ export function VehicleRequestStepVehicle({
       return;
     }
     setModelsLoading(true);
-    fetchModelsByBrand(selectedBrand)
+    fetchModelsByBrand(selectedBrand, undefined, findId("BRAND", selectedBrand))
       .then((rows) => {
         if (cancelled) return;
         setModelValues(rows.map((r) => r.value));
@@ -84,7 +84,7 @@ export function VehicleRequestStepVehicle({
     return () => {
       cancelled = true;
     };
-  }, [selectedBrand]);
+  }, [selectedBrand, findId]);
 
   const displayModelValues = selectedBrand ? modelValues : [];
 

@@ -84,16 +84,22 @@ export async function fetchTaxonomyValues(
 export async function fetchModelsByBrand(
   brand?: string,
   family?: string,
+  brandId?: string,
+  familyId?: string,
 ): Promise<TaxonomyRow[]> {
   let query = supabase
     .from("taxonomy_options")
     .select("id, value, metadata, category")
     .eq("category", "MODEL");
 
-  if (brand) {
+  if (brandId) {
+    query = query.eq("metadata->>brand_id", brandId);
+  } else if (brand) {
     query = query.eq("metadata->>brand", brand);
   }
-  if (family) {
+  if (familyId) {
+    query = query.eq("metadata->>family_id", familyId);
+  } else if (family) {
     query = query.eq("metadata->>family", family);
   }
 
@@ -105,13 +111,16 @@ export async function fetchModelsByBrand(
 /** Fetch families scoped to a brand (stored in metadata.brand). */
 export async function fetchFamiliesByBrand(
   brand?: string,
+  brandId?: string,
 ): Promise<TaxonomyRow[]> {
   let query = supabase
     .from("taxonomy_options")
     .select("id, value, metadata, category")
     .eq("category", "FAMILY");
 
-  if (brand) {
+  if (brandId) {
+    query = query.eq("metadata->>brand_id", brandId);
+  } else if (brand) {
     query = query.eq("metadata->>brand", brand);
   }
 

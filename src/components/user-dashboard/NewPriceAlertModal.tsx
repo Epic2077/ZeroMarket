@@ -143,7 +143,7 @@ function SearchablePicker({
 
 export default function NewPriceAlertModal({ onClose, onCreated }: Props) {
   const { user } = useUserInfo();
-  const { values: taxonomyValues } = useTaxonomyOptions();
+  const { values: taxonomyValues, findId } = useTaxonomyOptions();
   const brandOptions = useMemo(() => taxonomyValues("BRAND"), [taxonomyValues]);
   const yearOptions = useMemo(() => taxonomyValues("YEAR"), [taxonomyValues]);
 
@@ -171,7 +171,7 @@ export default function NewPriceAlertModal({ onClose, onCreated }: Props) {
     }
     let cancelled = false;
     setModelsLoading(true);
-    fetchModelsByBrand(selectedBrand)
+    fetchModelsByBrand(selectedBrand, undefined, findId("BRAND", selectedBrand))
       .then((rows) => {
         if (!cancelled) setModelOptions(rows.map((r) => r.value));
       })
@@ -184,7 +184,7 @@ export default function NewPriceAlertModal({ onClose, onCreated }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [selectedBrand]);
+  }, [selectedBrand, findId]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {

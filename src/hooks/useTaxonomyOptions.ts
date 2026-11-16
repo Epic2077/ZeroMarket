@@ -9,6 +9,8 @@ export interface UseTaxonomyOptionsResult {
   taxonomy: Record<TaxonomyCategory, TaxonomyRow[]>;
   /** Flat list of value strings for a given category. */
   values: (category: TaxonomyCategory) => string[];
+  /** Resolve a row's unique id by its value (undefined when not found). */
+  findId: (category: TaxonomyCategory, value: string) => string | undefined;
   loading: boolean;
   error: string | null;
   refresh: () => void;
@@ -45,5 +47,11 @@ export function useTaxonomyOptions(): UseTaxonomyOptionsResult {
     [taxonomy],
   );
 
-  return { taxonomy, values, loading, error, refresh: load };
+  const findId = useCallback(
+    (category: TaxonomyCategory, value: string): string | undefined =>
+      (taxonomy[category] ?? []).find((r) => r.value === value)?.id,
+    [taxonomy],
+  );
+
+  return { taxonomy, values, findId, loading, error, refresh: load };
 }
