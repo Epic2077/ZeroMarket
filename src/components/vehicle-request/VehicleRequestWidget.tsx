@@ -23,7 +23,7 @@ export function VehicleRequestWidget({
   idPrefix = "",
 }: VehicleRequestWidgetProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { values: taxonomyValues, loading: taxonomyLoading, findId } =
+  const { values: taxonomyValues, loading: taxonomyLoading } =
     useTaxonomyOptions();
   const [brandValue, setBrandValue] = useState(preselectedBrand ?? "");
   const [modelValue, setModelValue] = useState(preselectedModel ?? "");
@@ -57,7 +57,7 @@ export function VehicleRequestWidget({
       return;
     }
     setModelsLoading(true);
-    fetchModelsByBrand(brandValue, undefined, findId("BRAND", brandValue))
+    fetchModelsByBrand(brandValue)
       .then((rows) => {
         if (cancelled) return;
         setModelValues(rows.map((r) => r.value));
@@ -72,7 +72,7 @@ export function VehicleRequestWidget({
     return () => {
       cancelled = true;
     };
-  }, [brandValue, findId]);
+  }, [brandValue]);
 
   return (
     <div className={`vazir-matn ${className ?? ""}`}>

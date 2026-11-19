@@ -23,7 +23,7 @@ import SpecsComparisonTable from "./analytics/SpecsComparisonTable";
 import PriceScatterSection from "./analytics/PriceScatterSection";
 
 export default function MarketAnalytics() {
-  const { values, loading: taxLoading, findId } = useTaxonomyOptions();
+  const { values, loading: taxLoading } = useTaxonomyOptions();
   const { listings: rawListings } = useListings();
 
   const brandOptions = useMemo(() => values("BRAND"), [values]);
@@ -68,7 +68,7 @@ export default function MarketAnalytics() {
       return n;
     });
     try {
-      const rows = await fetchModelsByBrand(brand, undefined, findId("BRAND", brand));
+      const rows = await fetchModelsByBrand(brand);
       setModelOptions((p) => {
         const n = [...p];
         n[slotIdx] = rows.map((r) => r.value);
@@ -87,7 +87,7 @@ export default function MarketAnalytics() {
         return n;
       });
     }
-  }, [findId]);
+  }, []);
 
   const fetchInsights = useCallback(async () => {
     if (!slots.some((s) => s.brand && s.model)) {
