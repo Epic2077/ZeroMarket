@@ -173,8 +173,9 @@ export function listingColumns(
       cell: ({ row }) => {
         const key = `${row.original.brand} ${row.original.model}`;
         const isBuy = row.original.listingType === "BUY";
+        const trim = row.original.trim;
         return (
-          <div dir="rtl" className="flex flex-col gap-0.5 text-center">
+          <div dir="rtl" className="flex flex-col gap-0.5 text-right">
             <span className="font-medium">
               {brandModelFa[key] ?? key}
               <Badge
@@ -190,7 +191,7 @@ export function listingColumns(
               </Badge>
             </span>
             <span className="text-xs text-muted-foreground">
-              {row.original.trim}
+              {trim ? `تریم: ${trim}` : null}
             </span>
           </div>
         );

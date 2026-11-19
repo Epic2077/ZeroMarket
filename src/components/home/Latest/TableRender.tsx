@@ -78,7 +78,7 @@ export default function TableRender({ listings }: TableRenderProps) {
                       {brandModelLabel(row)}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {row.trim}
+                      {row.trim ? `تریم: ${row.trim}` : null}
                     </div>
                   </div>
                 </div>
